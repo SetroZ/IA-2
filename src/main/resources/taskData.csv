@@ -1,0 +1,11 @@
+// Task ID,Estimated Time (hrs),Difficulty,Deadline (hrs from now),Required Skill
+T1,4,3,8,A
+T2,6,5,12,B
+T3,2,2,6,A
+T4,5,4,10,C
+T5,3,1,7,A
+T6,8,6,15,B
+T7,4,3,9,C
+T8,7,5,14,B
+T9,2,2,5,A
+T10,6,4,11,C
