@@ -1,8 +1,8 @@
-import Algorithms.GeneticAlgorithm;
-import Model.Assignment;
 import Model.Employee;
 import Model.Task;
 import Utilities.DataGenerator;
+import Utilities.Initialise;
+import View.ConsoleView;
 
 import java.util.List;
 
@@ -15,20 +15,40 @@ public class Main
         {
             List<Task> tasks = DataGenerator.loadTasks();
             List<Employee> employees = DataGenerator.loadEmployees();
+            ConsoleView cv = new ConsoleView(employees, tasks);
+
 
             // Print loaded data
-            printLoadedData(tasks, employees);
+            //printLoadedData(tasks, employees);
 
-            System.out.println("=====================\n Running Genetic Algorithm\n");
-            // Use appropriate parameter values
-            GeneticAlgorithm ga = new GeneticAlgorithm(tasks, employees, 100, 0.7, 0.1, -1, false);
-            Assignment bestAssignment = ga.run();
+            //Initialise Population
+            int[][] population = Initialise.getInitialPopulation(employees, tasks, 1);
 
-            printLoadedData(tasks, employees);
+            //printPopulation(population, employees, tasks);
+
+            //cv.printPopulation(population);
+
+            cv.printData();
         }
         catch (Exception e)
         {
             e.printStackTrace();
+        }
+    }
+
+    private static void printPopulation(int[][] population, List<Employee> employees, List<Task> tasks)
+    {
+        for(int i = 0; i < population.length; i++)
+        {
+            System.out.println("Population: " + i);
+            for(int j = 0; j < population[i].length; j++)
+            {
+                int taskID = j;
+                int employeeID = population[i][j];
+                System.out.println("Employee ID: " + employeeID + " Task ID: " + taskID);
+                System.out.println(employees.get(employeeID));
+                System.out.println(tasks.get(taskID));
+            }
         }
     }
 

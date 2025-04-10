@@ -1,7 +1,5 @@
 package Algorithms;
 
-import Model.Assignment;
-
 import java.util.List;
 
 public interface Algorithm
@@ -11,7 +9,7 @@ public interface Algorithm
      *
      * @return The best Assignment found
      */
-    Assignment run();
+    int[] run();
 
     /**
      * Gets the best cost history throughout the optimization process.

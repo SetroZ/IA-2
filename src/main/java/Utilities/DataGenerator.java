@@ -48,6 +48,8 @@ public class DataGenerator {
             // Skip header line
             String line = reader.readLine();
 
+            int idx = 0;
+
             // Read data lines
             while ((line = reader.readLine()) != null) {
                 String[] data = line.split(",");
@@ -58,8 +60,9 @@ public class DataGenerator {
                     int deadline = Integer.parseInt(data[3].trim());
                     String requiredSkill = data[4].trim();
 
-                    Task task = new Task(id, estimatedTime, difficulty, deadline, requiredSkill);
+                    Task task = new Task(id, estimatedTime, difficulty, deadline, requiredSkill, idx);
                     tasks.add(task);
+                    idx++;
                 }
             }
         }
@@ -93,6 +96,7 @@ public class DataGenerator {
             // Skip header line
             String line = reader.readLine();
 
+            int idx = 0;
             // Read data lines
             while ((line = reader.readLine()) != null) {
                 String[] data = line.split(",");
@@ -107,8 +111,9 @@ public class DataGenerator {
                     String[] skillsArray = skillsStr.split(" ");
                     Set<String> skills = new HashSet<>(Arrays.asList(skillsArray));
 
-                    Employee employee = new Employee(id, availableHours, skillLevel, skills);
+                    Employee employee = new Employee(id, availableHours, skillLevel, skills, idx);
                     employees.add(employee);
+                    idx++;
                 }
             }
         }

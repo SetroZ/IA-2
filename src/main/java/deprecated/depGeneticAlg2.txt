@@ -1,10 +1,7 @@
-package deprecated;
-import Algorithms.Algorithm;
-import Model.Assignment;
+package Algorithms;
 import Model.Employee;
 import Model.Task;
 import Utilities.ConstraintValidator;
-import Utilities.Initialise;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -34,7 +31,7 @@ public class GeneticAlgorithm implements Algorithm
 
     // Tracking and reporting
     private String output = "";
-    private Assignment globalBestAssignment;
+    private int[] globalBestAssignment;
     private double globalBestCost = Double.MAX_VALUE;
     private List<Double> bestCostHistory = new ArrayList<>();
     private List<Double> avgCostHistory = new ArrayList<>();
@@ -60,11 +57,10 @@ public class GeneticAlgorithm implements Algorithm
         this.populationSize = populationSize;
         this.crossoverRate = crossoverRate;
         this.mutationRate = mutationRate;
-        if(maxGenerations == -1)
-        {
+        if(maxGenerations == -1) {
             this.maxGenerations = Integer.MAX_VALUE;
         }
-        else{
+        else {
             this.maxGenerations = maxGenerations;
         }
         this.elitismCount = 2; // Keep the best 2 solutions
@@ -81,18 +77,17 @@ public class GeneticAlgorithm implements Algorithm
         return new Random().nextInt(employees.size());
     }
 
-
-
     /**
      * Runs the genetic algorithm to find an optimal assignment.
      *
      * @return The best Assignment found
      */
     @Override
-    public Assignment run()
+    public int[] run()
     {
+        /*
         // Initialize population
-        List<Assignment> population = Initialise.getInitialPopulation(employees, tasks, populationSize);
+        int[][] = Initialise.getInitialPopulation(employees, tasks, populationSize);
         // Evaluate initial population
         evaluatePopulation(population);
 
@@ -184,6 +179,8 @@ public class GeneticAlgorithm implements Algorithm
 
         // Print final result
         printFinalResult(globalBestAssignment, generation);
+
+         */
 
         return globalBestAssignment;
     }
@@ -296,6 +293,7 @@ public class GeneticAlgorithm implements Algorithm
 
             parents[i] = findBestAssignment(tournament);
         }
+
         return parents;
     }
 
@@ -335,34 +333,28 @@ public class GeneticAlgorithm implements Algorithm
      */
     private void mutate(Assignment assignment)
     {
-        for (Task task : tasks)
-        {
-            if (Math.random() < mutationRate)
-            {
-                // Mutate this task by assigning it to a random employee
-                String employeeId = employees.get(Initialise.getRandomEmployeeIndex(employees.size())).getId();
-                assignment.assign(task.getId(), employeeId);
+        for (Task task : tasks) {
+        if (Math.random() < mutationRate) {
+            // Get the current assigned employee
+            String currentEmployeeId = assignment.getAssignedEmployee(task.getId());
+
+            // Create a list of employees who can perform this task
+            List<Employee> compatibleEmployees = new ArrayList<>();
+            for (Employee employee : employees) {
+                if (employee.hasSkill(task.getRequiredSkill()) &&
+                        employee.getSkillLevel() >= task.getDifficulty()) {
+                    compatibleEmployees.add(employee);
+                }
+            }
+
+            // If we have compatible employees, choose one randomly
+            if (!compatibleEmployees.isEmpty()) {
+                int randomIndex = new Random().nextInt(compatibleEmployees.size());
+                String newEmployeeId = compatibleEmployees.get(randomIndex).getId();
+                assignment.assign(task.getId(), newEmployeeId);
             }
         }
-
-        // Additional mutation: swap tasks between employees
-        if (Math.random() < mutationRate / 2 && tasks.size() >= 2)
-        {
-            int taskIndex1 = new Random().nextInt(tasks.size());
-            int taskIndex2 = new Random().nextInt(tasks.size());
-
-            if (taskIndex1 != taskIndex2)
-            {
-                String taskId1 = tasks.get(taskIndex1).getId();
-                String taskId2 = tasks.get(taskIndex2).getId();
-
-                String employeeId1 = assignment.getAssignedEmployee(taskId1);
-                String employeeId2 = assignment.getAssignedEmployee(taskId2);
-
-                assignment.assign(taskId1, employeeId2);
-                assignment.assign(taskId2, employeeId1);
-            }
-        }
+    }
     }
 
     /**

@@ -10,13 +10,19 @@ public class Employee
     private final int availableHours;
     private final int skillLevel;
     private final Set<String> skills;
+    private final int idx;
 
-    public Employee(String ID, int hours, int skillLevel, Set<String> skills)
+    public Employee(String ID, int hours, int skillLevel, Set<String> skills, int idx)
     {
         this.id = ID;
         this.availableHours = hours;
         this.skillLevel = skillLevel;
         this.skills = new HashSet<>(skills);
+        this.idx = idx;
+    }
+
+    public int getIdx(){
+        return idx;
     }
 
     public String getId()
@@ -55,7 +61,7 @@ public class Employee
                 "id='" + id + '\'' +
                 ", availableHours=" + availableHours +
                 ", skillLevel=" + skillLevel +
-                ", skills=" + skills +
+                ", skill/s=" + skills +
                 '}';
     }
 
