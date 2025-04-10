@@ -16,6 +16,7 @@ public class Initialise
 
     /**
      * Gets a random index from the range of employee indexes
+     *
      * @param size the size of employee list
      * @return random index from 0 to employee size
      */
@@ -27,8 +28,9 @@ public class Initialise
 
     /**
      * Generates population at random from data
-     * @param employees the list of employees
-     * @param tasks the list of tasks
+     *
+     * @param employees      the list of employees
+     * @param tasks          the list of tasks
      * @param populationSize the total number of solutions in the population
      * @return random initial population as int[][] array
      */
@@ -46,14 +48,15 @@ public class Initialise
         }
         return population;
     }
-
-    public static int[][] getTestPopulation(List<Employee> employees, List<Task> tasks)
-    {
-        int[][] population = new int[3][tasks.size()];
-
-        for(Task task : tasks)
-        {
-            population[0][task.getIdx()] = getRandomEmployeeIndex(employees.size());
-        }
-    }
 }
+//
+//    public static int[][] getTestPopulation(List<Employee> employees, List<Task> tasks)
+//    {
+//        int[][] population = new int[3][tasks.size()];
+//
+//        for(Task task : tasks)
+//        {
+//            population[0][task.getIdx()] = getRandomEmployeeIndex(employees.size());
+//        }
+//    }
+//}

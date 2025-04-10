@@ -1,8 +1,9 @@
 package Algorithms;
-import Model.Assignment;
+
 import Model.Employee;
 import Model.Task;
 import Utilities.ConstraintValidator;
+import Utilities.CostCalculator;
 import Utilities.Initialise;
 
 import java.io.File;
@@ -14,17 +15,19 @@ import java.nio.file.Paths;
 import java.util.*;
 
 /**
- * Genetic Algorithm implementation for employee-task assignment optimization.
+ * Genetic Algorithm implementation for employee-task solution optimization.
  * Adapted from a solution originally designed for the 8-Queens problem.
  */
 public class GeneticAlgorithm implements Algorithm
 {
+
     // Algorithm parameters
     private final int populationSize;
     private final double crossoverRate;
     private final double mutationRate;
     private final int maxGenerations;
     private final int elitismCount;
+    private final int REPORTING_FREQUENCY;
     private final boolean fileOutput;
 
     // Problem data
@@ -33,7 +36,7 @@ public class GeneticAlgorithm implements Algorithm
 
     // Tracking and reporting
     private String output = "";
-    private Assignment globalBestAssignment;
+    private int[] globalBestSolution;
     private double globalBestCost = Double.MAX_VALUE;
     private List<Double> bestCostHistory = new ArrayList<>();
     private List<Double> avgCostHistory = new ArrayList<>();
@@ -43,7 +46,7 @@ public class GeneticAlgorithm implements Algorithm
      * Constructor for the Genetic Algorithm.
      *
      * @param tasks          The list of tasks to be assigned
-     * @param employees      The list of employees available for assignment
+     * @param employees      The list of employees available for solution
      * @param populationSize Size of the population (number of solutions)
      * @param crossoverRate  Probability of crossover (0.0-1.0)
      * @param mutationRate   Probability of mutation (0.0-1.0)
@@ -52,13 +55,14 @@ public class GeneticAlgorithm implements Algorithm
      */
     public GeneticAlgorithm(List<Task> tasks, List<Employee> employees,
                             int populationSize, double crossoverRate, double mutationRate,
-                            int maxGenerations, boolean fileOutput)
+                            int maxGenerations, int reportingFrequency, boolean fileOutput)
     {
         this.tasks = tasks;
         this.employees = employees;
         this.populationSize = populationSize;
         this.crossoverRate = crossoverRate;
         this.mutationRate = mutationRate;
+        REPORTING_FREQUENCY = reportingFrequency;
         if(maxGenerations == -1) {
             this.maxGenerations = Integer.MAX_VALUE;
         }
@@ -70,69 +74,59 @@ public class GeneticAlgorithm implements Algorithm
     }
 
     /**
-     * Generates a random employee index within the valid range.
+     * Runs the genetic algorithm to find an optimal solution.
      *
-     * @return A random employee index
+     * @return The best Solution found
      */
-    private int getRandomEmployeeIndex()
-    {
-        return new Random().nextInt(employees.size());
-    }
 
-    /**
-     * Runs the genetic algorithm to find an optimal assignment.
-     *
-     * @return The best Assignment found
-     */
     @Override
-    public Assignment run()
+    public int[] run()
     {
         // Initialize population
-        List<Assignment> population = Initialise.getInitialPopulation(employees, tasks, populationSize);
-        // Evaluate initial population
-        evaluatePopulation(population);
+        int[][] population = Initialise.getInitialPopulation(employees, tasks, populationSize);
 
         int generation = 0;
-        globalBestAssignment = findBestAssignment(population);
-        globalBestCost = globalBestAssignment.calculateCost(employees, tasks);
 
-        recordStatistics(population, generation);
+        globalBestSolution = findBestSolution(population);
+        globalBestCost = CostCalculator.calculateTotalCost(globalBestSolution, tasks, employees);
+
+        //recordStatistics(population, generation);
 
         // Main loop
         while (generation < maxGenerations && !terminationCondition(population))
         {
-            List<Assignment> newPopulation = new ArrayList<>();
+            int[][] newPopulation = new int[populationSize][tasks.size()];
 
-            // Sort population by fitness (lower cost is better)
-            sortPopulationByFitness(population);
+            // Initialise counter for populated solutions
+            int counter = 0;
 
             // Add elite solutions to new population
-            for (int i = 0; i < elitismCount && i < population.size(); i++)
+            int[][] eliteSolutions = findBestSolution(population, elitismCount);
+
+            for (counter = 0; counter < elitismCount && counter < population.length; counter++)
             {
-                newPopulation.add(new Assignment(population.get(i)));
+                newPopulation[counter] = eliteSolutions[counter].clone();
             }
 
             // Fill the rest of the population with offspring
-            while (newPopulation.size() < populationSize)
+            while (counter < populationSize)
             {
                 // Selection
-                Assignment[] parents = selectParents(population);
-                Assignment parent1 = parents[0];
-                Assignment parent2 = parents[1];
+                int[][] parents = selectParents(population);
 
                 // Crossover
-                Assignment offspring1 = null;
-                Assignment offspring2 = null;
+                int[] offspring1 = null;
+                int[] offspring2 = null;
 
                 if (Math.random() < crossoverRate)
                 {
-                    offspring1 = crossover(parent1, parent2);
-                    offspring2 = crossover(parent2, parent1);
+                    offspring1 = crossover(parents[0], parents[1]);
+                    offspring2 = crossover(parents[1], parents[0]);
                 }
                 else
                 {
-                    offspring1 = new Assignment(parent1);
-                    offspring2 = new Assignment(parent2);
+                    offspring1 = parents[0].clone();
+                    offspring2 = parents[1].clone();
                 }
 
                 // Mutation
@@ -140,29 +134,26 @@ public class GeneticAlgorithm implements Algorithm
                 mutate(offspring2);
 
                 // Add to new population
-                if (newPopulation.size() < populationSize)
+                newPopulation[counter] = offspring1.clone();
+                counter++;
+
+                if (counter < populationSize)
                 {
-                    newPopulation.add(offspring1);
-                }
-                if (newPopulation.size() < populationSize)
-                {
-                    newPopulation.add(offspring2);
+                    newPopulation[counter] = offspring2.clone();
+                    counter++;
                 }
             }
 
             // Replace old population with new population
             population = newPopulation;
 
-            // Evaluate new population
-            evaluatePopulation(population);
-
             // Update global best
-            Assignment currentBest = findBestAssignment(population);
-            double currentBestCost = currentBest.calculateCost(employees, tasks);
+            int[] currentBest = findBestSolution(population);
+            double currentBestCost = CostCalculator.calculateTotalCost(currentBest, tasks, employees);
 
             if (currentBestCost < globalBestCost)
             {
-                globalBestAssignment = new Assignment(currentBest);
+                globalBestSolution = currentBest;
                 globalBestCost = currentBestCost;
             }
 
@@ -170,7 +161,7 @@ public class GeneticAlgorithm implements Algorithm
             recordStatistics(population, generation);
 
             // Print progress
-            if (generation % 10 == 0 || generation == maxGenerations - 1)
+            if (generation % REPORTING_FREQUENCY == 0 || generation == maxGenerations - 1)
             {
                 printProgress(currentBest, generation);
             }
@@ -179,9 +170,9 @@ public class GeneticAlgorithm implements Algorithm
         }
 
         // Print final result
-        printFinalResult(globalBestAssignment, generation);
+        printFinalResult(globalBestSolution, generation);
 
-        return globalBestAssignment;
+        return globalBestSolution;
     }
 
     /**
@@ -190,26 +181,26 @@ public class GeneticAlgorithm implements Algorithm
      * @param population The current population
      * @param generation The current generation number
      */
-    private void recordStatistics(List<Assignment> population, int generation)
+    private void recordStatistics(int[][] population, int generation)
     {
         // Record best cost
-        double bestCost = findBestAssignment(population).calculateCost(employees, tasks);
+        double bestCost = CostCalculator.calculateTotalCost(findBestSolution(population), tasks, employees);
         bestCostHistory.add(bestCost);
 
         // Record average cost
         double totalCost = 0;
-        for (Assignment assignment : population)
+        for (int[] solution : population)
         {
-            totalCost += assignment.calculateCost(employees, tasks);
+            totalCost += CostCalculator.calculateTotalCost(solution, tasks, employees);
         }
-        double avgCost = totalCost / population.size();
+        double avgCost = totalCost / populationSize;
         avgCostHistory.add(avgCost);
 
         // Record feasible solutions count
         int feasibleCount = 0;
-        for (Assignment assignment : population)
+        for (int[] solution : population)
         {
-            if (ConstraintValidator.isAssignmentFeasible(assignment, tasks, employees))
+            if (ConstraintValidator.isSolutionFeasible(solution, tasks, employees))
             {
                 feasibleCount++;
             }
@@ -218,107 +209,123 @@ public class GeneticAlgorithm implements Algorithm
     }
 
     /**
-     * Evaluates the fitness of all assignments in the population.
+     * Evaluates the fitness of all solutions in the population.
      *
      * @param population The population to evaluate
      */
-    private void evaluatePopulation(List<Assignment> population)
+    private Map<Integer, Double> evaluatePopulation(int[][] population)
     {
-        for (Assignment assignment : population)
+        Map<Integer, Double> populationCost = new HashMap<>();
+
+        for(int i = 0; i < population.length; i++)
         {
 
-            // Fitness is already calculated when needed by the Assignment class
-            // This is just a placeholder in case preprocessing is needed
+            Double cost = CostCalculator.calculateTotalCost(population[i], tasks, employees);
+            populationCost.put(i, cost);
         }
+        return populationCost;
     }
 
     /**
-     * Sorts the population by fitness (lower cost is better).
-     *
-     * @param population The population to sort
-     */
-    private void sortPopulationByFitness(List<Assignment> population)
-    {
-        population.sort(Comparator.comparingDouble(a -> a.calculateCost(employees, tasks)));
-    }
-
-    /**
-     * Finds the best assignment in the population.
+     * Finds the best solution in the population.
      *
      * @param population The population to search
-     * @return The best Assignment
+     * @return The best Solution
      */
-    private Assignment findBestAssignment(List<Assignment> population)
-    {
-        Assignment best = population.get(0);
-        double bestCost = best.calculateCost(employees, tasks);
+    private int[][] findBestSolution(int[][] population, int numSolutions) {
+        // Create an array to store individuals and their costs
+        List<int[]> individuals = new ArrayList<>();
+        List<Double> costs = new ArrayList<>();
 
-        for (int i = 1; i < population.size(); i++)
-        {
-            Assignment current = population.get(i);
-            double currentCost = current.calculateCost(employees, tasks);
+        // Calculate the cost of each individual in the population
+        for (int[] individual : population) {
+            double cost = CostCalculator.calculateTotalCost(individual, tasks, employees);
+            individuals.add(individual);
+            costs.add(cost);
+        }
 
-            if (currentCost < bestCost)
-            {
-                best = current;
-                bestCost = currentCost;
-            }
+        // Sort individuals by cost (ascending)
+        List<Integer> indices = new ArrayList<>();
+        for (int i = 0; i < costs.size(); i++) {
+            indices.add(i);
+        }
+        indices.sort(Comparator.comparingDouble(costs::get));
+
+        // Select the top numSolutions individuals
+        int[][] best = new int[numSolutions][tasks.size()];
+        for (int i = 0; i < numSolutions; i++) {
+            best[i] = individuals.get(indices.get(i));
         }
 
         return best;
     }
 
+    private int[] findBestSolution(int[][] population) {
+        // Create an array to store individuals and their costs
+        int[] best = population[0];
+        double bestCost = CostCalculator.calculateTotalCost(population[0], tasks, employees);
+
+        for(int i = 1; i < population.length; i++) {
+            double cost = CostCalculator.calculateTotalCost(population[i], tasks, employees);
+            if(cost< bestCost) {
+                best = population[i];
+            }
+        }
+        return best;
+    }
+
+
     /**
-     * Selects two parent assignments using tournament selection.
+     * Selects two parent solutions using tournament selection.
      *
      * @param population The population to select from
-     * @return Array of two selected parent Assignments
+     * @return Array of two selected parent Solutions
      */
-    private Assignment[] selectParents(List<Assignment> population)
+    private int[][] selectParents(int[][] population)
     {
-        Assignment[] parents = new Assignment[2];
+        int[][] parents = new int[2][tasks.size()];
 
         // Tournament selection
         for (int i = 0; i < 2; i++)
         {
             int tournamentSize = 3;
-            List<Assignment> tournament = new ArrayList<>();
+            int[][] tournament = new int[tournamentSize][tasks.size()];
 
             for (int j = 0; j < tournamentSize; j++)
             {
-                int randomIndex = new Random().nextInt(population.size());
-                tournament.add(population.get(randomIndex));
+                int randomIndex = new Random().nextInt(populationSize);
+                tournament[j] = population[randomIndex];
             }
 
-            parents[i] = findBestAssignment(tournament);
+            parents[i] = findBestSolution(tournament);
         }
 
         return parents;
     }
 
     /**
-     * Performs crossover between two parent assignments.
+     * Performs crossover between two parent solutions.
      *
-     * @param parent1 The first parent Assignment
-     * @param parent2 The second parent Assignment
-     * @return A new Assignment created by crossover
+     * @param parent1 The first parent Solution
+     * @param parent2 The second parent Solution
+     * @return A new Solution created by crossover
      */
-    private Assignment crossover(Assignment parent1, Assignment parent2)
+    private int[] crossover(int[] parent1, int[] parent2)
     {
-        Assignment offspring = new Assignment();
+        int[] offspring = new int[tasks.size()];
 
-        // Uniform crossover - for each task, choose assignment from either parent1 or parent2
+        // Uniform crossover - for each task, choose solution from either parent1 or parent2
         for (Task task : tasks)
         {
-            String taskId = task.getId();
+            int taskIdx = task.getIdx();
 
             if (Math.random() < 0.5)
             {
-                offspring.assign(taskId, parent1.getAssignedEmployee(taskId));
+                offspring[taskIdx] = parent1[taskIdx];
             }
             else
             {
-                offspring.assign(taskId, parent2.getAssignedEmployee(taskId));
+               offspring[taskIdx] = parent2[taskIdx];
             }
         }
 
@@ -326,34 +333,39 @@ public class GeneticAlgorithm implements Algorithm
     }
 
     /**
-     * Applies mutation to an assignment.
+     * Applies mutation to a solution.
      *
-     * @param assignment The Assignment to mutate
+     * @param solution The Solution to mutate
      */
-    private void mutate(Assignment assignment)
+    private void mutate(int[] solution)
     {
-        for (Task task : tasks) {
-        if (Math.random() < mutationRate) {
-            // Get the current assigned employee
-            String currentEmployeeId = assignment.getAssignedEmployee(task.getId());
+        for (Task task : tasks)
+        {
+            if (Math.random() < mutationRate)
+            {
+                // Get the current assigned employee
+                int currentEmployeeIdx = solution[task.getIdx()];
 
-            // Create a list of employees who can perform this task
-            List<Employee> compatibleEmployees = new ArrayList<>();
-            for (Employee employee : employees) {
-                if (employee.hasSkill(task.getRequiredSkill()) &&
-                        employee.getSkillLevel() >= task.getDifficulty()) {
-                    compatibleEmployees.add(employee);
+                // Create a list of employees who can perform this task
+                List<Employee> compatibleEmployees = new ArrayList<>();
+                for (Employee employee : employees)
+                {
+                    if (employee.hasSkill(task.getRequiredSkill()) &&
+                            employee.getSkillLevel() >= task.getDifficulty())
+                    {
+                        compatibleEmployees.add(employee);
+                    }
+                }
+
+                // If we have compatible employees, choose one randomly
+                if (!compatibleEmployees.isEmpty())
+                {
+                    int randomIndex = new Random().nextInt(compatibleEmployees.size());
+                    int newEmployeeIdx = compatibleEmployees.get(randomIndex).getIdx();
+                    solution[task.getIdx()] = newEmployeeIdx;
                 }
             }
-
-            // If we have compatible employees, choose one randomly
-            if (!compatibleEmployees.isEmpty()) {
-                int randomIndex = new Random().nextInt(compatibleEmployees.size());
-                String newEmployeeId = compatibleEmployees.get(randomIndex).getId();
-                assignment.assign(task.getId(), newEmployeeId);
-            }
         }
-    }
     }
 
     /**
@@ -362,34 +374,26 @@ public class GeneticAlgorithm implements Algorithm
      * @param population The current population
      * @return true if termination condition is met, false otherwise
      */
-    private boolean terminationCondition(List<Assignment> population)
+    private boolean terminationCondition(int[][] population)
     {
         // Check if we have a perfect solution (zero cost)
-        for (Assignment assignment : population)
-        {
-            if (assignment.calculateCost(employees, tasks) == 0)
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return globalBestCost == 0;
     }
 
     /**
      * Prints the progress of the current generation.
      *
-     * @param bestAssignment The best Assignment in the current generation
+     * @param bestSolution The best Solution in the current generation
      * @param generation     The current generation number
      */
-    private void printProgress(Assignment bestAssignment, int generation)
+    private void printProgress(int[] bestSolution, int generation)
     {
         StringBuilder sb = new StringBuilder();
-        double cost = bestAssignment.calculateCost(employees, tasks);
+        double cost = CostCalculator.calculateTotalCost(bestSolution, tasks, employees);
 
         sb.append("Generation ").append(generation)
                 .append(": Best Cost = ").append(String.format("%.2f", cost))
-                .append(", Feasible: ").append(ConstraintValidator.isAssignmentFeasible(bestAssignment, tasks, employees))
+                .append(", Feasible: ").append(ConstraintValidator.isSolutionFeasible(bestSolution, tasks, employees))
                 .append("\n");
 
         output += sb.toString();
@@ -403,26 +407,26 @@ public class GeneticAlgorithm implements Algorithm
     /**
      * Prints the final result of the algorithm.
      *
-     * @param bestAssignment The best Assignment found
+     * @param bestSolution The best Solution found
      * @param generation     The final generation number
      */
-    private void printFinalResult(Assignment bestAssignment, int generation)
+    private void printFinalResult(int[] bestSolution, int generation)
     {
         StringBuilder sb = new StringBuilder();
-        double cost = bestAssignment.calculateCost(employees, tasks);
+        double cost = CostCalculator.calculateTotalCost(bestSolution, tasks, employees);
 
         sb.append("\n=================================\n");
         sb.append("Final Result after ").append(generation).append(" generations:\n");
         sb.append("=================================\n");
         sb.append("Total Cost: ").append(String.format("%.2f", cost)).append("\n");
-        sb.append("Feasible Solution: ").append(ConstraintValidator.isAssignmentFeasible(bestAssignment, tasks, employees)).append("\n\n");
+        sb.append("Feasible Solution: ").append(ConstraintValidator.isSolutionFeasible(bestSolution, tasks, employees)).append("\n\n");
 
-        // Print assignments
-        sb.append("Task Assignments:\n");
+        // Print solutions
+        sb.append("Task Solutions:\n");
         for (Task task : tasks)
         {
             String taskId = task.getId();
-            String employeeId = bestAssignment.getAssignedEmployee(taskId);
+            String employeeId = employees.get(bestSolution[task.getIdx()]).getId();
 
             Employee employee = findEmployeeById(employeeId);
 
@@ -443,7 +447,7 @@ public class GeneticAlgorithm implements Algorithm
         for (Employee employee : employees)
         {
             String employeeId = employee.getId();
-            int totalTime = bestAssignment.calculateTotalWorkingTime(employeeId, tasks);
+            int totalTime = CostCalculator.calculateEmployeeWorkload(bestSolution, tasks, employees, employeeId);
             employeeWorkload.put(employeeId, totalTime);
 
             sb.append("  Employee ").append(employeeId)
@@ -466,11 +470,11 @@ public class GeneticAlgorithm implements Algorithm
         double overloadPenalty = 0;
         for (Employee employee : employees)
         {
-            overloadPenalty += bestAssignment.calculateOverloadPenalty(employee, tasks);
+            overloadPenalty += CostCalculator.calculateOverloadPenalty(bestSolution, tasks, employees);
         }
 
-        double skillMismatchPenalty = bestAssignment.calculateSkillMismatchPenalty(employees, tasks);
-        double deadlineViolationPenalty = bestAssignment.calculateDeadlineViolationPenalty(employees, tasks);
+        double skillMismatchPenalty = CostCalculator.calculateSkillMismatchPenalty(bestSolution, tasks, employees);
+        double deadlineViolationPenalty = CostCalculator.calculateDeadlineViolationPenalty(bestSolution, tasks, employees);
 
         sb.append("  Overload Penalty: ").append(String.format("%.2f", overloadPenalty)).append("\n");
         sb.append("  Skill Mismatch Penalty: ").append(String.format("%.2f", skillMismatchPenalty)).append("\n");
