@@ -1,7 +1,7 @@
 package Algorithms;
 import Model.Employee;
 import Model.Task;
-import Utilities.ConstraintValidator;
+import Algorithms.ConstraintValidator;
 
 import java.io.File;
 import java.io.FileWriter;

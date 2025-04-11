@@ -9,7 +9,7 @@ public interface Algorithm
      *
      * @return The best Assignment found
      */
-    int[] run();
+    void run();
 
     /**
      * Gets the best cost history throughout the optimization process.

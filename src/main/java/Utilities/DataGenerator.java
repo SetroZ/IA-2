@@ -22,25 +22,18 @@ public class DataGenerator {
     private static final String DEFAULT_TASKS_FILE = "/taskData.csv";
     private static final String DEFAULT_EMPLOYEES_FILE = "/employeeData.csv";
 
-    /**
-     * Loads task data from the default CSV file.
-     *
-     * @return List of Task objects
-     * @throws IOException If an I/O error occurs
-     */
-    public static List<Task> loadTasks() throws IOException {
-        return loadTasks(DEFAULT_TASKS_FILE);
-    }
 
     /**
      * Loads task data from a specific CSV file.
      *
      * @param filePath Path to the CSV file (relative to resources)
      * @return List of Task objects
-     * @throws IOException If an I/O error occurs
+     * @throws LoadDataException If an I/O error occurs
      */
-    public static List<Task> loadTasks(String filePath) throws IOException {
+    public static List<Task> loadTasks(String filePath) throws LoadDataException {
         List<Task> tasks = new ArrayList<>();
+
+
 
         try (InputStream is = DataGenerator.class.getResourceAsStream(filePath);
              BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
@@ -53,7 +46,7 @@ public class DataGenerator {
             // Read data lines
             while ((line = reader.readLine()) != null) {
                 String[] data = line.split(",");
-                if (data.length >= 5) {
+                if (data.length == 5) {
                     String id = data[0].trim();
                     int estimatedTime = Integer.parseInt(data[1].trim());
                     int difficulty = Integer.parseInt(data[2].trim());
@@ -64,35 +57,32 @@ public class DataGenerator {
                     tasks.add(task);
                     idx++;
                 }
+                else
+                {
+                    throw new LoadDataException("Invalid task line: " + line);
+                }
             }
+        }
+        catch (IOException e) {
+            throw new LoadDataException("ERROR while loading data to Tasks: " + e.getMessage());
         }
 
         return tasks;
     }
 
-    /**
-     * Loads employee data from the default CSV file.
-     *
-     * @return List of Employee objects
-     * @throws IOException If an I/O error occurs
-     */
-    public static List<Employee> loadEmployees() throws IOException {
-        return loadEmployees(DEFAULT_EMPLOYEES_FILE);
-    }
 
     /**
      * Loads employee data from a specific CSV file.
      *
      * @param filePath Path to the CSV file (relative to resources)
      * @return List of Employee objects
-     * @throws IOException If an I/O error occurs
+     * @throws LoadDataException If an I/O error occurs
      */
-    public static List<Employee> loadEmployees(String filePath) throws IOException {
+    public static List<Employee> loadEmployees(String filePath) throws LoadDataException {
         List<Employee> employees = new ArrayList<>();
 
         try (InputStream is = DataGenerator.class.getResourceAsStream(filePath);
              BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
-
             // Skip header line
             String line = reader.readLine();
 
@@ -100,7 +90,7 @@ public class DataGenerator {
             // Read data lines
             while ((line = reader.readLine()) != null) {
                 String[] data = line.split(",");
-                if (data.length >= 4) {
+                if (data.length == 4) {
                     String id = data[0].trim();
                     int availableHours = Integer.parseInt(data[1].trim());
                     int skillLevel = Integer.parseInt(data[2].trim());
@@ -115,7 +105,14 @@ public class DataGenerator {
                     employees.add(employee);
                     idx++;
                 }
+                else
+                {
+                    throw new LoadDataException("Invalid employee line: " + line + "\nData of wrong type or format");
+                }
             }
+        }
+        catch (IOException e) {
+            throw new LoadDataException("ERROR while loading data to Employees: " + e.getMessage());
         }
 
         return employees;

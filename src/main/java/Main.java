@@ -1,7 +1,9 @@
 import Algorithms.GeneticAlgorithm;
+import Controller.MenuController;
 import Model.Employee;
 import Model.Task;
 import Utilities.DataGenerator;
+import Utilities.FileOutput;
 import Utilities.Initialise;
 import View.ConsoleView;
 
@@ -11,22 +13,18 @@ public class Main
 {
     public static void main(String[] args)
     {
-
         try
         {
-            List<Task> tasks = DataGenerator.loadTasks();
-            List<Employee> employees = DataGenerator.loadEmployees();
-            ConsoleView cv = new ConsoleView(employees, tasks);
+            ConsoleView consoleView = new ConsoleView();
+            FileOutput fileOutput = new FileOutput();
 
-
-            cv.printData();
-
-            GeneticAlgorithm ga = new GeneticAlgorithm(tasks, employees, 100, 0.4, 0.2, 80, 1,false);
-            ga.run();
+            MenuController menuController = new MenuController(consoleView, fileOutput);
+            menuController.start();
         }
         catch (Exception e)
         {
             e.printStackTrace();
+            System.out.println("Error: " + e.getMessage());
         }
     }
 }

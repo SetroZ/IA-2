@@ -2,7 +2,7 @@ package deprecated;
 import Algorithms.Algorithm;
 import Model.Employee;
 import Model.Task;
-import Utilities.ConstraintValidator;
+import Algorithms.ConstraintValidator;
 import Utilities.Initialise;
 
 import java.io.File;

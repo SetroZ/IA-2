@@ -2,9 +2,10 @@ package Algorithms;
 
 import Model.Employee;
 import Model.Task;
-import Utilities.ConstraintValidator;
-import Utilities.CostCalculator;
 import Utilities.Initialise;
+import Utilities.Observer;
+import Utilities.ObserverException;
+import Utilities.Subject;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -15,10 +16,9 @@ import java.nio.file.Paths;
 import java.util.*;
 
 /**
- * Genetic Algorithm implementation for employee-task solution optimization.
- * Adapted from a solution originally designed for the 8-Queens problem.
+ * Genetic Algorithm implementation
  */
-public class GeneticAlgorithm implements Algorithm
+public class GeneticAlgorithm implements Algorithm, Subject
 {
 
     // Algorithm parameters
@@ -35,6 +35,7 @@ public class GeneticAlgorithm implements Algorithm
     private final List<Employee> employees;
 
     // Tracking and reporting
+    private List<Observer> observers = new ArrayList<>();
     private String output = "";
     private int[] globalBestSolution;
     private double globalBestCost = Double.MAX_VALUE;
@@ -45,13 +46,14 @@ public class GeneticAlgorithm implements Algorithm
     /**
      * Constructor for the Genetic Algorithm.
      *
-     * @param tasks          The list of tasks to be assigned
-     * @param employees      The list of employees available for solution
-     * @param populationSize Size of the population (number of solutions)
-     * @param crossoverRate  Probability of crossover (0.0-1.0)
-     * @param mutationRate   Probability of mutation (0.0-1.0)
-     * @param maxGenerations Maximum number of generations to run
-     * @param fileOutput     Whether to output results to a file
+     * @param tasks              The list of tasks to be assigned
+     * @param employees          The list of employees available for solution
+     * @param populationSize     Size of the population (number of solutions)
+     * @param crossoverRate      Probability of crossover (0.0-1.0)
+     * @param mutationRate       Probability of mutation (0.0-1.0)
+     * @param maxGenerations     Maximum number of generations to run
+     * @param reportingFrequency The frequency of progress reports printed to the console.
+     * @param fileOutput         Whether to output results to a file
      */
     public GeneticAlgorithm(List<Task> tasks, List<Employee> employees,
                             int populationSize, double crossoverRate, double mutationRate,
@@ -63,10 +65,12 @@ public class GeneticAlgorithm implements Algorithm
         this.crossoverRate = crossoverRate;
         this.mutationRate = mutationRate;
         REPORTING_FREQUENCY = reportingFrequency;
-        if(maxGenerations == -1) {
+        if (maxGenerations == -1)
+        {
             this.maxGenerations = Integer.MAX_VALUE;
         }
-        else {
+        else
+        {
             this.maxGenerations = maxGenerations;
         }
         this.elitismCount = 2; // Keep the best 2 solutions
@@ -80,8 +84,9 @@ public class GeneticAlgorithm implements Algorithm
      */
 
     @Override
-    public int[] run()
+    public void run()
     {
+
         // Initialize population
         int[][] population = Initialise.getInitialPopulation(employees, tasks, populationSize);
 
@@ -158,7 +163,7 @@ public class GeneticAlgorithm implements Algorithm
             }
 
             // Record statistics
-            recordStatistics(population, generation);
+            recordStatistics(population);
 
             // Print progress
             if (generation % REPORTING_FREQUENCY == 0 || generation == maxGenerations - 1)
@@ -171,17 +176,14 @@ public class GeneticAlgorithm implements Algorithm
 
         // Print final result
         printFinalResult(globalBestSolution, generation);
-
-        return globalBestSolution;
     }
 
     /**
      * Records statistics for the current generation.
      *
      * @param population The current population
-     * @param generation The current generation number
      */
-    private void recordStatistics(int[][] population, int generation)
+    private void recordStatistics(int[][] population)
     {
         // Record best cost
         double bestCost = CostCalculator.calculateTotalCost(findBestSolution(population), tasks, employees);
@@ -208,23 +210,6 @@ public class GeneticAlgorithm implements Algorithm
         feasibleSolutionsHistory.add(feasibleCount);
     }
 
-    /**
-     * Evaluates the fitness of all solutions in the population.
-     *
-     * @param population The population to evaluate
-     */
-    private Map<Integer, Double> evaluatePopulation(int[][] population)
-    {
-        Map<Integer, Double> populationCost = new HashMap<>();
-
-        for(int i = 0; i < population.length; i++)
-        {
-
-            Double cost = CostCalculator.calculateTotalCost(population[i], tasks, employees);
-            populationCost.put(i, cost);
-        }
-        return populationCost;
-    }
 
     /**
      * Finds the best solution in the population.
@@ -232,13 +217,15 @@ public class GeneticAlgorithm implements Algorithm
      * @param population The population to search
      * @return The best Solution
      */
-    private int[][] findBestSolution(int[][] population, int numSolutions) {
+    private int[][] findBestSolution(int[][] population, int numSolutions)
+    {
         // Create an array to store individuals and their costs
         List<int[]> individuals = new ArrayList<>();
         List<Double> costs = new ArrayList<>();
 
         // Calculate the cost of each individual in the population
-        for (int[] individual : population) {
+        for (int[] individual : population)
+        {
             double cost = CostCalculator.calculateTotalCost(individual, tasks, employees);
             individuals.add(individual);
             costs.add(cost);
@@ -246,28 +233,33 @@ public class GeneticAlgorithm implements Algorithm
 
         // Sort individuals by cost (ascending)
         List<Integer> indices = new ArrayList<>();
-        for (int i = 0; i < costs.size(); i++) {
+        for (int i = 0; i < costs.size(); i++)
+        {
             indices.add(i);
         }
         indices.sort(Comparator.comparingDouble(costs::get));
 
         // Select the top numSolutions individuals
         int[][] best = new int[numSolutions][tasks.size()];
-        for (int i = 0; i < numSolutions; i++) {
+        for (int i = 0; i < numSolutions; i++)
+        {
             best[i] = individuals.get(indices.get(i));
         }
 
         return best;
     }
 
-    private int[] findBestSolution(int[][] population) {
+    private int[] findBestSolution(int[][] population)
+    {
         // Create an array to store individuals and their costs
         int[] best = population[0];
         double bestCost = CostCalculator.calculateTotalCost(population[0], tasks, employees);
 
-        for(int i = 1; i < population.length; i++) {
+        for (int i = 1; i < population.length; i++)
+        {
             double cost = CostCalculator.calculateTotalCost(population[i], tasks, employees);
-            if(cost< bestCost) {
+            if (cost < bestCost)
+            {
                 best = population[i];
             }
         }
@@ -325,7 +317,7 @@ public class GeneticAlgorithm implements Algorithm
             }
             else
             {
-               offspring[taskIdx] = parent2[taskIdx];
+                offspring[taskIdx] = parent2[taskIdx];
             }
         }
 
@@ -384,7 +376,7 @@ public class GeneticAlgorithm implements Algorithm
      * Prints the progress of the current generation.
      *
      * @param bestSolution The best Solution in the current generation
-     * @param generation     The current generation number
+     * @param generation   The current generation number
      */
     private void printProgress(int[] bestSolution, int generation)
     {
@@ -408,88 +400,32 @@ public class GeneticAlgorithm implements Algorithm
      * Prints the final result of the algorithm.
      *
      * @param bestSolution The best Solution found
-     * @param generation     The final generation number
+     * @param generation   The final generation number
      */
     private void printFinalResult(int[] bestSolution, int generation)
     {
-        StringBuilder sb = new StringBuilder();
+
         double cost = CostCalculator.calculateTotalCost(bestSolution, tasks, employees);
+        boolean isFeasilble = ConstraintValidator.isSolutionFeasible(bestSolution, tasks, employees);
 
-        sb.append("\n=================================\n");
-        sb.append("Final Result after ").append(generation).append(" generations:\n");
-        sb.append("=================================\n");
-        sb.append("Total Cost: ").append(String.format("%.2f", cost)).append("\n");
-        sb.append("Feasible Solution: ").append(ConstraintValidator.isSolutionFeasible(bestSolution, tasks, employees)).append("\n\n");
+        String finalResult = observers.getFirst().getFinalSolution(bestSolution, cost, generation, isFeasilble);
 
-        // Print solutions
-        sb.append("Task Solutions:\n");
-        for (Task task : tasks)
-        {
-            String taskId = task.getId();
-            String employeeId = employees.get(bestSolution[task.getIdx()]).getId();
-
-            Employee employee = findEmployeeById(employeeId);
-
-            sb.append("  Task ").append(taskId)
-                    .append(" (Time: ").append(task.getEstimatedTime())
-                    .append(", Difficulty: ").append(task.getDifficulty())
-                    .append(", Skill: ").append(task.getRequiredSkill())
-                    .append(") -> Employee ").append(employeeId)
-                    .append(" (Skill Level: ").append(employee.getSkillLevel())
-                    .append(", Has Required Skill: ").append(employee.hasSkill(task.getRequiredSkill()))
-                    .append(")\n");
-        }
-
-        // Print workload distribution
-        sb.append("\nWorkload Distribution:\n");
-        Map<String, Integer> employeeWorkload = new HashMap<>();
-
-        for (Employee employee : employees)
-        {
-            String employeeId = employee.getId();
-            int totalTime = CostCalculator.calculateEmployeeWorkload(bestSolution, tasks, employees, employeeId);
-            employeeWorkload.put(employeeId, totalTime);
-
-            sb.append("  Employee ").append(employeeId)
-                    .append(": ").append(totalTime)
-                    .append(" / ").append(employee.getAvailableHours())
-                    .append(" hours (")
-                    .append(String.format("%.1f", (double) totalTime / employee.getAvailableHours() * 100))
-                    .append("%)");
-
-            if (totalTime > employee.getAvailableHours())
-            {
-                sb.append(" - OVERLOADED");
-            }
-
-            sb.append("\n");
-        }
-
-        // Print penalty breakdown
-        sb.append("\nPenalty Breakdown:\n");
-        double overloadPenalty = 0;
-        for (Employee employee : employees)
-        {
-            overloadPenalty += CostCalculator.calculateOverloadPenalty(bestSolution, tasks, employees);
-        }
-
-        double skillMismatchPenalty = CostCalculator.calculateSkillMismatchPenalty(bestSolution, tasks, employees);
-        double deadlineViolationPenalty = CostCalculator.calculateDeadlineViolationPenalty(bestSolution, tasks, employees);
-
-        sb.append("  Overload Penalty: ").append(String.format("%.2f", overloadPenalty)).append("\n");
-        sb.append("  Skill Mismatch Penalty: ").append(String.format("%.2f", skillMismatchPenalty)).append("\n");
-        sb.append("  Deadline Violation Penalty: ").append(String.format("%.2f", deadlineViolationPenalty)).append("\n");
-
-        output += sb.toString();
 
         if (fileOutput)
         {
-            System.out.println(sb.toString());
-            writeToFile();
+            output += finalResult;
+            try
+            {
+                notifyObservers("FILE", "geneticAlg", output);
+            }
+            catch (ObserverException e)
+            {
+                notifyObservers("ERROR", "Writing To File", e.getMessage());
+            }
         }
         else
         {
-            System.out.println(sb.toString());
+            notifyObservers("INFO", "GENETIC ALGORITHM RESULT", finalResult);
         }
     }
 
@@ -509,49 +445,6 @@ public class GeneticAlgorithm implements Algorithm
             }
         }
         return null;
-    }
-
-    /**
-     * Writes output to a file.
-     */
-    private void writeToFile()
-    {
-        String fileName = "results/ga_results.txt";
-
-        String extension = "";
-        String name = "";
-
-        int idxOfDot = fileName.lastIndexOf('.');
-        extension = fileName.substring(idxOfDot + 1);
-        name = fileName.substring(0, idxOfDot);
-
-        Path path = Paths.get(fileName);
-        int counter = 1;
-        File f = null;
-
-        // Create directories if they don't exist
-        File dir = new File("results");
-        if (!dir.exists())
-        {
-            dir.mkdirs();
-        }
-
-        while (Files.exists(path))
-        {
-            fileName = name + "(" + counter + ")." + extension;
-            path = Paths.get(fileName);
-            counter++;
-        }
-        f = new File(fileName);
-
-        try (FileWriter fw = new FileWriter(f))
-        {
-            fw.write(output);
-        }
-        catch (IOException e)
-        {
-            System.out.println("Error writing to file: " + e.getMessage());
-        }
     }
 
     /**
@@ -585,5 +478,26 @@ public class GeneticAlgorithm implements Algorithm
     public List<Integer> getFeasibleSolutionsHistory()
     {
         return feasibleSolutionsHistory;
+    }
+
+    @Override
+    public void registerObserver(Observer observer)
+    {
+        observers.add(observer);
+    }
+
+    @Override
+    public void removeObserver(Observer observer)
+    {
+        observers.remove(observer);
+    }
+
+    @Override
+    public void notifyObservers(String messageType, String title, String content)
+    {
+        for(Observer observer : observers)
+        {
+            observer.update(messageType, title, content);
+        }
     }
 }

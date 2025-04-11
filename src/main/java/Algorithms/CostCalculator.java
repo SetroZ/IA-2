@@ -1,4 +1,4 @@
-package Utilities;
+package Algorithms;
 
 import Model.Employee;
 import Model.Task;
