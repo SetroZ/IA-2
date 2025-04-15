@@ -69,6 +69,8 @@ public class CostCalculator {
      * @param employees The list of all employees
      * @return The skill mismatch penalty
      */
+
+
     public static double calculateSkillMismatchPenalty(int[] solution, List<Task> tasks, List<Employee> employees) {
         int mismatchCount = 0;
 
@@ -90,7 +92,6 @@ public class CostCalculator {
                 }
             }
         }
-
         return mismatchCount;
     }
 
