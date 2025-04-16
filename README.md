@@ -4,7 +4,7 @@ This project is written in pure Java and does not require Gradle, Maven, or any 
 You can compile and execute it using the provided build scripts.
 
 ---
-
+```
 ## 📁 Project Structure
 ├── src/
 │ └── main/
@@ -14,7 +14,7 @@ You can compile and execute it using the provided build scripts.
 ├── build.sh # Build script for macOS/Linux
 ├── build.bat # Build script for Windows
 └── README.md # You're reading it!
-
+```
 ## Prerequisites 
 - JDK 23 or later
 
