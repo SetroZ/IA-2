@@ -31,7 +31,7 @@ public class ParticleSwarm implements Algorithm {
 
     }
 
-    private double getNewVelocity(ParticleData currPar, int currP) {
+    private double calculateVelocity(ParticleData currPar, int currP) {
         double c1 = 1.5;
         double c2 = 1.5;
         double r1 = Math.random();
@@ -39,6 +39,17 @@ public class ParticleSwarm implements Algorithm {
         double w = 0.5;
         double newV = w * (currPar.velocity) + c1 * r1 * (currPar.pBest - currP) + c2 * r2 * (gBest - currP);
         return sigmoid(newV);
+
+    }
+
+    private int calculatePosition(double velocity, int employeeSize) {
+        boolean update = Math.random() < velocity;
+        if (update) {
+            Random rand = new Random();
+            return rand.nextInt(0, employeeSize);
+        } else {
+            return -1;
+        }
 
     }
 
@@ -65,7 +76,7 @@ public class ParticleSwarm implements Algorithm {
 
 class SwarmData {
     ParticleData[] pData;
-    int gBest;7
+    int gBest;
 
     public void updateSwarm(int w, int[] positions, int employeeSize) {
         for (int i = 0; i < pData.length; i++) {
@@ -74,17 +85,6 @@ class SwarmData {
             int newPosition = getNewPosition(currData.velocity, employeeSize)
             if 
         }
-    }
-
-    private int getNewPosition(double velocity, int employeeSize) {
-        boolean update = Math.random() < velocity;
-        if (update) {
-            Random rand = new Random();
-            return rand.nextInt(0, employeeSize);
-        } else {
-            return -1;
-        }
-
     }
 
 }

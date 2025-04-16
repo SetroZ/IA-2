@@ -21,7 +21,7 @@ public class FileOutput implements Observer
 
             Path path = Paths.get(fileName+extension);
             int counter = 1;
-            File f = null;
+            File f;
 
             // Create directories if they don't exist
             File dir = new File("results");
@@ -46,7 +46,7 @@ public class FileOutput implements Observer
             {
                 fw.write(content);
                 System.out.println("\n[SUCCESS] " + "Writing to File:");
-                System.out.println(fileName);
+                System.out.println("out/"+fileName);
             }
             catch (IOException e)
             {

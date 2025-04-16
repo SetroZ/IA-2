@@ -123,7 +123,6 @@ public class ConstraintValidator {
                 }
             }
         }
-
         return true;
     }
 
