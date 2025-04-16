@@ -25,31 +25,51 @@ public class ParticleSwarm implements Algorithm {
     @Override
 
     public void run() {
-
-        int[][] swarms = Initialise.getInitialPopulation(employees, tasks, populationSize);
-        SwarmData[] swarmData = new SwarmData[populationSize];
-        for (int i = 0; i < tasks.size(); i++) {
-            swarmData[i].pData = new positionData[tasks.size()];
-        }
         int gBest;
+        int[][] swarms = Initialise.getInitialPopulation(employees, tasks, populationSize);
+        ParticleData[][] posData = new ParticleData[populationSize][tasks.size()];
 
+    }
+
+    private double getNewVelocity(ParticleData currPar, int currP) {
+        double c1 = 1.5;
+        double c2 = 1.5;
+        double r1 = Math.random();
+        double r2 = Math.random();
+        double w = 0.5;
+        double newV = w * (currPar.velocity) + c1 * r1 * (currPar.pBest - currP) + c2 * r2 * (gBest - currP);
+        return sigmoid(newV);
+
+    }
+
+    private double sigmoid(double v) {
+        return 1 / (1 + Math.pow(Math.E, -v));
+    }
+
+    private void updateSwarm() {
+
+    }
+
+    private int findGbest(ParticleData[][] particleData) {
+        int gBest = Integer.MAX_VALUE;
+        for (int i = 0; i < particleData.length; i++) {
+
+            for (int j = 0; j < particleData[0].length; j++) {
+                gBest = Math.max(gBest, particleData[i][j].pBest);
+            }
+
+        }
+        return gBest;
     }
 }
 
 class SwarmData {
-    positionData[] pData;
-    int gBest;
-
-    public int getandUpdategBest() {
-        for (int i = 0; i < pData.length; i++) {
-            gBest = Math.max(gBest, pData[i].pBest);
-        }
-        return gBest;
-    }
+    ParticleData[] pData;
+    int gBest;7
 
     public void updateSwarm(int w, int[] positions, int employeeSize) {
         for (int i = 0; i < pData.length; i++) {
-            positionData currData = pData[i];
+            ParticleData currData = pData[i];
             pData[i].velocity = getNewVelocity(currData, positions[i]);
             int newPosition = getNewPosition(currData.velocity, employeeSize)
             if 
@@ -67,24 +87,9 @@ class SwarmData {
 
     }
 
-    private double getNewVelocity(positionData currData, int currP) {
-        double c1 = 1.5;
-        double c2 = 1.5;
-        double r1 = Math.random();
-        double r2 = Math.random();
-        double w = 0.5;
-        double newV = w * (currData.velocity) + c1 * r1 * (currData.pBest - currP) + c2 * r2 * (gBest - currP);
-        return sigmoid(newV);
-
-    }
-
-    private double sigmoid(double v) {
-        return 1 / (1 + Math.pow(Math.E, -v));
-    }
-
 }
 
-class positionData {
+class ParticleData {
     double velocity;
     int pBest;
 }
