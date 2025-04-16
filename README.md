@@ -50,6 +50,8 @@ chmod +x build.sh
 
 - All results files will be located in /out/results/
 
+# Algorithms
+
 ## Particle Swarm Optimisation
 
 ### Varaibles

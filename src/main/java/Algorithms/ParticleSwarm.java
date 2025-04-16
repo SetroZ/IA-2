@@ -25,13 +25,25 @@ public class ParticleSwarm implements Algorithm {
     @Override
 
     public void run() {
-        int gBest;
+
+        Fitness gBest;
+        gBest.fitness = Double.MAX_VALUE;
         int[][] swarms = Initialise.getInitialPopulation(employees, tasks, populationSize);
-        ParticleData[][] posData = new ParticleData[populationSize][tasks.size()];
+        ParticleData[][] partiData = new ParticleData[populationSize][tasks.size()];
+
+        for (int n = 0; n < maxIterations; n++) {
+            for (int i = 0; i < partiData.length; i++) {
+                for (int j = 0; j < partiData[0].length; j++) {
+                    partiData[i][j].velocity = calculateVelocity(gBest, partiData[i][j], swarms[i][j]);
+                    swarms[i][j] = calculatePosition(partiData[i][j].velocity, swarms[i][j]);
+
+                }
+            }
+        }
 
     }
 
-    private double calculateVelocity(ParticleData currPar, int currP) {
+    private double calculateVelocity(double gBest, ParticleData currPar, int currP) {
         double c1 = 1.5;
         double c2 = 1.5;
         double r1 = Math.random();
@@ -42,23 +54,19 @@ public class ParticleSwarm implements Algorithm {
 
     }
 
-    private int calculatePosition(double velocity, int employeeSize) {
+    private int calculatePosition(double velocity, int defaultPos) {
         boolean update = Math.random() < velocity;
         if (update) {
             Random rand = new Random();
-            return rand.nextInt(0, employeeSize);
+            return rand.nextInt(0, this.employees.size());
         } else {
-            return -1;
+            return defaultPos;
         }
 
     }
 
     private double sigmoid(double v) {
         return 1 / (1 + Math.pow(Math.E, -v));
-    }
-
-    private void updateSwarm() {
-
     }
 
     private int findGbest(ParticleData[][] particleData) {
@@ -74,22 +82,12 @@ public class ParticleSwarm implements Algorithm {
     }
 }
 
-class SwarmData {
-    ParticleData[] pData;
-    int gBest;
-
-    public void updateSwarm(int w, int[] positions, int employeeSize) {
-        for (int i = 0; i < pData.length; i++) {
-            ParticleData currData = pData[i];
-            pData[i].velocity = getNewVelocity(currData, positions[i]);
-            int newPosition = getNewPosition(currData.velocity, employeeSize)
-            if 
-        }
-    }
-
-}
-
 class ParticleData {
     double velocity;
-    int pBest;
+    Fitness pBest;
+}
+
+class Fitness {
+    int position;
+    double fitness;
 }
