@@ -24,3 +24,10 @@
 4. A position is a mapping of a single task $p_i$ to employee.
 5. positions are updated using (prevPosition + newVelocity).
 6. velocity is updated using an equation found in the lecture slide.
+7. The personal best $Pbest$ of each particle represents the best solution (task-to-employee mapping) that the particle has found so far.
+8. The global best $Gbest$ is the best solution found by any particle in the swarm.
+
+#### Velocity updates:
+
+- Velocity is a value between 0-1 represnting the chance of switching.
+- Greedly select the employee with the lowest cost. or randomly
