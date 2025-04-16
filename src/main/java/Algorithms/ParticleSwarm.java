@@ -26,17 +26,25 @@ public class ParticleSwarm implements Algorithm {
 
     public void run() {
 
-        Fitness gBest;
-        gBest.fitness = Double.MAX_VALUE;
+        Fitness[] gBest = new Fitness[tasks.size()];
         int[][] swarms = Initialise.getInitialPopulation(employees, tasks, populationSize);
         ParticleData[][] partiData = new ParticleData[populationSize][tasks.size()];
+
+        // Intialize Velocities, positions, pBest and gBest
+        for (int i = 0; i < populationSize; i++) {
+            for (int j = 0; j < populationSize; j++) {
+                partiData[i][j].velocity = Math.random();
+                partiData[i][j].pBest.position = swarms[i][j];
+                partiData[i][j].pBest.fitness = swarms[i][j];
+            }
+        }
+        gBest = findGbest(partiData);
 
         for (int n = 0; n < maxIterations; n++) {
             for (int i = 0; i < partiData.length; i++) {
                 for (int j = 0; j < partiData[0].length; j++) {
-                    partiData[i][j].velocity = calculateVelocity(gBest, partiData[i][j], swarms[i][j]);
+                    partiData[i][j].velocity = calculateVelocity(gBest[j].position, partiData[i][j], swarms[i][j]);
                     swarms[i][j] = calculatePosition(partiData[i][j].velocity, swarms[i][j]);
-
                 }
             }
         }
@@ -49,7 +57,7 @@ public class ParticleSwarm implements Algorithm {
         double r1 = Math.random();
         double r2 = Math.random();
         double w = 0.5;
-        double newV = w * (currPar.velocity) + c1 * r1 * (currPar.pBest - currP) + c2 * r2 * (gBest - currP);
+        double newV = w * (currPar.velocity) + c1 * r1 * (currPar.pBest.position - currP) + c2 * r2 * (gBest - currP);
         return sigmoid(newV);
 
     }
@@ -69,16 +77,17 @@ public class ParticleSwarm implements Algorithm {
         return 1 / (1 + Math.pow(Math.E, -v));
     }
 
-    private int findGbest(ParticleData[][] particleData) {
-        int gBest = Integer.MAX_VALUE;
+    private Fitness[] findGbest(ParticleData[][] particleData) {
+        double gBest = Integer.MAX_VALUE;
+        Fitness[] gBestArr = new Fitness[tasks.size()];
         for (int i = 0; i < particleData.length; i++) {
 
             for (int j = 0; j < particleData[0].length; j++) {
-                gBest = Math.max(gBest, particleData[i][j].pBest);
+                gBest = Math.max(gBest, particleData[i][j].pBest.fitness);
             }
 
         }
-        return gBest;
+        return gBestArr;
     }
 }
 
