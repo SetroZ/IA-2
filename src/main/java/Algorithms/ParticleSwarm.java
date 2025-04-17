@@ -66,7 +66,8 @@ public class ParticleSwarm implements Algorithm, Subject {
                                                                // the best positions for each position.
         GBestData gBestData = new GBestData();// contains the best pBest found i.e gBest. which is an array of
         // the best positions found.
-        gBestData.gBestArr = new int[populationSize];
+        gBestData.gBest = Double.MAX_VALUE;
+        gBestData.gBestArr = new int[tasks.size()];
         double[] fitnessPBest = new double[populationSize]; // contains the fitness value for each pBest.
 
         // Intialize Velocities, positions, pBest and gBest
@@ -125,19 +126,14 @@ public class ParticleSwarm implements Algorithm, Subject {
         double r2 = Math.random();
         double w = 0.5;
         double newV = w * (v) + c1 * r1 * (pBest - currP) + c2 * r2 * (gBest - currP);
-        return sigmoid(newV);
+        return newV;
 
     }
 
     private int calculatePosition(double velocity, int defaultPos) {
-        boolean update = Math.random() < velocity;
-        if (update) {
-            Random rand = new Random();
-            return rand.nextInt(0, this.employees.size());
-        } else {
-            return defaultPos;
-        }
-
+        int size = employees.size();
+        int pos = (int) Math.floor(defaultPos + velocity);
+        return Math.max(0, Math.min(pos, size - 1));
     }
 
     private void printProgress(int[] bestSolution, int generation) {
