@@ -1,14 +1,37 @@
 package Algorithms;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 import Model.Employee;
 import Model.Task;
 import Utilities.Initialise;
+import Utilities.Observer;
 import Utilities.Subject;
 
 public class ParticleSwarm implements Algorithm, Subject {
+
+    @Override
+    public void registerObserver(Observer observer)
+    {
+        observers.add(observer);
+    }
+
+    @Override
+    public void removeObserver(Observer observer)
+    {
+        observers.remove(observer);
+    }
+
+    @Override
+    public void notifyObservers(String messageType, String title, String content)
+    {
+        for(Observer observer : observers)
+        {
+            observer.update(messageType, title, content);
+        }
+    }
 
     class GBestData {
         double gBest;
@@ -17,6 +40,7 @@ public class ParticleSwarm implements Algorithm, Subject {
 
     private List<Employee> employees;
     private List<Task> tasks;
+    private List<Observer> observers = new ArrayList<>();
     int populationSize;
 
     int maxIterations;
@@ -72,6 +96,24 @@ public class ParticleSwarm implements Algorithm, Subject {
             gBestData = findGbest(gBestData, fitnessPBest, pBest);
         }
 
+    }
+
+    @Override
+    public List<Double> getBestCostHistory()
+    {
+        return List.of();
+    }
+
+    @Override
+    public List<Double> getAvgCostHistory()
+    {
+        return List.of();
+    }
+
+    @Override
+    public List<Integer> getFeasibleSolutionsHistory()
+    {
+        return List.of();
     }
 
     private double calculateVelocity(double gBest, int pBest, double v, int currP) {
