@@ -1,13 +1,6 @@
-import Algorithms.GeneticAlgorithm;
 import Controller.MenuController;
-import Model.Employee;
-import Model.Task;
-import Utilities.DataGenerator;
 import Utilities.FileOutput;
-import Utilities.Initialise;
 import View.ConsoleView;
-
-import java.util.List;
 
 public class Main
 {

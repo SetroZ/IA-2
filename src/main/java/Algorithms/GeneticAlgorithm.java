@@ -72,8 +72,6 @@ public class GeneticAlgorithm implements Algorithm, Subject
 
     /**
      * Runs the genetic algorithm to find an optimal solution.
-     *
-     * @return The best Solution found
      */
 
     @Override
@@ -195,7 +193,7 @@ public class GeneticAlgorithm implements Algorithm, Subject
         int feasibleCount = 0;
         for (int[] solution : population)
         {
-            if (ConstraintValidator.isSolutionFeasible(solution, tasks, employees))
+            if (CostCalculator.isFeasible(solution, tasks, employees))
             {
                 feasibleCount++;
             }
@@ -378,15 +376,11 @@ public class GeneticAlgorithm implements Algorithm, Subject
 
         sb.append("Generation ").append(generation)
                 .append(": Best Cost = ").append(String.format("%.2f", cost))
-                .append(", Feasible: ").append(ConstraintValidator.isSolutionFeasible(bestSolution, tasks, employees))
+                .append(", Feasible: ").append(CostCalculator.isFeasible(bestSolution, tasks, employees))
                 .append("\n");
 
         output += sb.toString();
 
-        if (!fileOutput)
-        {
-            System.out.print(sb.toString());
-        }
     }
 
     /**
@@ -399,14 +393,14 @@ public class GeneticAlgorithm implements Algorithm, Subject
     {
 
         double cost = CostCalculator.calculateTotalCost(bestSolution, tasks, employees);
-        boolean isFeasilble = ConstraintValidator.isSolutionFeasible(bestSolution, tasks, employees);
+        boolean isFeasible = CostCalculator.isFeasible(bestSolution, tasks, employees);
 
-        String finalResult = observers.getFirst().getFinalSolution(bestSolution, cost, generation, isFeasilble);
+        String finalResult = observers.getFirst().getFinalSolution(bestSolution, cost, generation, isFeasible);
 
+        output += finalResult;
 
         if (fileOutput)
         {
-            output += finalResult;
             try
             {
                 notifyObservers("FILE", "geneticAlg", output);
@@ -418,27 +412,10 @@ public class GeneticAlgorithm implements Algorithm, Subject
         }
         else
         {
-            notifyObservers("INFO", "GENETIC ALGORITHM RESULT", finalResult);
+            notifyObservers("INFO", "GENETIC ALGORITHM RESULT", output);
         }
     }
 
-    /**
-     * Helper method to find an employee by ID.
-     *
-     * @param employeeId The ID of the employee to find
-     * @return The Employee with the specified ID, or null if not found
-     */
-    private Employee findEmployeeById(String employeeId)
-    {
-        for (Employee employee : employees)
-        {
-            if (employee.getId().equals(employeeId))
-            {
-                return employee;
-            }
-        }
-        return null;
-    }
 
     /**
      * Gets the best cost history for reporting.
