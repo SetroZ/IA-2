@@ -11,7 +11,8 @@ import java.util.Map;
  * Utility class for calculating costs and penalties in the task solution problem.
  */
 
-public class CostCalculator {
+public class CostCalculator
+{
 
     // Penalty weighting factors as defined in the problem specification
     private static final double OVERLOAD_WEIGHT = 0.2;
@@ -28,12 +29,13 @@ public class CostCalculator {
      * Calculates the total cost of aS solution.
      * Cost = α × (Overload Penalty) + β × (Skill Mismatch Penalty) + γ × (Deadline Violation Penalty)
      *
-     * @param solution The Solution to evaluate
-     * @param tasks The list of all tasks
+     * @param solution  The Solution to evaluate
+     * @param tasks     The list of all tasks
      * @param employees The list of all employees
      * @return The total cost of the solution
      */
-    public static double calculateTotalCost(int[] solution, List<Task> tasks, List<Employee> employees) {
+    public static double calculateTotalCost(int[] solution, List<Task> tasks, List<Employee> employees)
+    {
         double overloadPenalty = calculateOverloadPenalty(solution, tasks, employees);
         double skillMismatchPenalty = calculateSkillMismatchPenalty(solution, tasks, employees);
         double deadlineViolationPenalty = calculateDeadlineViolationPenalty(solution, tasks, employees);
@@ -42,18 +44,19 @@ public class CostCalculator {
 
         return (
                 (OVERLOAD_WEIGHT * overloadPenalty) +
-                (SKILL_MISMATCH_WEIGHT * skillMismatchPenalty) +
-                (DIFFICULTY_VIOLATION_WEIGHT * skillLvlViolationPenalty) +
-                (UNIQUE_ASSIGNMENT_WEIGHT * uniqueAssignmentViolationPenalty)
-                        * HARD_CONSTRAINT_MULTIPLIER) +
+                        (SKILL_MISMATCH_WEIGHT * skillMismatchPenalty) +
+                        (DIFFICULTY_VIOLATION_WEIGHT * skillLvlViolationPenalty) +
+                        (UNIQUE_ASSIGNMENT_WEIGHT * uniqueAssignmentViolationPenalty)
+                                * HARD_CONSTRAINT_MULTIPLIER) +
                 (DEADLINE_VIOLATION_WEIGHT * deadlineViolationPenalty);
     }
 
     /**
      * Calculate the unique assignment penalty
      * If a task is assigned to more than one employee, increments count
-     * @param solution The Solution to evaluate
-     * @param tasks The list of all tasks
+     *
+     * @param solution  The Solution to evaluate
+     * @param tasks     The list of all tasks
      * @param employees The list of all employees
      * @return The number of violations
      */
@@ -61,9 +64,9 @@ public class CostCalculator {
     public static double calculateUniqueAssignmentViolationPenalty(int[] solution, List<Task> tasks, List<Employee> employees)
     {
         int violationCount = 0;
-        for(Task task : tasks)
+        for (Task task : tasks)
         {
-            if(employees.get(solution[task.getIdx()]) == null)
+            if (employees.get(solution[task.getIdx()]) == null)
             {
                 violationCount++;
             }
@@ -75,16 +78,18 @@ public class CostCalculator {
      * Calculates the overload penalty.
      * This penalty occurs when an employee is assigned more work than their available hours.
      *
-     * @param solution The Solution to evaluate
-     * @param tasks The list of all tasks
+     * @param solution  The Solution to evaluate
+     * @param tasks     The list of all tasks
      * @param employees The list of all employees
      * @return The number of hours in total that an employees are overworked.
      */
 
-    public static double calculateOverloadPenalty(int[] solution, List<Task> tasks, List<Employee> employees) {
+    public static double calculateOverloadPenalty(int[] solution, List<Task> tasks, List<Employee> employees)
+    {
         double totalPenalty = 0;
 
-        for (Employee employee : employees) {
+        for (Employee employee : employees)
+        {
             int totalWorkload = calculateEmployeeWorkload(solution, tasks, employees, employee.getId());
             int overload = Math.max(0, totalWorkload - employee.getAvailableHours());
             totalPenalty += overload;
@@ -99,24 +104,28 @@ public class CostCalculator {
      * 1. Have a skill level lower than the task's difficulty
      * 2. Don't possess the specific skill required by the task
      *
-     * @param solution The Solution to evaluate
-     * @param tasks The list of all tasks
+     * @param solution  The Solution to evaluate
+     * @param tasks     The list of all tasks
      * @param employees The list of all employees
      * @return The skill mismatch penalty
      */
 
 
-    public static double calculateSkillMismatchPenalty(int[] solution, List<Task> tasks, List<Employee> employees) {
+    public static double calculateSkillMismatchPenalty(int[] solution, List<Task> tasks, List<Employee> employees)
+    {
         int mismatchCount = 0;
 
-        for (Task task : tasks) {
-            String employeeId = employees.get(solution[task.getIdx()]).getId();
-            if (employeeId != null) {
-                Employee employee = findEmployeeById(employees, employeeId);
-                if (employee != null) {
-
+        for (Task task : tasks)
+        {
+            int employeeIdx = solution[task.getIdx()];
+            if (employeeIdx != -1)
+            {
+                Employee employee = employees.get(employeeIdx);
+                if (employee != null)
+                {
                     // Check specialized skill constraint
-                    if (!employee.hasSkill(task.getRequiredSkill())) {
+                    if (!employee.hasSkill(task.getRequiredSkill()))
+                    {
                         mismatchCount++;
                     }
                 }
@@ -126,10 +135,11 @@ public class CostCalculator {
     }
 
     /**
-     *  Calculates difficulty level violation penalty
-     *  The number of assignments with correct skill matches that don't have the adequate skill level
-     * @param solution The Solution to evaluate
-     * @param tasks The list of all tasks
+     * Calculates difficulty level violation penalty
+     * The number of assignments with correct skill matches that don't have the adequate skill level
+     *
+     * @param solution  The Solution to evaluate
+     * @param tasks     The list of all tasks
      * @param employees The list of all employees
      * @return The difficulty violation penalty
      */
@@ -138,11 +148,14 @@ public class CostCalculator {
     {
         int skillLvlViolationCount = 0;
 
-        for(Task task : tasks) {
-            String employeeId = employees.get(solution[task.getIdx()]).getId();
-            if(employeeId != null) {
-                Employee employee = findEmployeeById(employees, employeeId);
-                if(employee != null) {
+        for (Task task : tasks)
+        {
+            int employeeIdx = solution[task.getIdx()];
+            if (employeeIdx != -1)
+            {
+                Employee employee = employees.get(employeeIdx);
+                if (employee != null)
+                {
                     if (task.getDifficulty() > employee.getSkillLevel())
                     {
                         skillLvlViolationCount++;
@@ -158,21 +171,24 @@ public class CostCalculator {
      * Calculates the deadline violation penalty.
      * The number of total hours tasks overshoot their deadline in a solution
      *
-     * @param solution The Solution to evaluate
-     * @param tasks The list of all tasks
+     * @param solution  The Solution to evaluate
+     * @param tasks     The list of all tasks
      * @param employees The list of all employees
      * @return The deadline violation penalty
      */
 
-    public static double calculateDeadlineViolationPenalty(int[] solution, List<Task> tasks, List<Employee> employees) {
+    public static double calculateDeadlineViolationPenalty(int[] solution, List<Task> tasks, List<Employee> employees)
+    {
         int violationHrs = 0;
 
         // For each employee, track their current workload time
         Map<String, Integer> employeeWorkloadTimes = new HashMap<>();
 
-        for (Task task : tasks) {
+        for (Task task : tasks)
+        {
             String employeeId = employees.get(solution[task.getIdx()]).getId();
-            if (employeeId != null) {
+            if (employeeId != null)
+            {
                 // Initialize workload time if not already present
                 employeeWorkloadTimes.putIfAbsent(employeeId, 0);
 
@@ -183,7 +199,8 @@ public class CostCalculator {
                 currentWorkloadTime += task.getEstimatedTime();
 
                 // Check if the deadline is violated
-                if (currentWorkloadTime > task.getDeadline()) {
+                if (currentWorkloadTime > task.getDeadline())
+                {
                     violationHrs += (currentWorkloadTime - task.getDeadline());
                 }
 
@@ -198,18 +215,21 @@ public class CostCalculator {
     /**
      * Calculates the total workload assigned to an employee.
      *
-     * @param solution The Solution to evaluate
-     * @param tasks The list of all tasks
+     * @param solution   The Solution to evaluate
+     * @param tasks      The list of all tasks
      * @param employeeId The ID of the employee
      * @return The total workload in hours
      */
 
-    public static int calculateEmployeeWorkload(int[] solution, List<Task> tasks, List<Employee> employees, String employeeId) {
+    public static int calculateEmployeeWorkload(int[] solution, List<Task> tasks, List<Employee> employees, String employeeId)
+    {
         int totalWorkload = 0;
 
-        for (Task task : tasks) {
+        for (Task task : tasks)
+        {
             String assignedEmployeeId = employees.get(solution[task.getIdx()]).getId();
-            if (employeeId.equals(assignedEmployeeId)) {
+            if (employeeId.equals(assignedEmployeeId))
+            {
                 totalWorkload += task.getEstimatedTime();
             }
         }
@@ -218,19 +238,16 @@ public class CostCalculator {
     }
 
     /**
-     * Helper method to find an employee by ID.
-     *
-     * @param employees The list of all employees
-     * @param employeeId The ID of the employee to find
-     * @return The employee with the specified ID, or null if not found
+     * Checks if all hard constraints are satisfied
+     * @param solution   The Solution to evaluate
+     * @param tasks      The list of all tasks
+     * @param employees  The list of all employees
+     * @return True if feasible, false if else.
      */
 
-    private static Employee findEmployeeById(List<Employee> employees, String employeeId) {
-        for (Employee employee : employees) {
-            if (employee.getId().equals(employeeId)) {
-                return employee;
-            }
-        }
-        return null;
+    public static boolean isFeasible(int[] solution, List<Task> tasks, List<Employee> employees)
+    {
+        return  (calculateTotalCost(solution, tasks, employees) -
+                calculateDeadlineViolationPenalty(solution, tasks, employees) == 0);
     }
 }
