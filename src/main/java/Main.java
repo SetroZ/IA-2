@@ -1,18 +1,13 @@
-import Algorithms.GeneticAlgorithm;
 import Controller.MenuController;
-import Factories.AlgorithmFactory;
-import Model.Employee;
-import Model.Task;
-import Utilities.DataGenerator;
 import Utilities.FileOutput;
-import Utilities.Initialise;
 import View.ConsoleView;
 
-import java.util.List;
-
-public class Main {
-    public static void main(String[] args) {
-        try {
+public class Main
+{
+    public static void main(String[] args)
+    {
+        try
+        {
             ConsoleView consoleView = new ConsoleView();
             FileOutput fileOutput = new FileOutput();
 

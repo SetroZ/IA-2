@@ -62,9 +62,11 @@ public class ConstraintValidator {
         }
 
         // Calculate workload for each employee
-        for (Task task : tasks) {
+        for (Task task : tasks)
+        {
             String employeeId = employees.get(solution[task.getIdx()]).getId();
-            if (employeeId != null) {
+            if (employeeId != null)
+            {
                 int currentWorkload = employeeWorkload.getOrDefault(employeeId, 0);
                 employeeWorkload.put(employeeId, currentWorkload + task.getEstimatedTime());
             }
@@ -77,7 +79,6 @@ public class ConstraintValidator {
                 return false;
             }
         }
-
         return true;
     }
 
