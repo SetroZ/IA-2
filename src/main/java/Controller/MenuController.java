@@ -1,18 +1,24 @@
 package Controller;
 
-import Algorithms.Algorithm;
-import Algorithms.GeneticAlgorithm;
-import Factories.AlgorithmFactory;
-import Model.Employee;
-import Model.Task;
-import Utilities.*;
-import View.ConsoleView;
-
 import java.io.File;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
+import Algorithms.Algorithm;
+import Algorithms.GeneticAlgorithm;
+import Algorithms.ParticleSwarm;
+import Factories.AlgorithmFactory;
+import Model.Employee;
+import Model.Task;
+import Utilities.DataGenerator;
+import Utilities.FileOutput;
+import Utilities.InputException;
+import Utilities.LoadDataException;
+import Utilities.Observer;
+import Utilities.ObserverException;
+import Utilities.Subject;
+import View.ConsoleView;
 
 public class MenuController implements Subject {
     private final List<Observer> observers;
@@ -212,6 +218,7 @@ public class MenuController implements Subject {
                         runGeneticAlgMenu();
                         break;
                     case 2:
+
                         break;
                     case 3:
                         break;
@@ -220,6 +227,21 @@ public class MenuController implements Subject {
         } catch (InputException e) {
             notifyObservers("ERROR", "Error occurred while getting input", e.getMessage());
         }
+    }
+
+    private void runParticleSwarmMenu() {
+
+        int PS_POPULATION_SIZE_DEFAULT = 100;
+        int PS_MAX_GEN_DEFAULT = 200;
+        int GA_REPORTING_FREQUENCY_DEFAULT = 5;
+        boolean GA_FILE_OUTPUT_DEFAULT = true;
+
+        ParticleSwarm ps = new AlgorithmFactory(tasks, employees, observers).createParticleSwarm(
+                PS_POPULATION_SIZE_DEFAULT,
+                PS_MAX_GEN_DEFAULT,
+                GA_FILE_OUTPUT_DEFAULT);
+        runMenu(ps, "ParticleSwarm");
+
     }
 
     private void runGeneticAlgMenu() {

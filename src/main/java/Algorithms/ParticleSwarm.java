@@ -8,41 +8,26 @@ import Model.Employee;
 import Model.Task;
 import Utilities.Initialise;
 import Utilities.Observer;
+import Utilities.ObserverException;
 import Utilities.Subject;
 
 public class ParticleSwarm implements Algorithm, Subject {
-
-    @Override
-    public void registerObserver(Observer observer)
-    {
-        observers.add(observer);
-    }
-
-    @Override
-    public void removeObserver(Observer observer)
-    {
-        observers.remove(observer);
-    }
-
-    @Override
-    public void notifyObservers(String messageType, String title, String content)
-    {
-        for(Observer observer : observers)
-        {
-            observer.update(messageType, title, content);
-        }
-    }
 
     class GBestData {
         double gBest;
         int[] gBestArr;
     }
 
-    private List<Employee> employees;
-    private List<Task> tasks;
-    private List<Observer> observers = new ArrayList<>();
-    int populationSize;
+    private final boolean fileOutput;
+    private String output = "";
 
+    private List<Employee> employees;
+
+    private List<Task> tasks;
+
+    private List<Observer> observers = new ArrayList<>();
+
+    int populationSize;
     int maxIterations;
 
     public ParticleSwarm(List<Task> tasks, List<Employee> employees,
@@ -51,6 +36,24 @@ public class ParticleSwarm implements Algorithm, Subject {
         this.employees = employees;
         this.tasks = tasks;
         this.maxIterations = maxIterations;
+        this.fileOutput = true;
+    }
+
+    @Override
+    public void registerObserver(Observer observer) {
+        observers.add(observer);
+    }
+
+    @Override
+    public void removeObserver(Observer observer) {
+        observers.remove(observer);
+    }
+
+    @Override
+    public void notifyObservers(String messageType, String title, String content) {
+        for (Observer observer : observers) {
+            observer.update(messageType, title, content);
+        }
     }
 
     @Override
@@ -76,10 +79,11 @@ public class ParticleSwarm implements Algorithm, Subject {
         }
         gBestData = findGbest(gBestData, fitnessPBest, pBest);
 
+        int n = 0;
         // Main loop.
-        for (int n = 0; n < maxIterations; n++) {
+        for (; n < maxIterations; n++) {
             if (gBestData.gBest == 0) {
-                return gBestData.gBestArr;
+                break;
             }
             for (int i = 0; i < populationSize; i++) {
                 for (int j = 0; j < tasks.size(); j++) {
@@ -95,24 +99,22 @@ public class ParticleSwarm implements Algorithm, Subject {
             }
             gBestData = findGbest(gBestData, fitnessPBest, pBest);
         }
+        printFinalResult(gBestData.gBestArr, n);
 
     }
 
     @Override
-    public List<Double> getBestCostHistory()
-    {
+    public List<Double> getBestCostHistory() {
         return List.of();
     }
 
     @Override
-    public List<Double> getAvgCostHistory()
-    {
+    public List<Double> getAvgCostHistory() {
         return List.of();
     }
 
     @Override
-    public List<Integer> getFeasibleSolutionsHistory()
-    {
+    public List<Integer> getFeasibleSolutionsHistory() {
         return List.of();
     }
 
@@ -136,6 +138,47 @@ public class ParticleSwarm implements Algorithm, Subject {
             return defaultPos;
         }
 
+    }
+
+    private void printProgress(int[] bestSolution, int generation) {
+        StringBuilder sb = new StringBuilder();
+        double cost = CostCalculator.calculateTotalCost(bestSolution, tasks, employees);
+
+        sb.append("Generation ").append(generation)
+                .append(": Best Cost = ").append(String.format("%.2f", cost))
+                .append(", Feasible: ").append(ConstraintValidator.isSolutionFeasible(bestSolution, tasks, employees))
+                .append("\n");
+
+        output += sb.toString();
+
+        if (!fileOutput) {
+            System.out.print(sb.toString());
+        }
+    }
+
+    /**
+     * Prints the final result of the algorithm.
+     *
+     * @param bestSolution The best Solution found
+     * @param generation   The final generation number
+     */
+    private void printFinalResult(int[] bestSolution, int generation) {
+
+        double cost = CostCalculator.calculateTotalCost(bestSolution, tasks, employees);
+        boolean isFeasilble = ConstraintValidator.isSolutionFeasible(bestSolution, tasks, employees);
+
+        String finalResult = observers.getFirst().getFinalSolution(bestSolution, cost, generation, isFeasilble);
+
+        if (fileOutput) {
+            output += finalResult;
+            try {
+                notifyObservers("FILE", "ParticleAlg", output);
+            } catch (ObserverException e) {
+                notifyObservers("ERROR", "Writing To File", e.getMessage());
+            }
+        } else {
+            notifyObservers("INFO", "GENETIC ALGORITHM RESULT", finalResult);
+        }
     }
 
     private double sigmoid(double v) {
