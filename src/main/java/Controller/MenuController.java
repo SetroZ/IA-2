@@ -218,7 +218,7 @@ public class MenuController implements Subject {
                         runGeneticAlgMenu();
                         break;
                     case 2:
-
+                        runParticleSwarmMenu();
                         break;
                     case 3:
                         break;

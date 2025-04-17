@@ -71,7 +71,7 @@ public class ParticleSwarm implements Algorithm, Subject {
 
         // Intialize Velocities, positions, pBest and gBest
         for (int i = 0; i < populationSize; i++) {
-            for (int j = 0; j < populationSize; j++) {
+            for (int j = 0; j < tasks.size(); j++) {
                 v[i][j] = Math.random();
                 pBest[i][j] = swarms[i][j];
                 fitnessPBest[i] = CostCalculator.calculateTotalCost(pBest[i], tasks, employees);
