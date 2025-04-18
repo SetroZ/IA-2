@@ -29,6 +29,8 @@ public class ParticleSwarm implements Algorithm, Subject {
 
     int populationSize;
     int maxIterations;
+    int STAG_LIMIT = 8;
+    int lastgBestUpdate = 0;
 
     public ParticleSwarm(List<Task> tasks, List<Employee> employees,
             int populationSize, int maxIterations) {
@@ -69,17 +71,17 @@ public class ParticleSwarm implements Algorithm, Subject {
         gBestData.gBest = Double.MAX_VALUE;
         gBestData.gBestArr = new int[tasks.size()];
         double[] fitnessPBest = new double[populationSize]; // contains the fitness value for each pBest.
+
         Random rd = new Random();
         // Intialize Velocities, positions, pBest and gBest
         for (int i = 0; i < populationSize; i++) {
             for (int j = 0; j < tasks.size(); j++) {
-                v[i][j] = rd.nextInt(-3, 3);
+                v[i][j] = rd.nextDouble(0.5, 2) * (rd.nextBoolean() ? 1 : -1);
                 pBest[i][j] = swarms[i][j];
                 fitnessPBest[i] = CostCalculator.calculateTotalCost(pBest[i], tasks, employees);
             }
         }
         gBestData = findGbest(gBestData, fitnessPBest, pBest);
-
         int n = 0;
         // Main loop.
         for (; n < maxIterations; n++) {
@@ -95,14 +97,17 @@ public class ParticleSwarm implements Algorithm, Subject {
                 // Find pBest
                 double newCost = CostCalculator.calculateTotalCost(swarms[i], tasks, employees);
                 if (newCost <= fitnessPBest[i]) {
+
                     fitnessPBest[i] = newCost;
                     pBest[i] = swarms[i];
                 }
             }
+
             gBestData = findGbest(gBestData, fitnessPBest, pBest);
+            printProgress(gBestData.gBest, n);
         }
         printFinalResult(gBestData.gBestArr, n);
-
+        System.out.println("Gen:" + n + "  Gbest:" + gBestData.gBest);
     }
 
     @Override
@@ -121,14 +126,17 @@ public class ParticleSwarm implements Algorithm, Subject {
     }
 
     private double calculateVelocity(double gBest, int pBest, double v, int currP) {
-        double c1 = 1.5;
-        double c2 = 1.5;
-        double r1 = Math.random();
-        double r2 = Math.random();
+        double c1 = 1.6;
+        double c2 = 1.6;
+        Random rd = new Random();
+        double r1 = rd.nextDouble(0.1, 1);
+        double r2 = rd.nextDouble(0.1, 1);
         double w = 0.5;
-
-        double newV = w * v + c1 * r1 * (pBest - currP) + c2 * r2 * (gBest - currP);
-
+        double stag = (STAG_LIMIT < lastgBestUpdate) ? Math.copySign(rd.nextDouble(0.5, 1), v) : 0;
+        int maxV = employees.size() + 10;
+        double newV = w * v + c1 * r1 * (pBest - currP) + c2 * r2 * (gBest - currP) + stag;
+        newV = Math.max(-maxV, Math.min(maxV, newV));
+        System.out.println(newV);
         return newV;
     }
 
@@ -139,7 +147,10 @@ public class ParticleSwarm implements Algorithm, Subject {
         List<Integer> compatibleEmployees = new ArrayList<>();
         int i = 0;
         for (Employee employee : employees) {
-
+            if (currentPos == i) {
+                i++;
+                continue;
+            }
             if (employee.hasSkill(task.getRequiredSkill()) &&
                     employee.getSkillLevel() >= task.getDifficulty()) {
                 compatibleEmployees.add(i);
@@ -149,6 +160,9 @@ public class ParticleSwarm implements Algorithm, Subject {
 
         int move = (int) Math.round(velocity); // Step direction
 
+        if (compatibleEmployees.size() == 0) {
+            return currentPos;
+        }
         int newPos = findClosest(compatibleEmployees, Math.floorMod(move + currentPos, size));
 
         return newPos;
@@ -180,13 +194,15 @@ public class ParticleSwarm implements Algorithm, Subject {
         return res;
     }
 
-    private void printProgress(int[] bestSolution, int generation) {
+    private void preventStagnation() {
+
+    }
+
+    private void printProgress(double gbest, int generation) {
         StringBuilder sb = new StringBuilder();
-        double cost = CostCalculator.calculateTotalCost(bestSolution, tasks, employees);
 
         sb.append("Generation ").append(generation)
-                .append(": Best Cost = ").append(String.format("%.2f", cost))
-                .append(", Feasible: ").append(CostCalculator.isFeasible(bestSolution, tasks, employees))
+                .append(": Best Cost = ").append(String.format("%.2f", gbest))
                 .append("\n");
 
         output += sb.toString();
@@ -221,19 +237,17 @@ public class ParticleSwarm implements Algorithm, Subject {
         }
     }
 
-    private double sigmoid(double v) {
-        return 1 / (1 + Math.pow(Math.E, -v));
-    }
-
     private GBestData findGbest(GBestData currGBest, double[] fitnesspBest, int[][] pBest) {
+        lastgBestUpdate += 1;
         GBestData newGBest = currGBest;
+
         for (int i = 0; i < populationSize; i++) {
             if (newGBest.gBest > fitnesspBest[i]) {
                 newGBest.gBest = fitnesspBest[i];
                 newGBest.gBestArr = pBest[i];
+                lastgBestUpdate = 0;
             }
         }
-        System.out.println(newGBest.gBest);
 
         return newGBest;
     }

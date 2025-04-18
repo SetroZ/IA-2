@@ -232,7 +232,7 @@ public class MenuController implements Subject {
     private void runParticleSwarmMenu() {
 
         int PS_POPULATION_SIZE_DEFAULT = 100;
-        int PS_MAX_GEN_DEFAULT = 200;
+        int PS_MAX_GEN_DEFAULT = 1000;
         int GA_REPORTING_FREQUENCY_DEFAULT = 5;
         boolean GA_FILE_OUTPUT_DEFAULT = true;
 
