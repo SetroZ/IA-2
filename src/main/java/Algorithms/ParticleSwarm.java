@@ -29,7 +29,7 @@ public class ParticleSwarm implements Algorithm, Subject {
 
     int populationSize;
     int maxIterations;
-    int STAG_LIMIT = 8;
+    int STAG_LIMIT = 20;
     int lastgBestUpdate = 0;
 
     public ParticleSwarm(List<Task> tasks, List<Employee> employees,
@@ -126,18 +126,25 @@ public class ParticleSwarm implements Algorithm, Subject {
     }
 
     private double calculateVelocity(double gBest, int pBest, double v, int currP) {
-        double c1 = 1.6;
-        double c2 = 1.6;
+        final double c1 = 1.5;
+        final double c2 = 1.5;
+        final double w = 0.5;
+        final int maxV = employees.size();
+
         Random rd = new Random();
-        double r1 = rd.nextDouble(0.1, 1);
-        double r2 = rd.nextDouble(0.1, 1);
-        double w = 0.5;
-        double stag = (STAG_LIMIT < lastgBestUpdate) ? Math.copySign(rd.nextDouble(0.5, 1), v) : 0;
-        int maxV = employees.size() + 10;
-        double newV = w * v + c1 * r1 * (pBest - currP) + c2 * r2 * (gBest - currP) + stag;
-        newV = Math.max(-maxV, Math.min(maxV, newV));
-        System.out.println(newV);
-        return newV;
+        double r1 = rd.nextDouble(0.1, 1.0);
+        double r2 = rd.nextDouble(0.1, 1.0);
+
+        double cognitive = c1 * r1 * (pBest - currP);
+        double social = c2 * r2 * (gBest - currP);
+
+        double stag = (STAG_LIMIT < lastgBestUpdate)
+                ? Math.copySign(rd.nextDouble(0.5, 1.0), v)
+                : 0.0;
+
+        double newV = w * v + cognitive + social + stag;
+
+        return Math.max(-maxV, Math.min(maxV, newV));
     }
 
     private int calculatePosition(double velocity, int currentPos, int taskId) {
@@ -192,10 +199,6 @@ public class ParticleSwarm implements Algorithm, Subject {
         }
 
         return res;
-    }
-
-    private void preventStagnation() {
-
     }
 
     private void printProgress(double gbest, int generation) {
