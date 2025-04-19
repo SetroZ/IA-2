@@ -126,7 +126,7 @@ public class ParticleSwarm implements Algorithm, Subject {
     }
 
     private double calculateVelocity(double gBest, int pBest, double v, int currP) {
-        double c1 = 1.6;
+        double c1 = 1.1;
         double c2 = 1.6;
         Random rd = new Random();
         double r1 = rd.nextDouble(0.1, 1);
