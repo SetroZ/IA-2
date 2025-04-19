@@ -17,7 +17,9 @@ import Utilities.InputException;
 import Utilities.LoadDataException;
 import Utilities.Observer;
 import Utilities.ObserverException;
+import Utilities.RandomDataGen;
 import Utilities.Subject;
+import Utilities.RandomDataGen.DataSet;
 import View.ConsoleView;
 
 public class MenuController implements Subject {
@@ -98,13 +100,16 @@ public class MenuController implements Subject {
         while (!exit) {
             try {
                 int choice = consoleView.requestInput("WELCOME", sb.toString(),
-                        new String[] { "Exit", "Load stored data from csv", "Run an algorithm" });
+                        new String[] { "Exit", "Load stored data from csv", "Run an algorithm", "Load Random Data" });
                 switch (choice) {
                     case 1:
                         loadDataMenu();
                         break;
                     case 2:
                         runAlgorithmMenu();
+                        break;
+                    case 3:
+                        RandomDataMenu();
                         break;
                     case 0:
                         exit = true;
@@ -199,6 +204,29 @@ public class MenuController implements Subject {
     /**
      * Algorithm run menu
      */
+    private void RandomDataMenu() {
+        boolean exit = false;
+
+        try {
+            while (!exit) {
+
+                int taskCount = consoleView.requestInput("SET RANDOM PARAMETERS:",
+                        "Enter Task count:",
+                        1, 10000);
+                int employeeCount = consoleView.requestInput("SET RANDOM PARAMETERS:",
+                        "Enter Employee count:",
+                        1, 10000);
+                DataSet ds = RandomDataGen.generateDataSet(taskCount, employeeCount);
+                tasks = ds.tasks;
+                employees = ds.employees;
+                consoleView.displayData("EMPLOYEES", employees);
+                consoleView.displayData("TASKS", tasks);
+                exit = true;
+            }
+        } catch (InputException e) {
+            notifyObservers("ERROR", "Error occurred while getting input", e.getMessage());
+        }
+    }
 
     private void runAlgorithmMenu() {
         boolean exit = false;
@@ -232,7 +260,7 @@ public class MenuController implements Subject {
     private void runParticleSwarmMenu() {
 
         int PS_POPULATION_SIZE_DEFAULT = 100;
-        int PS_MAX_GEN_DEFAULT = 1000;
+        int PS_MAX_GEN_DEFAULT = 200;
         int GA_REPORTING_FREQUENCY_DEFAULT = 5;
         boolean GA_FILE_OUTPUT_DEFAULT = true;
 

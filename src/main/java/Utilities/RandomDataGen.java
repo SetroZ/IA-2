@@ -34,7 +34,7 @@ public class RandomDataGen {
         }
     }
 
-    static String[] requiredSkills = new String[] { "A", "B", "C", "D", "E" };
+    static String[] requiredSkills = new String[] { "A", "B", "C" };
     static Random rd = new Random();
 
     static private Set<String> generateRandomSkillSet() {
@@ -48,12 +48,13 @@ public class RandomDataGen {
 
     public static DataSet generateDataSet(int numOfTasks, int numOfEmployees) {
         DataSet dataSet = new DataSet();
+        int ratio = numOfTasks / numOfEmployees;
 
         for (int i = 0; i < numOfTasks; i++) {
             String skill = requiredSkills[rd.nextInt(0, requiredSkills.length)];
-            int estimatedTime = rd.nextInt(1, 20);
-            int difficulty = rd.nextInt(1, 20);
-            int deadline = rd.nextInt(1, 20);
+            int estimatedTime = rd.nextInt(1, 10);
+            int difficulty = rd.nextInt(1, 10);
+            int deadline = rd.nextInt(1, 30);
             String id = Integer.toString(i);
 
             Task newTask = new Task(id, estimatedTime, difficulty, deadline, skill,
@@ -62,8 +63,8 @@ public class RandomDataGen {
         }
         for (int i = 0; i < numOfEmployees; i++) {
             String id = Integer.toString(i);
-            int hours = rd.nextInt(1, 20);
-            int skillLevel = rd.nextInt(1, 20);
+            int hours = rd.nextInt(7, 20);
+            int skillLevel = rd.nextInt(1, 10);
             int idx = i;
             Set<String> skills = generateRandomSkillSet();
             Employee newEmployee = new Employee(id, hours, skillLevel, skills, idx);
@@ -73,7 +74,4 @@ public class RandomDataGen {
         return dataSet;
     }
 
-    public static void Main(String[] args) {
-        System.out.println();
-    };
 }
