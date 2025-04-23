@@ -9,9 +9,9 @@ import Model.Task;
 import Utilities.Initialise;
 import Utilities.Observer;
 import Utilities.ObserverException;
-import Utilities.Subject;
 
-public class ParticleSwarm implements Algorithm, Subject {
+public class ParticleSwarm extends AbstractOptimisationAlgorithm
+{
 
     class GBestData {
         double gBest;
@@ -33,7 +33,8 @@ public class ParticleSwarm implements Algorithm, Subject {
     int lastgBestUpdate = 0;
 
     public ParticleSwarm(List<Task> tasks, List<Employee> employees,
-            int populationSize, int maxIterations) {
+            int populationSize, int maxIterations, int reportingFrequency, boolean fileOutput) {
+        super(tasks, employees, reportingFrequency, fileOutput);
         this.populationSize = populationSize;
         this.employees = employees;
         this.tasks = tasks;
@@ -51,11 +52,23 @@ public class ParticleSwarm implements Algorithm, Subject {
         observers.remove(observer);
     }
 
-    @Override
+
     public void notifyObservers(String messageType, String title, String content) {
         for (Observer observer : observers) {
             observer.update(messageType, title, content);
         }
+    }
+
+    @Override
+    protected String getAlgorithmName()
+    {
+        return "";
+    }
+
+    @Override
+    protected int getMaxGenerations()
+    {
+        return 0;
     }
 
     @Override
@@ -110,20 +123,6 @@ public class ParticleSwarm implements Algorithm, Subject {
         System.out.println("Gen:" + n + "  Gbest:" + gBestData.gBest);
     }
 
-    @Override
-    public List<Double> getBestCostHistory() {
-        return List.of();
-    }
-
-    @Override
-    public List<Double> getAvgCostHistory() {
-        return List.of();
-    }
-
-    @Override
-    public List<Integer> getFeasibleSolutionsHistory() {
-        return List.of();
-    }
 
     private double calculateVelocity(double gBest, int pBest, double v, int currP) {
         final double c1 = 1.5;

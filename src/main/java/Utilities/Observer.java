@@ -10,23 +10,12 @@ public interface Observer {
      */
     void update(String messageType, String title, String content) throws ObserverException;
 
-    /**
-     * Display data in a formatted way.
-     *
-     * @param dataType The type of data being displayed (e.g., "TASKS", "EMPLOYEES", "SOLUTION")
-     * @param data     The data to display
+    /**Format the final solution for reporting
+     * @param solution The best solution found
+     * @param cost The cost of the best solution
+     * @param generation The final iteration/generation count
+     * @param isFeasible Whether the solution is feasible
+     * @return A formatted string representing the final solution
      */
-    void displayData(String dataType, Object data) throws ObserverException;
-
-    /**
-     * Show progress of an algorithm.
-     *
-     * @param algorithmName The name of the algorithm
-     * @param iteration     The current iteration/generation
-     * @param cost          The current best cost
-     * @param info          Additional information to display
-     */
-    void showProgress(String algorithmName, int iteration, double cost, String info) throws ObserverException;
-
-    String getFinalSolution(int[] solution, double cost, int generation, boolean feasible) throws ObserverException;
+    String getFinalSolution(int[] solution, double cost, int generation, boolean isFeasible) throws ObserverException;
 }

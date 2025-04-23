@@ -34,9 +34,11 @@ public class AlgorithmFactory {
     }
 
     public ParticleSwarm createParticleSwarm(Integer populationSize, Integer maxIterations,
-            Boolean fileOutput) {
-        ParticleSwarm ps = new ParticleSwarm(tasks, employees, populationSize, maxIterations);
-        for (Observer observer : observers) {
+                                             Integer reportingFrequency, Boolean fileOutput)
+    {
+        ParticleSwarm ps = new ParticleSwarm(tasks, employees, populationSize, maxIterations, reportingFrequency, fileOutput);
+        for (Observer observer : observers)
+        {
             ps.registerObserver(observer);
         }
         return ps;
