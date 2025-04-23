@@ -71,7 +71,7 @@ public class CostCalculator
                 violationCount++;
             }
         }
-        return violationCount;
+        return 100000 * violationCount;
     }
 
     /**
@@ -95,7 +95,7 @@ public class CostCalculator
             totalPenalty += overload;
         }
 
-        return totalPenalty;
+        return 100000 * totalPenalty;
     }
 
     /**
@@ -131,7 +131,7 @@ public class CostCalculator
                 }
             }
         }
-        return mismatchCount;
+        return 100000 * mismatchCount;
     }
 
     /**
@@ -163,7 +163,7 @@ public class CostCalculator
                 }
             }
         }
-        return skillLvlViolationCount;
+        return 100000 * skillLvlViolationCount;
     }
 
 

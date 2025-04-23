@@ -12,17 +12,17 @@ import java.util.*;
 public class AntColAlgorithm implements Algorithm, Subject
 {
     //Algorithm Parameters
-    private final int numAnts;
-    private final int maxIterations;
+    private int numAnts;
+    private int maxIterations;
     private final int REPORTING_FREQUENCY;
     private final boolean fileOutput;
-    private final double initPheromone;
+    private double initPheromone;
 
     // Problem data
     private final List<Task> tasks;
     private final List<Employee> employees;
     private double[][] pherMatrix;
-    private final double pherDecayRate;
+    private double pherDecayRate;
 
     // Tracking and reporting
     private List<Observer> observers = new ArrayList<>();
@@ -30,14 +30,15 @@ public class AntColAlgorithm implements Algorithm, Subject
     private boolean foundPerfectSolution = false;
     private int[] globalBestSolution;
     private double globalBestCost = Double.MAX_VALUE;
-    private double[] globalBestPheromone;
+    // private double[] globalBestPheromone;
     private int iterationCount = 0;
 
 
     /**
-     * Construction for Ant Colony Optimisation Algorithm
+     * Constructor for Ant Colony Optimisation Algorithm
      * 
      */
+
     public AntColAlgorithm(int numAnts, double pherDecayRate, double initPheromone, int maxIterations, int REPORTING_FREQUENCY, 
                             boolean fileOutput, List<Task> tasks, List<Employee> employees)
     {
@@ -94,12 +95,13 @@ public class AntColAlgorithm implements Algorithm, Subject
 
     private void updatePheromones(int[][] antMatrix, int numAnts, int numEmployees, int numTasks)
     {
+        int[] ant;
         decayPheromones();
         for(int i = 0; i < numAnts; i++)
         {
-            int[] ant = antMatrix[i];
+            ant = antMatrix[i];
             double antCost = CostCalculator.calculateTotalCost(ant, this.tasks, this.employees);
-            System.out.println(antCost)
+            System.out.println(antCost);
             if(antCost < this.globalBestCost)
             {
                 this.globalBestCost = antCost;
@@ -112,7 +114,7 @@ public class AntColAlgorithm implements Algorithm, Subject
                 this.foundPerfectSolution = true;
             }
             */
-            double pheromone = 1.0/(5.0 * antCost + 1.0); // Multiplying by 5 ensures no dividing by a decimal, Adding 1 ensures no division by zero
+            double pheromone = 1.0/(5.0 * antCost) + 1.0; // Multiplying by 5 ensures no dividing by a decimal, Adding 1 ensures no division by zero
             
             for(int j = 0; j < numTasks; j++) //for each task in ant's solution
             {
@@ -144,6 +146,7 @@ public class AntColAlgorithm implements Algorithm, Subject
                     if(choice < cumulative)
                     {
                         antMatrix[i][j] = e;
+                        e = numEmployees;
                     }
                 }
             }
