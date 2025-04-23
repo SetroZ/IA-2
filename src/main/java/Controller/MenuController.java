@@ -27,9 +27,7 @@ public class MenuController{
     private List<Task> tasks;
     private final ConsoleObserver consoleObserver;
     private String employeesFileName;
-    private String employeesFilePath;
     private String tasksFileName;
-    private String tasksFilePath;
 
     /**
      * Constructor for menu controller
@@ -51,15 +49,6 @@ public class MenuController{
 
     public void registerObserver(Observer observer) {
         observers.add(observer);
-    }
-
-    /**
-     *
-     * @param observer The observer to remove
-     */
-
-    public void removeObserver(Observer observer) {
-        observers.remove(observer);
     }
 
     /**
@@ -92,8 +81,6 @@ public class MenuController{
                     .append(tasksFileName != null ? tasksFileName : "none")
                     .append("\n");
         }
-
-        String menuStr = sb.toString();
 
         while (!exit) {
             try {
@@ -148,7 +135,7 @@ public class MenuController{
 
         try {
             // Load selected employee file
-            employeesFilePath = employeeFiles.get(choice);
+            String employeesFilePath = employeeFiles.get(choice);
 
             String[] fileName = employeesFilePath.split("/");
             employeesFileName = fileName[fileName.length - 1];
@@ -179,7 +166,7 @@ public class MenuController{
             }
 
             // Load selected task file
-            tasksFilePath = taskFiles.get(choice);
+            String tasksFilePath = taskFiles.get(choice);
             String[] fname = tasksFilePath.split("/");
 
             tasksFileName = fname[fname.length - 1];
@@ -283,7 +270,6 @@ public class MenuController{
         boolean exit = false;
 
         while (!exit) {
-            StringBuilder sb = new StringBuilder();
 
             int choice = consoleObserver.requestInput("DEFINE GENETIC ALGORITHM",
                     "Specify the parameters to use for this algorithm or proceed",

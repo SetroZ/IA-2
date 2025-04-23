@@ -4,7 +4,6 @@ import Model.Employee;
 import Model.Task;
 import Utilities.Initialise;
 import Utilities.Observer;
-import Utilities.ObserverException;
 
 import java.util.*;
 
@@ -35,9 +34,6 @@ public class GeneticAlgorithm extends AbstractOptimisationAlgorithm{
      * @param fileOutput         Whether to output results to a file
      */
 
-    /**
-     * Runs the genetic algorithm to find an optimal solution.
-     */
     public GeneticAlgorithm(List<Task> tasks, List<Employee> employees,
                             int populationSize, double crossoverRate, double mutationRate,
                             int maxGenerations, int reportingFrequency, boolean fileOutput) {
@@ -49,7 +45,9 @@ public class GeneticAlgorithm extends AbstractOptimisationAlgorithm{
         this.elitismCount = 2; // Keep the best 2 solutions
     }
 
-
+    /**
+     * Runs the genetic algorithm to find an optimal solution.
+     */
 
     @Override
     public void run() {
@@ -69,7 +67,7 @@ public class GeneticAlgorithm extends AbstractOptimisationAlgorithm{
             int[][] newPopulation = new int[populationSize][tasks.size()];
 
             // Initialise counter for populated solutions
-            int counter = 0;
+            int counter;
 
             // Add elite solutions to new population
             int[][] eliteSolutions = findBestSolution(population, elitismCount);
@@ -84,8 +82,8 @@ public class GeneticAlgorithm extends AbstractOptimisationAlgorithm{
                 int[][] parents = selectParents(population);
 
                 // Crossover
-                int[] offspring1 = null;
-                int[] offspring2 = null;
+                int[] offspring1;
+                int[] offspring2;
 
                 if (Math.random() < crossoverRate) {
                     offspring1 = crossover(parents[0], parents[1]);
@@ -241,8 +239,6 @@ public class GeneticAlgorithm extends AbstractOptimisationAlgorithm{
     private void mutate(int[] solution) {
         for (Task task : tasks) {
             if (Math.random() < mutationRate) {
-                // Get the current assigned employee
-                int currentEmployeeIdx = solution[task.getIdx()];
 
                 // Create a list of employees who can perform this task
                 List<Employee> compatibleEmployees = new ArrayList<>();
@@ -263,16 +259,6 @@ public class GeneticAlgorithm extends AbstractOptimisationAlgorithm{
         }
     }
 
-
-    @Override
-    public void registerObserver(Observer observer) {
-        observers.add(observer);
-    }
-
-    @Override
-    public void removeObserver(Observer observer) {
-        observers.remove(observer);
-    }
 
     public void notifyObservers(String messageType, String title, String content) {
         for (Observer observer : observers) {
