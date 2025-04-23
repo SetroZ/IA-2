@@ -1,6 +1,7 @@
 package Factories;
 
 import Algorithms.GeneticAlgorithm;
+import Algorithms.AntColAlgorithm;
 import Model.Employee;
 import Model.Task;
 import Utilities.Observer;
@@ -32,5 +33,15 @@ public class AlgorithmFactory
             ga.registerObserver(observer);
         }
         return ga;
+    }
+
+    public AntColAlgorithm createAntColonyOptimisation(Integer numAnts, Double pherDecayRate, Double initPheromone, Integer maxIterations, Integer reportingFrequency, Boolean fileOutput)
+    {
+        AntColAlgorithm aco = new AntColAlgorithm(numAnts, pherDecayRate, initPheromone, maxIterations, reportingFrequency, fileOutput, this.tasks, this.employees);
+        for(Observer observer : observers)
+        {
+            aco.registerObserver(observer);
+        }
+        return aco;
     }
 }

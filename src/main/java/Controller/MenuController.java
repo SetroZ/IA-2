@@ -2,6 +2,7 @@ package Controller;
 
 import Algorithms.Algorithm;
 import Algorithms.GeneticAlgorithm;
+import Algorithms.AntColAlgorithm;
 import Factories.AlgorithmFactory;
 import Model.Employee;
 import Model.Task;
@@ -214,6 +215,7 @@ public class MenuController implements Subject {
                     case 2:
                         break;
                     case 3:
+                        runAntColAlgMenu();
                         break;
                 }
             }
@@ -276,6 +278,66 @@ public class MenuController implements Subject {
                             GA_REPORTING_FREQUENCY_DEFAULT, GA_FILE_OUTPUT_DEFAULT);
                     runMenu(ga, "Genetic");
                     break;
+                default:
+                    break;
+            }
+
+        }
+    }
+
+    private void runAntColAlgMenu() {
+        // Initialise with parameters
+        double ACO_DECAY_RATE_DEFAULT = 0.1;
+        double ACO_INITIAL_PHEROMONE_DEFAULT = 0.1;
+        int ACO_NUM_ANTS_DEFAULT = 5;
+        int ACO_MAX_ITERATIONS_DEFAULT = 500;
+        int ACO_REPORTING_FREQUENCY_DEFAULT = 5;
+        boolean ACO_FILE_OUTPUT_DEFAULT = true;
+
+        boolean exit = false;
+
+        while (!exit) {
+            StringBuilder sb = new StringBuilder();
+
+            int choice = consoleView.requestInput("DEFINE ANT COLONY OPTIMISATION ",
+                    "Specify the parameters to use for this algorithm or proceed",
+                    new String[] { "Exit", "Number of Ants: " + ACO_NUM_ANTS_DEFAULT,
+                            "Pheromone Decay Rate: " + ACO_DECAY_RATE_DEFAULT,
+                            "Initial Pheromone Value: " + ACO_INITIAL_PHEROMONE_DEFAULT,
+                            "Maximum Iterations: " + ACO_MAX_ITERATIONS_DEFAULT,
+                            "Reporting Frequency: " + ACO_REPORTING_FREQUENCY_DEFAULT,
+                            "Output to File: " + ACO_FILE_OUTPUT_DEFAULT,
+                            "Proceed" });
+
+            switch (choice) {
+                case 0:
+                    exit = true;
+                    break;
+                case 1:
+                    ACO_NUM_ANTS_DEFAULT = getParameter("Number of Ants", ACO_NUM_ANTS_DEFAULT, 1,
+                            Integer.MAX_VALUE);
+                    break;
+                case 2:
+                    ACO_DECAY_RATE_DEFAULT = getParameter("Pheromone Decay Rate", ACO_DECAY_RATE_DEFAULT, 0.0, 1.0);
+                    break;
+                case 3:
+                    ACO_INITIAL_PHEROMONE_DEFAULT = getParameter("Initial Pheromone Value", ACO_INITIAL_PHEROMONE_DEFAULT, 0.0, Double.MAX_VALUE);
+                    break;
+                case 4:
+                    ACO_MAX_ITERATIONS_DEFAULT = getParameter("Maximum Iterations", ACO_MAX_ITERATIONS_DEFAULT, 1, Integer.MAX_VALUE);
+                    break;
+                case 5:
+                    ACO_REPORTING_FREQUENCY_DEFAULT = getParameter("Reporting Frequency", ACO_REPORTING_FREQUENCY_DEFAULT,
+                            1, Integer.MAX_VALUE);
+                    break;
+                case 6:
+                    ACO_FILE_OUTPUT_DEFAULT = getParameter("Output to File", ACO_FILE_OUTPUT_DEFAULT);
+                    break;
+                case 7:
+                    AntColAlgorithm aco = new AlgorithmFactory(tasks, employees, observers).createAntColonyOptimisation(
+                        ACO_NUM_ANTS_DEFAULT, ACO_DECAY_RATE_DEFAULT, ACO_INITIAL_PHEROMONE_DEFAULT, ACO_MAX_ITERATIONS_DEFAULT, 
+                        ACO_REPORTING_FREQUENCY_DEFAULT, ACO_FILE_OUTPUT_DEFAULT);
+                    runMenu(aco, "Ant Colony");
                 default:
                     break;
             }
