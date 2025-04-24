@@ -8,24 +8,16 @@ import Model.Employee;
 import Model.Task;
 import Utilities.Initialise;
 import Utilities.Observer;
-import Utilities.ObserverException;
-import Utilities.Subject;
 
-public class ParticleSwarm implements Algorithm, Subject {
+public class ParticleSwarm extends AbstractOptimisationAlgorithm
+{
 
-    class GBestData {
+    static class GBestData {
         double gBest;
         int[] gBestArr;
     }
 
-    private final boolean fileOutput;
-    private String output = "";
 
-    private List<Employee> employees;
-
-    private List<Task> tasks;
-
-    private List<Observer> observers = new ArrayList<>();
 
     int populationSize;
     int maxIterations;
@@ -33,29 +25,32 @@ public class ParticleSwarm implements Algorithm, Subject {
     int lastgBestUpdate = 0;
 
     public ParticleSwarm(List<Task> tasks, List<Employee> employees,
-            int populationSize, int maxIterations) {
+            int populationSize, int maxIterations, int reportingFrequency, boolean fileOutput) {
+        super(tasks, employees, reportingFrequency, fileOutput);
         this.populationSize = populationSize;
         this.employees = employees;
         this.tasks = tasks;
         this.maxIterations = maxIterations;
-        this.fileOutput = true;
     }
 
-    @Override
-    public void registerObserver(Observer observer) {
-        observers.add(observer);
-    }
 
-    @Override
-    public void removeObserver(Observer observer) {
-        observers.remove(observer);
-    }
 
-    @Override
     public void notifyObservers(String messageType, String title, String content) {
         for (Observer observer : observers) {
             observer.update(messageType, title, content);
         }
+    }
+
+    @Override
+    protected String getAlgorithmName()
+    {
+        return "";
+    }
+
+    @Override
+    protected int getMaxGenerations()
+    {
+        return 0;
     }
 
     @Override
@@ -66,7 +61,7 @@ public class ParticleSwarm implements Algorithm, Subject {
         double[][] v = new double[populationSize][tasks.size()]; // contains velocities for each position.
         int[][] pBest = new int[populationSize][tasks.size()]; // contains pbest for each particle. which is an array of
                                                                // the best positions for each position.
-        GBestData gBestData = new GBestData();// contains the best pBest found i.e gBest. which is an array of
+        GBestData gBestData = new GBestData();// contains the best pBest found i.e. gBest. which is an array of
         // the best positions found.
         gBestData.gBest = Double.MAX_VALUE;
         gBestData.gBestArr = new int[tasks.size()];
@@ -104,26 +99,12 @@ public class ParticleSwarm implements Algorithm, Subject {
             }
 
             gBestData = findGbest(gBestData, fitnessPBest, pBest);
-            printProgress(gBestData.gBest, n);
+            reportProgress(gBestData.gBestArr, n);
         }
-        printFinalResult(gBestData.gBestArr, n);
-        System.out.println("Gen:" + n + "  Gbest:" + gBestData.gBest);
+        reportFinalResult(gBestData.gBestArr, n);
+        //System.out.println("Gen:" + n + "  Gbest:" + gBestData.gBest);
     }
 
-    @Override
-    public List<Double> getBestCostHistory() {
-        return List.of();
-    }
-
-    @Override
-    public List<Double> getAvgCostHistory() {
-        return List.of();
-    }
-
-    @Override
-    public List<Integer> getFeasibleSolutionsHistory() {
-        return List.of();
-    }
 
     private double calculateVelocity(double gBest, int pBest, double v, int currP) {
         final double c1 = 1.5;
@@ -167,16 +148,15 @@ public class ParticleSwarm implements Algorithm, Subject {
 
         int move = (int) Math.round(velocity); // Step direction
 
-        if (compatibleEmployees.size() == 0) {
+        if (compatibleEmployees.isEmpty()) {
             return currentPos;
         }
-        int newPos = findClosest(compatibleEmployees, Math.floorMod(move + currentPos, size));
 
-        return newPos;
+        return findClosest(compatibleEmployees, Math.floorMod(move + currentPos, size));
     }
 
     private int findClosest(List<Integer> arr, int target) {
-        int res = arr.get(0);
+        int res = arr.getFirst();
         int lo = 0, hi = arr.size() - 1;
 
         while (lo <= hi) {
@@ -201,57 +181,18 @@ public class ParticleSwarm implements Algorithm, Subject {
         return res;
     }
 
-    private void printProgress(double gbest, int generation) {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("Generation ").append(generation)
-                .append(": Best Cost = ").append(String.format("%.2f", gbest))
-                .append("\n");
-
-        output += sb.toString();
-
-        if (!fileOutput) {
-            System.out.print(sb.toString());
-        }
-    }
-
-    /**
-     * Prints the final result of the algorithm.
-     *
-     * @param bestSolution The best Solution found
-     * @param generation   The final generation number
-     */
-    private void printFinalResult(int[] bestSolution, int generation) {
-
-        double cost = CostCalculator.calculateTotalCost(bestSolution, tasks, employees);
-        boolean isFeasilble = CostCalculator.isFeasible(bestSolution, tasks, employees);
-
-        String finalResult = observers.getFirst().getFinalSolution(bestSolution, cost, generation, isFeasilble);
-
-        if (fileOutput) {
-            output += finalResult;
-            try {
-                notifyObservers("FILE", "ParticleAlg", output);
-            } catch (ObserverException e) {
-                notifyObservers("ERROR", "Writing To File", e.getMessage());
-            }
-        } else {
-            notifyObservers("INFO", "GENETIC ALGORITHM RESULT", finalResult);
-        }
-    }
 
     private GBestData findGbest(GBestData currGBest, double[] fitnesspBest, int[][] pBest) {
         lastgBestUpdate += 1;
-        GBestData newGBest = currGBest;
 
         for (int i = 0; i < populationSize; i++) {
-            if (newGBest.gBest > fitnesspBest[i]) {
-                newGBest.gBest = fitnesspBest[i];
-                newGBest.gBestArr = pBest[i];
+            if (currGBest.gBest > fitnesspBest[i]) {
+                currGBest.gBest = fitnesspBest[i];
+                currGBest.gBestArr = pBest[i];
                 lastgBestUpdate = 0;
             }
         }
 
-        return newGBest;
+        return currGBest;
     }
 }

@@ -1,37 +1,22 @@
 package Algorithms;
 
-import java.util.List;
-
-public interface Algorithm
-{
+import Utilities.Observer;
+/*
+ * Core algorithm interface focusing solely on algorithm execution
+ */
+public interface Algorithm {
     /**
-     * Runs the genetic algorithm to find an optimal assignment.
-     *
-     * @return The best Assignment found
+     * Execute the optimization algorithm
      */
     void run();
 
     /**
-     * Gets the best cost history throughout the optimization process.
-     * This is used for performance evaluation and visualization.
-     *
-     * @return List of best cost values per iteration/generation
+     * Register observers to receive algorithm updates
      */
-    List<Double> getBestCostHistory();
+    void registerObserver(Observer observer);
 
     /**
-     * Gets the average cost history throughout the optimization process.
-     * This is used for performance evaluation and visualization.
-     *
-     * @return List of average cost values per iteration/generation
+     * Remove an observer
      */
-    List<Double> getAvgCostHistory();
-
-    /**
-     * Gets the feasible solutions history throughout the optimization process.
-     * This tracks how many solutions satisfy all constraints at each iteration.
-     *
-     * @return List of feasible solution counts per iteration/generation
-     */
-    List<Integer> getFeasibleSolutionsHistory();
+    void removeObserver(Observer observer);
 }

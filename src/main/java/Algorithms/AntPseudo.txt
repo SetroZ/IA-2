@@ -1,0 +1,61 @@
+Create pheromone matrix [num tasks][num employees] | every element initialised to same value
+
+    pherMatx[i][j] stores the pheromone value of assigning task i to employee j
+    Each task essentially has an array of the pheromone for each employee it can be assigned to
+
+eg pher matrix[0] (Task 1) might be  0.2 | 0.3 | 0.4 | 0.1 | 0.6
+where 0.2 is the pheromone strength of assigning T1 to E1, 0.3 is for T1 to E2. 
+
+Create ant matrix [num ants][num Tasks] | use getInitialPopulation to randomly create a solution for each ant.
+    
+    each ant is a potential solution
+    eg Amatx[x][j] = z; means that the x'th ant chose to assign task j to employee z+1. || z = 0 represents E1
+
+METHOD: UPDATE PHEROMONE MATRIX
+decayPheromone(pherMatx)
+FOR each ant : ants
+    solution = aMatx[i]
+    Calculate cost for solution / check if zero - optimal found
+    pheromone ≈ 1/(Cost + 1) | may require + 1 to ensure not dividing by 0/ maybe not cause if cost is 0 we end early and use that solution
+    
+    Update pheromone matrix 
+    FOR each task j in solution ( j = 0 represents T1)
+        int emplIDX = solution[j];
+        pherMatrix[j][emplIDX] += pheromone;
+    END 
+END 
+
+METHOD: newAntPaths / update population
+IMPORT pherMatx[][], AntMatrix[][]
+EXPORT: N/A 
+
+FOR i < numAnts
+    FOR j < numTasks
+        cumulative = 0;
+        total = sumPheromone(pherMatx[j])
+        r = rand * total
+        FOR e < numEmployees
+            cumulative += pherMatx[j][e]
+            if(r < cumulative)
+                antMatx[i][j] = e;
+            ENDIF
+        ENDFOR
+    ENDFOR
+ENDFOR
+
+
+METHOD: sumPheromone
+IMPORT pheromoneForTask[]
+    for(double p : pheromoneForTask) 
+        sum += p;
+RETURN sum
+
+
+
+
+
+
+WHAT DO I WANT TO OUTPUT
+    file
+- pheromone matrix every x iterations
+- best solution : cost, iteration, 

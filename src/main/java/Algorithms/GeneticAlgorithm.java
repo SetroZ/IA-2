@@ -4,16 +4,13 @@ import Model.Employee;
 import Model.Task;
 import Utilities.Initialise;
 import Utilities.Observer;
-import Utilities.ObserverException;
-import Utilities.Subject;
 
-import java.io.Console;
 import java.util.*;
 
 /**
  * Genetic Algorithm implementation
  */
-public class GeneticAlgorithm implements Algorithm, Subject {
+public class GeneticAlgorithm extends AbstractOptimisationAlgorithm{
 
     // Algorithm parameters
     private final int populationSize;
@@ -21,21 +18,7 @@ public class GeneticAlgorithm implements Algorithm, Subject {
     private final double mutationRate;
     private final int maxGenerations;
     private final int elitismCount;
-    private final int REPORTING_FREQUENCY;
-    private final boolean fileOutput;
 
-    // Problem data
-    private final List<Task> tasks;
-    private final List<Employee> employees;
-
-    // Tracking and reporting
-    private List<Observer> observers = new ArrayList<>();
-    private String output = "";
-    private int[] globalBestSolution;
-    private double globalBestCost = Double.MAX_VALUE;
-    private List<Double> bestCostHistory = new ArrayList<>();
-    private List<Double> avgCostHistory = new ArrayList<>();
-    private List<Integer> feasibleSolutionsHistory = new ArrayList<>();
 
     /**
      * Constructor for the Genetic Algorithm.
@@ -50,22 +33,16 @@ public class GeneticAlgorithm implements Algorithm, Subject {
      *                           console.
      * @param fileOutput         Whether to output results to a file
      */
+
     public GeneticAlgorithm(List<Task> tasks, List<Employee> employees,
-            int populationSize, double crossoverRate, double mutationRate,
-            int maxGenerations, int reportingFrequency, boolean fileOutput) {
-        this.tasks = tasks;
-        this.employees = employees;
+                            int populationSize, double crossoverRate, double mutationRate,
+                            int maxGenerations, int reportingFrequency, boolean fileOutput) {
+        super(tasks, employees, reportingFrequency, fileOutput);
         this.populationSize = populationSize;
         this.crossoverRate = crossoverRate;
         this.mutationRate = mutationRate;
-        REPORTING_FREQUENCY = reportingFrequency;
-        if (maxGenerations == -1) {
-            this.maxGenerations = Integer.MAX_VALUE;
-        } else {
-            this.maxGenerations = maxGenerations;
-        }
+        this.maxGenerations = maxGenerations;
         this.elitismCount = 2; // Keep the best 2 solutions
-        this.fileOutput = fileOutput;
     }
 
     /**
@@ -80,17 +57,17 @@ public class GeneticAlgorithm implements Algorithm, Subject {
 
         int generation = 0;
 
-        globalBestSolution = findBestSolution(population);
-        globalBestCost = CostCalculator.calculateTotalCost(globalBestSolution, tasks, employees);
+        int[] globalBestSolution = findBestSolution(population);
+        double globalBestCost = CostCalculator.calculateTotalCost(globalBestSolution, tasks, employees);
 
         // recordStatistics(population, generation);
 
         // Main loop
-        while (generation < maxGenerations && !terminationCondition(population)) {
+        while (generation < maxGenerations && !(globalBestCost == 0)) {
             int[][] newPopulation = new int[populationSize][tasks.size()];
 
             // Initialise counter for populated solutions
-            int counter = 0;
+            int counter;
 
             // Add elite solutions to new population
             int[][] eliteSolutions = findBestSolution(population, elitismCount);
@@ -105,8 +82,8 @@ public class GeneticAlgorithm implements Algorithm, Subject {
                 int[][] parents = selectParents(population);
 
                 // Crossover
-                int[] offspring1 = null;
-                int[] offspring2 = null;
+                int[] offspring1;
+                int[] offspring2;
 
                 if (Math.random() < crossoverRate) {
                     offspring1 = crossover(parents[0], parents[1]);
@@ -142,50 +119,19 @@ public class GeneticAlgorithm implements Algorithm, Subject {
                 globalBestCost = currentBestCost;
             }
 
-            // Record statistics
-            recordStatistics(population);
 
             // Print progress
             if (generation % REPORTING_FREQUENCY == 0 || generation == maxGenerations - 1) {
-                printProgress(currentBest, generation);
+                reportProgress(globalBestSolution, generation);
             }
 
             generation++;
         }
-        System.out.println(globalBestSolution);
+
         // Print final result
-        printFinalResult(globalBestSolution, generation);
+        reportFinalResult(globalBestSolution, generation);
     }
 
-    /**
-     * Records statistics for the current generation.
-     *
-     * @param population The current population
-     */
-    private void recordStatistics(int[][] population) {
-        // Record best cost
-        double bestCost = CostCalculator.calculateTotalCost(findBestSolution(population), tasks, employees);
-        bestCostHistory.add(bestCost);
-
-        // Record average cost
-        double totalCost = 0;
-        for (int[] solution : population) {
-            totalCost += CostCalculator.calculateTotalCost(solution, tasks, employees);
-        }
-        double avgCost = totalCost / populationSize;
-        avgCostHistory.add(avgCost);
-
-        // Record feasible solutions count
-        int feasibleCount = 0;
-        for (int[] solution : population)
-        {
-            if (CostCalculator.isFeasible(solution, tasks, employees))
-            {
-                feasibleCount++;
-            }
-        }
-        feasibleSolutionsHistory.add(feasibleCount);
-    }
 
     /**
      * Finds the best solution in the population.
@@ -293,8 +239,6 @@ public class GeneticAlgorithm implements Algorithm, Subject {
     private void mutate(int[] solution) {
         for (Task task : tasks) {
             if (Math.random() < mutationRate) {
-                // Get the current assigned employee
-                int currentEmployeeIdx = solution[task.getIdx()];
 
                 // Create a list of employees who can perform this task
                 List<Employee> compatibleEmployees = new ArrayList<>();
@@ -315,111 +259,22 @@ public class GeneticAlgorithm implements Algorithm, Subject {
         }
     }
 
-    /**
-     * Checks if termination condition is met.
-     *
-     * @param population The current population
-     * @return true if termination condition is met, false otherwise
-     */
-    private boolean terminationCondition(int[][] population) {
-        // Check if we have a perfect solution (zero cost)
-        return globalBestCost == 0;
-    }
 
-    /**
-     * Prints the progress of the current generation.
-     *
-     * @param bestSolution The best Solution in the current generation
-     * @param generation   The current generation number
-     */
-    private void printProgress(int[] bestSolution, int generation) {
-        StringBuilder sb = new StringBuilder();
-        double cost = CostCalculator.calculateTotalCost(bestSolution, tasks, employees);
-
-        sb.append("Generation ").append(generation)
-                .append(": Best Cost = ").append(String.format("%.2f", cost))
-                .append(", Feasible: ").append(CostCalculator.isFeasible(bestSolution, tasks, employees))
-                .append("\n");
-
-        output += sb.toString();
-
-    }
-
-    /**
-     * Prints the final result of the algorithm.
-     *
-     * @param bestSolution The best Solution found
-     * @param generation   The final generation number
-     */
-    private void printFinalResult(int[] bestSolution, int generation) {
-
-        double cost = CostCalculator.calculateTotalCost(bestSolution, tasks, employees);
-        boolean isFeasible = CostCalculator.isFeasible(bestSolution, tasks, employees);
-
-        String finalResult = observers.getFirst().getFinalSolution(bestSolution, cost, generation, isFeasible);
-
-        output += finalResult;
-
-        if (fileOutput)
-        {
-            try
-            {
-                notifyObservers("FILE", "geneticAlg", output);
-            } catch (ObserverException e) {
-                notifyObservers("ERROR", "Writing To File", e.getMessage());
-            }
-        }
-        else
-        {
-            notifyObservers("INFO", "GENETIC ALGORITHM RESULT", output);
-        }
-    }
-
-
-    /**
-     * Gets the best cost history for reporting.
-     *
-     * @return List of best cost values per generation
-     */
-    @Override
-    public List<Double> getBestCostHistory() {
-        return bestCostHistory;
-    }
-
-    /**
-     * Gets the average cost history for reporting.
-     *
-     * @return List of average cost values per generation
-     */
-    @Override
-    public List<Double> getAvgCostHistory() {
-        return avgCostHistory;
-    }
-
-    /**
-     * Gets the feasible solutions history for reporting.
-     *
-     * @return List of feasible solution counts per generation
-     */
-    @Override
-    public List<Integer> getFeasibleSolutionsHistory() {
-        return feasibleSolutionsHistory;
-    }
-
-    @Override
-    public void registerObserver(Observer observer) {
-        observers.add(observer);
-    }
-
-    @Override
-    public void removeObserver(Observer observer) {
-        observers.remove(observer);
-    }
-
-    @Override
     public void notifyObservers(String messageType, String title, String content) {
         for (Observer observer : observers) {
             observer.update(messageType, title, content);
         }
+    }
+
+    @Override
+    protected String getAlgorithmName()
+    {
+        return "Genetic Algorithm";
+    }
+
+    @Override
+    protected int getMaxGenerations()
+    {
+        return maxGenerations;
     }
 }

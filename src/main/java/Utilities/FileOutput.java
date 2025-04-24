@@ -57,18 +57,6 @@ public class FileOutput implements Observer
 
 
     @Override
-    public void displayData(String dataType, Object data) throws ObserverException
-    {
-
-    }
-
-    @Override
-    public void showProgress(String algorithmName, int iteration, double cost, String info) throws ObserverException
-    {
-
-    }
-
-    @Override
     public String getFinalSolution(int[] solution, double cost, int generation, boolean feasible) throws ObserverException
     {
         return "";

@@ -1,6 +1,6 @@
 import Controller.MenuController;
 import Utilities.FileOutput;
-import View.ConsoleView;
+import View.ConsoleObserver;
 
 public class Main
 {
@@ -8,10 +8,10 @@ public class Main
     {
         try
         {
-            ConsoleView consoleView = new ConsoleView();
+            ConsoleObserver consoleObserver = new ConsoleObserver();
             FileOutput fileOutput = new FileOutput();
 
-            MenuController menuController = new MenuController(consoleView, fileOutput);
+            MenuController menuController = new MenuController(consoleObserver, fileOutput);
             menuController.start();
         } catch (Exception e) {
             e.printStackTrace();

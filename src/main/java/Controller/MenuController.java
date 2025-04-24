@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import Algorithms.Algorithm;
+import Algorithms.AntColAlgorithm;
 import Algorithms.GeneticAlgorithm;
 import Algorithms.ParticleSwarm;
 import Factories.AlgorithmFactory;
@@ -18,30 +19,27 @@ import Utilities.LoadDataException;
 import Utilities.Observer;
 import Utilities.ObserverException;
 import Utilities.RandomDataGen;
-import Utilities.Subject;
 import Utilities.RandomDataGen.DataSet;
-import View.ConsoleView;
+import View.ConsoleObserver;
 
-public class MenuController implements Subject {
+public class MenuController{
     private final List<Observer> observers;
     private List<Employee> employees;
     private List<Task> tasks;
-    private final ConsoleView consoleView;
+    private final ConsoleObserver consoleObserver;
     private String employeesFileName;
-    private String employeesFilePath;
     private String tasksFileName;
-    private String tasksFilePath;
 
     /**
      * Constructor for menu controller
      * 
-     * @param consoleView the ConsoleView instance to use for user interaction
+     * @param consoleObserver the ConsoleObserver instance to use for user interaction
      */
 
-    public MenuController(ConsoleView consoleView, FileOutput fileOutput) {
+    public MenuController(ConsoleObserver consoleObserver, FileOutput fileOutput) {
         observers = new ArrayList<>();
-        this.consoleView = consoleView;
-        registerObserver(consoleView);
+        this.consoleObserver = consoleObserver;
+        registerObserver(consoleObserver);
         registerObserver(fileOutput);
     }
 
@@ -49,19 +47,9 @@ public class MenuController implements Subject {
      *
      * @param observer The observer to register
      */
-    @Override
+
     public void registerObserver(Observer observer) {
         observers.add(observer);
-    }
-
-    /**
-     *
-     * @param observer The observer to remove
-     */
-
-    @Override
-    public void removeObserver(Observer observer) {
-        observers.remove(observer);
     }
 
     /**
@@ -72,7 +60,7 @@ public class MenuController implements Subject {
      * @param content     The content or body of the message
      */
 
-    @Override
+
     public void notifyObservers(String messageType, String title, String content) {
         for (Observer observer : observers) {
             observer.update(messageType, title, content);
@@ -95,11 +83,9 @@ public class MenuController implements Subject {
                     .append("\n");
         }
 
-        String menuStr = sb.toString();
-
         while (!exit) {
             try {
-                int choice = consoleView.requestInput("WELCOME", sb.toString(),
+                int choice = consoleObserver.requestInput("WELCOME", sb.toString(),
                         new String[] { "Exit", "Load stored data from csv", "Run an algorithm", "Load Random Data" });
                 switch (choice) {
                     case 1:
@@ -140,8 +126,8 @@ public class MenuController implements Subject {
         // Add exit option
         employeeFiles.addFirst("Exit");
 
-        int choice = consoleView.requestInput("LOAD EMPLOYEE DATA",
-                "Select the CSV file to use from the resources folder\n" + consoleView.getLoadedDataStatus(),
+        int choice = consoleObserver.requestInput("LOAD EMPLOYEE DATA",
+                "Select the CSV file to use from the resources folder\n" + consoleObserver.getLoadedDataStatus(),
                 employeeFiles.toArray(new String[0]));
 
         if (choice == 0) {
@@ -150,16 +136,16 @@ public class MenuController implements Subject {
 
         try {
             // Load selected employee file
-            employeesFilePath = employeeFiles.get(choice);
+            String employeesFilePath = employeeFiles.get(choice);
 
             String[] fileName = employeesFilePath.split("/");
             employeesFileName = fileName[fileName.length - 1];
 
             employees = DataGenerator.loadEmployees("/" + employeesFileName);
-            consoleView.updateLoadedData("Employees", employeesFileName);
+            consoleObserver.updateLoadedData("Employees", employeesFileName);
 
             // Display loaded employees
-            consoleView.displayData("EMPLOYEES", employees);
+            consoleObserver.displayData("EMPLOYEES", employees);
 
             List<String> taskFiles = getResourceFiles();
 
@@ -171,9 +157,9 @@ public class MenuController implements Subject {
             // Add exit option
             taskFiles.addFirst("Exit");
 
-            choice = consoleView.requestInput("LOAD TASK DATA",
+            choice = consoleObserver.requestInput("LOAD TASK DATA",
                     "Select the CSV file to use from the resources folder\n" +
-                            consoleView.getLoadedDataStatus(),
+                            consoleObserver.getLoadedDataStatus(),
                     taskFiles.toArray(new String[0]));
 
             if (choice == 0) {
@@ -181,15 +167,15 @@ public class MenuController implements Subject {
             }
 
             // Load selected task file
-            tasksFilePath = taskFiles.get(choice);
+            String tasksFilePath = taskFiles.get(choice);
             String[] fname = tasksFilePath.split("/");
 
             tasksFileName = fname[fname.length - 1];
             tasks = DataGenerator.loadTasks("/" + tasksFileName);
-            consoleView.updateLoadedData("Tasks", tasksFileName);
+            consoleObserver.updateLoadedData("Tasks", tasksFileName);
 
             // Display loaded tasks
-            consoleView.displayData("TASKS", tasks);
+            consoleObserver.displayData("TASKS", tasks);
 
             notifyObservers("SUCCESS", "Data Loaded",
                     "Successfully loaded employees from " + employeesFileName +
@@ -210,17 +196,17 @@ public class MenuController implements Subject {
         try {
             while (!exit) {
 
-                int taskCount = consoleView.requestInput("SET RANDOM PARAMETERS:",
+                int taskCount = consoleObserver.requestInput("SET RANDOM PARAMETERS:",
                         "Enter Task count:",
                         1, 10000);
-                int employeeCount = consoleView.requestInput("SET RANDOM PARAMETERS:",
+                int employeeCount = consoleObserver.requestInput("SET RANDOM PARAMETERS:",
                         "Enter Employee count:",
                         1, 10000);
                 DataSet ds = RandomDataGen.generateDataSet(taskCount, employeeCount);
                 tasks = ds.tasks;
                 employees = ds.employees;
-                consoleView.displayData("EMPLOYEES", employees);
-                consoleView.displayData("TASKS", tasks);
+                consoleObserver.displayData("EMPLOYEES", employees);
+                consoleObserver.displayData("TASKS", tasks);
                 exit = true;
             }
         } catch (InputException e) {
@@ -234,7 +220,7 @@ public class MenuController implements Subject {
         try {
             while (!exit) {
 
-                int choice = consoleView.requestInput("CHOOSE ALGORITHM",
+                int choice = consoleObserver.requestInput("CHOOSE ALGORITHM",
                         "Select an Algorithm to run",
                         new String[] { "Exit", "Genetic Algorithm", "Swarm Optimisation", "Ant Colony" });
 
@@ -249,6 +235,7 @@ public class MenuController implements Subject {
                         runParticleSwarmMenu();
                         break;
                     case 3:
+                        runAntColAlgMenu();
                         break;
                 }
             }
@@ -267,9 +254,70 @@ public class MenuController implements Subject {
         ParticleSwarm ps = new AlgorithmFactory(tasks, employees, observers).createParticleSwarm(
                 PS_POPULATION_SIZE_DEFAULT,
                 PS_MAX_GEN_DEFAULT,
+                GA_REPORTING_FREQUENCY_DEFAULT,
                 GA_FILE_OUTPUT_DEFAULT);
         runMenu(ps, "ParticleSwarm");
 
+    }
+
+    private void runAntColAlgMenu() {
+        // Initialise with parameters
+        double ACO_DECAY_RATE_DEFAULT = 0.1;
+        double ACO_INITIAL_PHEROMONE_DEFAULT = 0.1;
+        int ACO_NUM_ANTS_DEFAULT = 5;
+        int ACO_MAX_ITERATIONS_DEFAULT = 500;
+        int ACO_REPORTING_FREQUENCY_DEFAULT = 5;
+        boolean ACO_FILE_OUTPUT_DEFAULT = true;
+
+        boolean exit = false;
+
+        while (!exit) {
+            StringBuilder sb = new StringBuilder();
+
+            int choice = consoleObserver.requestInput("DEFINE ANT COLONY OPTIMISATION ",
+                    "Specify the parameters to use for this algorithm or proceed",
+                    new String[] { "Exit", "Number of Ants: " + ACO_NUM_ANTS_DEFAULT,
+                            "Pheromone Decay Rate: " + ACO_DECAY_RATE_DEFAULT,
+                            "Initial Pheromone Value: " + ACO_INITIAL_PHEROMONE_DEFAULT,
+                            "Maximum Iterations: " + ACO_MAX_ITERATIONS_DEFAULT,
+                            "Reporting Frequency: " + ACO_REPORTING_FREQUENCY_DEFAULT,
+                            "Output to File: " + ACO_FILE_OUTPUT_DEFAULT,
+                            "Proceed" });
+
+            switch (choice) {
+                case 0:
+                    exit = true;
+                    break;
+                case 1:
+                    ACO_NUM_ANTS_DEFAULT = getParameter("Number of Ants", ACO_NUM_ANTS_DEFAULT, 1,
+                            Integer.MAX_VALUE);
+                    break;
+                case 2:
+                    ACO_DECAY_RATE_DEFAULT = getParameter("Pheromone Decay Rate", ACO_DECAY_RATE_DEFAULT, 0.0, 1.0);
+                    break;
+                case 3:
+                    ACO_INITIAL_PHEROMONE_DEFAULT = getParameter("Initial Pheromone Value", ACO_INITIAL_PHEROMONE_DEFAULT, 0.0, Double.MAX_VALUE);
+                    break;
+                case 4:
+                    ACO_MAX_ITERATIONS_DEFAULT = getParameter("Maximum Iterations", ACO_MAX_ITERATIONS_DEFAULT, 1, Integer.MAX_VALUE);
+                    break;
+                case 5:
+                    ACO_REPORTING_FREQUENCY_DEFAULT = getParameter("Reporting Frequency", ACO_REPORTING_FREQUENCY_DEFAULT,
+                            1, Integer.MAX_VALUE);
+                    break;
+                case 6:
+                    ACO_FILE_OUTPUT_DEFAULT = getParameter("Output to File", ACO_FILE_OUTPUT_DEFAULT);
+                    break;
+                case 7:
+                    AntColAlgorithm aco = new AlgorithmFactory(tasks, employees, observers).createAntColonyOptimisation(
+                            ACO_NUM_ANTS_DEFAULT, ACO_DECAY_RATE_DEFAULT, ACO_INITIAL_PHEROMONE_DEFAULT, ACO_MAX_ITERATIONS_DEFAULT,
+                            ACO_REPORTING_FREQUENCY_DEFAULT, ACO_FILE_OUTPUT_DEFAULT);
+                    runMenu(aco, "Ant Colony");
+                default:
+                    break;
+            }
+
+        }
     }
 
     private void runGeneticAlgMenu() {
@@ -284,9 +332,8 @@ public class MenuController implements Subject {
         boolean exit = false;
 
         while (!exit) {
-            StringBuilder sb = new StringBuilder();
 
-            int choice = consoleView.requestInput("DEFINE GENETIC ALGORITHM",
+            int choice = consoleObserver.requestInput("DEFINE GENETIC ALGORITHM",
                     "Specify the parameters to use for this algorithm or proceed",
                     new String[] { "Exit", "Population size: " + GA_POPULATION_SIZE_DEFAULT,
                             "Crossover rate: " + GA_CROSSOVER_DEFAULT,
@@ -339,19 +386,19 @@ public class MenuController implements Subject {
     }
 
     private boolean getParameter(String parameter, boolean defaultVal) {
-        int choice = (consoleView.requestInput("ENTER PARAMETER", "Enter a value for " + parameter.toLowerCase(),
+        int choice = (consoleObserver.requestInput("ENTER PARAMETER", "Enter a value for " + parameter.toLowerCase(),
                 new String[] { "Exit", "True", "False" }));
         return (choice == 0) ? defaultVal : choice != 2;
     }
 
     private double getParameter(String parameter, double defaultVal, double min, double max) {
-        double choice = consoleView.requestInput("ENTER PARAMETER", "Enter a value for " + parameter.toLowerCase(), min,
+        double choice = consoleObserver.requestInput("ENTER PARAMETER", "Enter a value for " + parameter.toLowerCase(), min,
                 max);
         return ((choice == min - 1.0) ? defaultVal : choice);
     }
 
     private int getParameter(String parameter, int defaultVal, int min, int max) {
-        int choice = consoleView.requestInput("ENTER PARAMETER", "Enter a value for " + parameter.toLowerCase(), min,
+        int choice = consoleObserver.requestInput("ENTER PARAMETER", "Enter a value for " + parameter.toLowerCase(), min,
                 max);
         return ((choice == min - 1.0) ? defaultVal : choice);
     }
