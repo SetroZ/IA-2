@@ -4,20 +4,19 @@ import Model.Employee;
 import Model.Task;
 import Utilities.Initialise;
 import Utilities.Observer;
-import Utilities.ObserverException;
 import java.util.*;
 
 
 public class AntColAlgorithm extends AbstractOptimisationAlgorithm
 {
     //Algorithm Parameters
-    private int numAnts;
-    private int maxIterations;
-    private double initPheromone;
+    private final int numAnts;
+    private final int maxIterations;
+    private final double initPheromone;
 
     // Problem data
     private double[][] pherMatrix;
-    private double pherDecayRate;
+    private final double pherDecayRate;
 
     // Tracking and reporting
     private boolean foundPerfectSolution = false;
