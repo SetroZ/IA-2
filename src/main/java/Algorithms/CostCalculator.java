@@ -163,7 +163,7 @@ public class CostCalculator
                 }
             }
         }
-        return 100000 * skillLvlViolationCount;
+        return skillLvlViolationCount;
     }
 
 

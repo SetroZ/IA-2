@@ -89,7 +89,7 @@ public class AntColAlgorithm extends AbstractOptimisationAlgorithm
         {
             ant = antMatrix[i];
             double antCost = CostCalculator.calculateTotalCost(ant, this.tasks, this.employees);
-            System.out.println(antCost);
+            //System.out.println(antCost);
             if(antCost < bestCost)
             {
                 bestCost = antCost;

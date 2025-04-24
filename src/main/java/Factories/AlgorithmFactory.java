@@ -2,6 +2,7 @@ package Factories;
 
 import java.util.List;
 
+import Algorithms.AntColAlgorithm;
 import Algorithms.GeneticAlgorithm;
 import Algorithms.ParticleSwarm;
 import Model.Employee;
@@ -11,23 +12,27 @@ import Utilities.Observer;
 /**
  * Creates and returns a registered an algorithm
  */
-public class AlgorithmFactory {
+public class AlgorithmFactory
+{
 
     private final List<Task> tasks;
     private final List<Employee> employees;
     private final List<Observer> observers;
 
-    public AlgorithmFactory(List<Task> tasks, List<Employee> employees, List<Observer> observers) {
+    public AlgorithmFactory(List<Task> tasks, List<Employee> employees, List<Observer> observers)
+    {
         this.tasks = tasks;
         this.employees = employees;
         this.observers = observers;
     }
 
     public GeneticAlgorithm createGeneticAlgorithm(Integer populationSize, Double crossoverRate, Double mutationRate,
-            Integer maxGenerations, Integer reportingFrequency, Boolean fileOutput) {
+                                                   Integer maxGenerations, Integer reportingFrequency, Boolean fileOutput)
+    {
         GeneticAlgorithm ga = new GeneticAlgorithm(tasks, employees, populationSize, crossoverRate, mutationRate,
                 maxGenerations, reportingFrequency, fileOutput);
-        for (Observer observer : observers) {
+        for (Observer observer : observers)
+        {
             ga.registerObserver(observer);
         }
         return ga;
@@ -43,5 +48,15 @@ public class AlgorithmFactory {
         }
         return ps;
 
+    }
+
+    public AntColAlgorithm createAntColonyOptimisation(Integer numAnts, Double pherDecayRate, Double initPheromone, Integer maxIterations, Integer reportingFrequency, Boolean fileOutput)
+    {
+        AntColAlgorithm aco = new AntColAlgorithm(numAnts, pherDecayRate, initPheromone, maxIterations, reportingFrequency, fileOutput, this.tasks, this.employees);
+        for (Observer observer : observers)
+        {
+            aco.registerObserver(observer);
+        }
+        return aco;
     }
 }

@@ -235,6 +235,7 @@ public class MenuController{
                         runParticleSwarmMenu();
                         break;
                     case 3:
+                        runAntColAlgMenu();
                         break;
                 }
             }
