@@ -8,7 +8,7 @@ import Utilities.ObserverException;
 
 import java.util.*;
 
-public class ConsoleView implements Observer
+public class ConsoleObserver implements Observer
 {
 
     /**
@@ -21,9 +21,9 @@ public class ConsoleView implements Observer
     private final int DIV_LENGTH = 60;
 
     /**
-     * Constructor for the ConsoleView.
+     * Constructor for the ConsoleObserver.
      */
-    public ConsoleView() {
+    public ConsoleObserver() {
         this.sc = new Scanner(System.in);
         this.loadedData = new HashMap<>();
         this.loadedData.put("Employees", "none");
@@ -35,7 +35,7 @@ public class ConsoleView implements Observer
      * @param employeeList list of employees
      * @param taskList list of tasks
      */
-    public ConsoleView(List<Employee> employeeList, List<Task> taskList, Scanner sc)
+    public ConsoleObserver(List<Employee> employeeList, List<Task> taskList, Scanner sc)
     {
         this();
         this.employeeList = employeeList;
@@ -269,7 +269,7 @@ public class ConsoleView implements Observer
         }
     }
 
-    @Override
+
     public void displayData(String dataType, Object data)
     {
         if (dataType.equals("TASKS") && data instanceof List<?>) {
@@ -287,19 +287,6 @@ public class ConsoleView implements Observer
         }
     }
 
-    @Override
-    public void showProgress(String algorithmName, int iteration, double cost, String info) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Algorithm: ").append(algorithmName)
-                .append(" | Iteration: ").append(iteration)
-                .append(" | Best Cost: ").append(String.format("%.2f", cost));
-
-        if (info != null && !info.isEmpty()) {
-            sb.append(" | ").append(info);
-        }
-
-        System.out.println(sb.toString());
-    }
 
     @Override
     public String getFinalSolution(int[] solution, double cost, int generation, boolean feasible) throws ObserverException
