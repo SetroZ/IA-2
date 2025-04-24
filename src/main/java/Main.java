@@ -13,9 +13,7 @@ public class Main
 
             MenuController menuController = new MenuController(consoleView, fileOutput);
             menuController.start();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Error: " + e.getMessage());
         }

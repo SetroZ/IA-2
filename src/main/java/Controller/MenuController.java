@@ -1,19 +1,26 @@
 package Controller;
 
-import Algorithms.Algorithm;
-import Algorithms.GeneticAlgorithm;
-import Algorithms.AntColAlgorithm;
-import Factories.AlgorithmFactory;
-import Model.Employee;
-import Model.Task;
-import Utilities.*;
-import View.ConsoleView;
-
 import java.io.File;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
+import Algorithms.Algorithm;
+import Algorithms.GeneticAlgorithm;
+import Algorithms.ParticleSwarm;
+import Factories.AlgorithmFactory;
+import Model.Employee;
+import Model.Task;
+import Utilities.DataGenerator;
+import Utilities.FileOutput;
+import Utilities.InputException;
+import Utilities.LoadDataException;
+import Utilities.Observer;
+import Utilities.ObserverException;
+import Utilities.RandomDataGen;
+import Utilities.Subject;
+import Utilities.RandomDataGen.DataSet;
+import View.ConsoleView;
 
 public class MenuController implements Subject {
     private final List<Observer> observers;
@@ -93,13 +100,16 @@ public class MenuController implements Subject {
         while (!exit) {
             try {
                 int choice = consoleView.requestInput("WELCOME", sb.toString(),
-                        new String[] { "Exit", "Load stored data from csv", "Run an algorithm" });
+                        new String[] { "Exit", "Load stored data from csv", "Run an algorithm", "Load Random Data" });
                 switch (choice) {
                     case 1:
                         loadDataMenu();
                         break;
                     case 2:
                         runAlgorithmMenu();
+                        break;
+                    case 3:
+                        RandomDataMenu();
                         break;
                     case 0:
                         exit = true;
@@ -194,6 +204,29 @@ public class MenuController implements Subject {
     /**
      * Algorithm run menu
      */
+    private void RandomDataMenu() {
+        boolean exit = false;
+
+        try {
+            while (!exit) {
+
+                int taskCount = consoleView.requestInput("SET RANDOM PARAMETERS:",
+                        "Enter Task count:",
+                        1, 10000);
+                int employeeCount = consoleView.requestInput("SET RANDOM PARAMETERS:",
+                        "Enter Employee count:",
+                        1, 10000);
+                DataSet ds = RandomDataGen.generateDataSet(taskCount, employeeCount);
+                tasks = ds.tasks;
+                employees = ds.employees;
+                consoleView.displayData("EMPLOYEES", employees);
+                consoleView.displayData("TASKS", tasks);
+                exit = true;
+            }
+        } catch (InputException e) {
+            notifyObservers("ERROR", "Error occurred while getting input", e.getMessage());
+        }
+    }
 
     private void runAlgorithmMenu() {
         boolean exit = false;
@@ -213,15 +246,30 @@ public class MenuController implements Subject {
                         runGeneticAlgMenu();
                         break;
                     case 2:
+                        runParticleSwarmMenu();
                         break;
                     case 3:
-                        runAntColAlgMenu();
                         break;
                 }
             }
         } catch (InputException e) {
             notifyObservers("ERROR", "Error occurred while getting input", e.getMessage());
         }
+    }
+
+    private void runParticleSwarmMenu() {
+
+        int PS_POPULATION_SIZE_DEFAULT = 100;
+        int PS_MAX_GEN_DEFAULT = 200;
+        int GA_REPORTING_FREQUENCY_DEFAULT = 5;
+        boolean GA_FILE_OUTPUT_DEFAULT = true;
+
+        ParticleSwarm ps = new AlgorithmFactory(tasks, employees, observers).createParticleSwarm(
+                PS_POPULATION_SIZE_DEFAULT,
+                PS_MAX_GEN_DEFAULT,
+                GA_FILE_OUTPUT_DEFAULT);
+        runMenu(ps, "ParticleSwarm");
+
     }
 
     private void runGeneticAlgMenu() {
@@ -278,66 +326,6 @@ public class MenuController implements Subject {
                             GA_REPORTING_FREQUENCY_DEFAULT, GA_FILE_OUTPUT_DEFAULT);
                     runMenu(ga, "Genetic");
                     break;
-                default:
-                    break;
-            }
-
-        }
-    }
-
-    private void runAntColAlgMenu() {
-        // Initialise with parameters
-        double ACO_DECAY_RATE_DEFAULT = 0.1;
-        double ACO_INITIAL_PHEROMONE_DEFAULT = 0.1;
-        int ACO_NUM_ANTS_DEFAULT = 5;
-        int ACO_MAX_ITERATIONS_DEFAULT = 500;
-        int ACO_REPORTING_FREQUENCY_DEFAULT = 5;
-        boolean ACO_FILE_OUTPUT_DEFAULT = true;
-
-        boolean exit = false;
-
-        while (!exit) {
-            StringBuilder sb = new StringBuilder();
-
-            int choice = consoleView.requestInput("DEFINE ANT COLONY OPTIMISATION ",
-                    "Specify the parameters to use for this algorithm or proceed",
-                    new String[] { "Exit", "Number of Ants: " + ACO_NUM_ANTS_DEFAULT,
-                            "Pheromone Decay Rate: " + ACO_DECAY_RATE_DEFAULT,
-                            "Initial Pheromone Value: " + ACO_INITIAL_PHEROMONE_DEFAULT,
-                            "Maximum Iterations: " + ACO_MAX_ITERATIONS_DEFAULT,
-                            "Reporting Frequency: " + ACO_REPORTING_FREQUENCY_DEFAULT,
-                            "Output to File: " + ACO_FILE_OUTPUT_DEFAULT,
-                            "Proceed" });
-
-            switch (choice) {
-                case 0:
-                    exit = true;
-                    break;
-                case 1:
-                    ACO_NUM_ANTS_DEFAULT = getParameter("Number of Ants", ACO_NUM_ANTS_DEFAULT, 1,
-                            Integer.MAX_VALUE);
-                    break;
-                case 2:
-                    ACO_DECAY_RATE_DEFAULT = getParameter("Pheromone Decay Rate", ACO_DECAY_RATE_DEFAULT, 0.0, 1.0);
-                    break;
-                case 3:
-                    ACO_INITIAL_PHEROMONE_DEFAULT = getParameter("Initial Pheromone Value", ACO_INITIAL_PHEROMONE_DEFAULT, 0.0, Double.MAX_VALUE);
-                    break;
-                case 4:
-                    ACO_MAX_ITERATIONS_DEFAULT = getParameter("Maximum Iterations", ACO_MAX_ITERATIONS_DEFAULT, 1, Integer.MAX_VALUE);
-                    break;
-                case 5:
-                    ACO_REPORTING_FREQUENCY_DEFAULT = getParameter("Reporting Frequency", ACO_REPORTING_FREQUENCY_DEFAULT,
-                            1, Integer.MAX_VALUE);
-                    break;
-                case 6:
-                    ACO_FILE_OUTPUT_DEFAULT = getParameter("Output to File", ACO_FILE_OUTPUT_DEFAULT);
-                    break;
-                case 7:
-                    AntColAlgorithm aco = new AlgorithmFactory(tasks, employees, observers).createAntColonyOptimisation(
-                        ACO_NUM_ANTS_DEFAULT, ACO_DECAY_RATE_DEFAULT, ACO_INITIAL_PHEROMONE_DEFAULT, ACO_MAX_ITERATIONS_DEFAULT, 
-                        ACO_REPORTING_FREQUENCY_DEFAULT, ACO_FILE_OUTPUT_DEFAULT);
-                    runMenu(aco, "Ant Colony");
                 default:
                     break;
             }
