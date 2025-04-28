@@ -9,8 +9,7 @@ javac -d out @sources.txt
 rm sources.txt
 
 # Copy resource files
-cp -r src/main/resources/* out/
+cp -r src/main/resources/* out/resources
 
 echo "Running..."
-cd out
-java Main
+java -cp out Main

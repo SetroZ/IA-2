@@ -3,10 +3,8 @@ package Utilities;
 import Model.Task;
 import Model.Employee;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -17,11 +15,6 @@ import java.util.Arrays;
  * Utility class for generating or loading task and employee data.
  */
 public class DataGenerator {
-
-    // Default file paths in resources
-    private static final String DEFAULT_TASKS_FILE = "/taskData.csv";
-    private static final String DEFAULT_EMPLOYEES_FILE = "/employeeData.csv";
-
 
     /**
      * Loads task data from a specific CSV file.
@@ -35,31 +28,34 @@ public class DataGenerator {
 
 
 
-        try (InputStream is = DataGenerator.class.getResourceAsStream(filePath);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+        try (InputStream is = DataGenerator.class.getResourceAsStream(filePath))
+        {
+            assert is != null;
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
 
-            // Skip header line
-            String line = reader.readLine();
+                // Skip header line
+                String line = reader.readLine();
 
-            int idx = 0;
+                int idx = 0;
 
-            // Read data lines
-            while ((line = reader.readLine()) != null) {
-                String[] data = line.split(",");
-                if (data.length == 5) {
-                    String id = data[0].trim();
-                    int estimatedTime = Integer.parseInt(data[1].trim());
-                    int difficulty = Integer.parseInt(data[2].trim());
-                    int deadline = Integer.parseInt(data[3].trim());
-                    String requiredSkill = data[4].trim();
+                // Read data lines
+                while ((line = reader.readLine()) != null) {
+                    String[] data = line.split(",");
+                    if (data.length == 5) {
+                        String id = data[0].trim();
+                        int estimatedTime = Integer.parseInt(data[1].trim());
+                        int difficulty = Integer.parseInt(data[2].trim());
+                        int deadline = Integer.parseInt(data[3].trim());
+                        String requiredSkill = data[4].trim();
 
-                    Task task = new Task(id, estimatedTime, difficulty, deadline, requiredSkill, idx);
-                    tasks.add(task);
-                    idx++;
-                }
-                else
-                {
-                    throw new LoadDataException("Invalid task line: " + line);
+                        Task task = new Task(id, estimatedTime, difficulty, deadline, requiredSkill, idx);
+                        tasks.add(task);
+                        idx++;
+                    }
+                    else
+                    {
+                        throw new LoadDataException("Invalid task line: " + line);
+                    }
                 }
             }
         }
@@ -116,6 +112,40 @@ public class DataGenerator {
         }
 
         return employees;
+    }
+
+    /**
+     * Scan and return a list of all csv files in resource folder
+     *
+     * @return String List of all file paths found
+     */
+
+    public static List<String> getResourceFiles() throws LoadDataException{
+        List<String> fileNames = new ArrayList<>();
+        try {
+            // Root of classpath
+            URL resourceURL = DataGenerator.class.getClassLoader().getResource("resources/");
+
+            if (resourceURL == null) {
+                throw new LoadDataException("Resource path not found.");
+            }
+
+            File directory = new File(resourceURL.toURI());
+            File[] files = directory.listFiles();
+
+            if (files != null) {
+                for (File file : files) {
+                    if (file.getName().endsWith(".csv")) {
+                        System.err.println("Adding: " + file.getPath());
+                        fileNames.add(file.getPath());
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            throw new LoadDataException("Error loading resource files." + e.getMessage());
+        }
+        return fileNames;
     }
 
 }

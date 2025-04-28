@@ -12,15 +12,14 @@ import Model.Employee;
 public class RandomDataGen {
     public static class DataSet {
         public DataSet() {
-            tasks = new ArrayList<Task>();
-            employees = new ArrayList<Employee>();
+            tasks = new ArrayList<>();
+            employees = new ArrayList<>();
         }
 
         public List<Task> tasks;
         public List<Employee> employees;
 
         @Override
-
         public String toString() {
             String res = "-----TASKS-------";
             for (Task task : tasks) {
@@ -48,7 +47,6 @@ public class RandomDataGen {
 
     public static DataSet generateDataSet(int numOfTasks, int numOfEmployees) {
         DataSet dataSet = new DataSet();
-        int ratio = numOfTasks / numOfEmployees;
 
         for (int i = 0; i < numOfTasks; i++) {
             String skill = requiredSkills[rd.nextInt(0, requiredSkills.length)];
@@ -65,13 +63,13 @@ public class RandomDataGen {
             String id = Integer.toString(i);
             int hours = rd.nextInt(7, 20);
             int skillLevel = rd.nextInt(1, 10);
-            int idx = i;
             Set<String> skills = generateRandomSkillSet();
-            Employee newEmployee = new Employee(id, hours, skillLevel, skills, idx);
+            Employee newEmployee = new Employee(id, hours, skillLevel, skills, i);
 
             dataSet.employees.add(newEmployee);
         }
         return dataSet;
     }
+
 
 }

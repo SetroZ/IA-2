@@ -46,7 +46,7 @@ public class FileOutput implements Observer
             {
                 fw.write(content);
                 System.out.println("\n[SUCCESS] " + "Writing to File:");
-                System.out.println("out/"+fileName);
+                System.out.println(fileName);
             }
             catch (IOException e)
             {

@@ -43,12 +43,11 @@ public class CostCalculator
         double uniqueAssignmentViolationPenalty = calculateUniqueAssignmentViolationPenalty(solution, tasks, employees);
 
         return (
-                (OVERLOAD_WEIGHT * overloadPenalty) +
-                        (SKILL_MISMATCH_WEIGHT * skillMismatchPenalty) +
-                        (DIFFICULTY_VIOLATION_WEIGHT * skillLvlViolationPenalty) +
-                        (UNIQUE_ASSIGNMENT_WEIGHT * uniqueAssignmentViolationPenalty)
-                                * HARD_CONSTRAINT_MULTIPLIER) +
-                (DEADLINE_VIOLATION_WEIGHT * deadlineViolationPenalty);
+                OVERLOAD_WEIGHT * overloadPenalty +
+                        SKILL_MISMATCH_WEIGHT * skillMismatchPenalty +
+                        DIFFICULTY_VIOLATION_WEIGHT * skillLvlViolationPenalty +
+                        UNIQUE_ASSIGNMENT_WEIGHT * uniqueAssignmentViolationPenalty +
+                        DEADLINE_VIOLATION_WEIGHT * deadlineViolationPenalty);
     }
 
     /**
@@ -71,7 +70,7 @@ public class CostCalculator
                 violationCount++;
             }
         }
-        return 100000 * violationCount;
+        return HARD_CONSTRAINT_MULTIPLIER * violationCount;
     }
 
     /**
@@ -95,7 +94,7 @@ public class CostCalculator
             totalPenalty += overload;
         }
 
-        return 100000 * totalPenalty;
+        return HARD_CONSTRAINT_MULTIPLIER * totalPenalty;
     }
 
     /**
@@ -131,7 +130,7 @@ public class CostCalculator
                 }
             }
         }
-        return 100000 * mismatchCount;
+        return HARD_CONSTRAINT_MULTIPLIER * mismatchCount;
     }
 
     /**
@@ -163,7 +162,7 @@ public class CostCalculator
                 }
             }
         }
-        return skillLvlViolationCount;
+        return HARD_CONSTRAINT_MULTIPLIER * skillLvlViolationCount;
     }
 
 

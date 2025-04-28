@@ -35,7 +35,7 @@ public class ConsoleObserver implements Observer
      * @param employeeList list of employees
      * @param taskList list of tasks
      */
-    public ConsoleObserver(List<Employee> employeeList, List<Task> taskList, Scanner sc)
+    public ConsoleObserver(List<Employee> employeeList, List<Task> taskList)
     {
         this();
         this.employeeList = employeeList;
@@ -51,134 +51,26 @@ public class ConsoleObserver implements Observer
     @Override
     public void update(String messageType, String title, String content)
     {
-        if (messageType.equals("MENU"))
+        switch (messageType)
         {
-            displayMenu(title, content);
-        }
-        else if (messageType.equals("INFO"))
-        {
-            displayInfo(title, content);
-        }
-        else if (messageType.equals("ERROR"))
-        {
-            displayError(title, content);
-        }
-        else if (messageType.equals("SUCCESS"))
-        {
-            displaySuccess(title, content);
+            case "MENU" -> displayMenu(title, content);
+            case "INFO" -> displayInfo(title, content);
+            case "ERROR" -> displayError(title, content);
+            case "SUCCESS" -> displaySuccess(title, content);
         }
     }
 
     /**
+     * @param title The title of the input request
      * @param prompt  The prompt to display to the user
      * @param options The options the user can choose from
-     * @return
+     * @return the user choice
      */
-
-//    @Override
-//    public int requestInput(String prompt, String[] options) throws InputException
-//    {
-//
-//        System.out.println(prompt);
-//        for (int i = 1; i < options.length; i++)
-//        {
-//            System.out.println(i + ". " + options[i]);
-//        }
-//        if (options[0] != null)
-//        {
-//            System.out.println("0. " + options[0]);
-//        }
-//
-//        int selection = -1;
-//        while (selection < 0 || selection >= options.length)
-//        {
-//            System.out.print("Enter selection (1-" + options.length + "): \n");
-//            try
-//            {
-//
-//                selection = sc.nextInt();
-//                if (selection < 0 || selection >= options.length)
-//                {
-//                    System.out.println("Invalid selection. Please try again.");
-//                }
-//            }
-//            catch (NumberFormatException e)
-//            {
-//                throw new InputException("Invalid selection. Please try again.");
-//            }
-//            catch (NoSuchElementException e)
-//            {
-//                throw new InputException(e.getMessage());
-//            }
-//        }
-//        return selection;
-//    }
-
-//    @Override
-//    public int requestInput(String prompt, String[] options) {
-//        // Build the menu string
-//        StringBuilder menuString = new StringBuilder();
-//        menuString.append(prompt).append("\n");
-//
-//        // Add numbered options (1 to n-1)
-//        for (int i = 1; i < options.length; i++) {
-//            menuString.append(i).append(". ").append(options[i]).append("\n");
-//        }
-//
-//        // Add exit option if available
-//        if (options[0] != null) {
-//            menuString.append("0. ").append(options[0]).append("\n");
-//        }
-//
-//        // Create a new BufferedReader for each input request
-//        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-//
-//        // Loop until valid input is received
-//        while (true) {
-//            try {
-//                // Display the menu
-//                System.out.print(menuString);
-//                System.out.print("Select a number between 0-" + (options.length - 1) + ": \n");
-//
-//                // Read input
-//                String inputLine = reader.readLine();
-//
-//                // Check for null (end of stream)
-//                if (inputLine == null) {
-//                    System.out.println("End of input stream reached. Using default option 0.");
-//                    return 0; // Return the exit option as default
-//                }
-//
-//                // Parse input
-//                try {
-//                    int userInput = Integer.parseInt(inputLine.trim());
-//
-//                    // Check if input is within valid range
-//                    if (userInput < 0 || userInput >= options.length) {
-//                        System.out.println("Invalid selection: Number must be between 0 and " + (options.length - 1) + "\n");
-//                    } else {
-//                        return userInput; // Valid input
-//                    }
-//                } catch (NumberFormatException e) {
-//                    System.out.println("Invalid selection: Please enter a number\n");
-//                }
-//
-//            } catch (IOException e) {
-//                System.out.println("Error reading input. Please try again.\n");
-//
-//                // In case of severe IO error, return the exit option
-//                if (e.getMessage() != null && e.getMessage().contains("Stream closed")) {
-//                    System.out.println("Input stream closed. Using default option 0.");
-//                    return 0;
-//                }
-//            }
-//        }
-//    }
 
     public int requestInput(String title,  String prompt, String[] options) {
         int userInput;
         int max = options.length;
-        StringBuilder menuString = new StringBuilder();;
+        StringBuilder menuString = new StringBuilder();
         for (int i = 1; i < max; i++)
         {
             menuString.append(i).append(". ").append(options[i]).append("\n");
@@ -322,11 +214,8 @@ public class ConsoleObserver implements Observer
 
         // Print penalty breakdown
         sb.append("\nPenalty Breakdown:\n");
-        double overloadPenalty = 0;
-        for (Employee employee : employeeList)
-        {
-            overloadPenalty += CostCalculator.calculateOverloadPenalty(solution, taskList, employeeList);
-        }
+        double overloadPenalty = CostCalculator.calculateOverloadPenalty(solution, taskList, employeeList);
+
 
         double skillMismatchPenalty = CostCalculator.calculateSkillMismatchPenalty(solution, taskList, employeeList);
         double deadlineViolationPenalty = CostCalculator.calculateDeadlineViolationPenalty(solution, taskList, employeeList);
@@ -346,7 +235,7 @@ public class ConsoleObserver implements Observer
      * @param filename The filename that was loaded
      */
     public void updateLoadedData(String dataType, String filename) {
-        this.loadedData.put(dataType, filename);
+        this.loadedData.put(dataType.toLowerCase(), filename);
     }
 
     /**
@@ -355,8 +244,9 @@ public class ConsoleObserver implements Observer
      * @return A string representation of the loaded data
      */
     public String getLoadedDataStatus() {
-        return "Current Data loaded: Employees: " + loadedData.get("Employees") +
-                ", Tasks: " + loadedData.get("Tasks");
+        return "Loaded: Employees: " +
+                (loadedData.get("employees") == null ? "None" : loadedData.get("employees")) +
+                ", Tasks: "+ (loadedData.get("tasks") == null ? "None" : loadedData.get("tasks"));
     }
 
     /**
@@ -463,11 +353,11 @@ public class ConsoleObserver implements Observer
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append(centerString("TASKS", DIV_LENGTH, true)+"\n");
+        sb.append(centerString("TASKS", DIV_LENGTH, true)).append("\n");
 
-        sb.append(horizontalLine+"\n");
+        sb.append(horizontalLine).append("\n");
         sb.append("| ID | IDX | EST TIME | DIFFICULTY | DEADLINE | SKILL REQ |\n");
-        sb.append(horizontalLine+"\n");
+        sb.append(horizontalLine).append("\n");
         for(Task task : taskList)
         {
             String taskId = centerString(task.getId(), taskIDWidth, false);
@@ -559,12 +449,9 @@ public class ConsoleObserver implements Observer
         int paddingStart = paddingTotal / 2;
         int paddingEnd = paddingTotal - paddingStart;
 
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < paddingStart; i++) result.append(padding);
-        result.append(text);
-        for (int i = 0; i < paddingEnd; i++) result.append(padding);
-
-        return result.toString();
+        return padding.repeat(paddingStart) +
+                text +
+                padding.repeat(Math.max(0, paddingEnd));
     }
 
 

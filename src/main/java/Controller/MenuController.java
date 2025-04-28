@@ -1,7 +1,5 @@
 package Controller;
 
-import java.io.File;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,8 +25,6 @@ public class MenuController{
     private List<Employee> employees;
     private List<Task> tasks;
     private final ConsoleObserver consoleObserver;
-    private String employeesFileName;
-    private String tasksFileName;
 
     /**
      * Constructor for menu controller
@@ -74,18 +70,11 @@ public class MenuController{
     public void start() throws ObserverException {
         boolean exit = false;
 
-        StringBuilder sb = new StringBuilder();
-        if (employees != null && tasks != null) {
-            sb.append("Loaded data: Employees: ")
-                    .append(employeesFileName != null ? employeesFileName : "none")
-                    .append(", Tasks: ")
-                    .append(tasksFileName != null ? tasksFileName : "none")
-                    .append("\n");
-        }
+
 
         while (!exit) {
             try {
-                int choice = consoleObserver.requestInput("WELCOME", sb.toString(),
+                int choice = consoleObserver.requestInput("WELCOME", consoleObserver.getLoadedDataStatus(),
                         new String[] { "Exit", "Load stored data from csv", "Run an algorithm", "Load Random Data" });
                 switch (choice) {
                     case 1:
@@ -95,7 +84,7 @@ public class MenuController{
                         runAlgorithmMenu();
                         break;
                     case 3:
-                        RandomDataMenu();
+                        randomDataMenu();
                         break;
                     case 0:
                         exit = true;
@@ -116,29 +105,57 @@ public class MenuController{
     private void loadDataMenu() {
         // Get a list of all files in /resources
 
-        List<String> employeeFiles = getResourceFiles();
+        while(true)
+        {
+            try
+            {
+                List<String> files = DataGenerator.getResourceFiles();
+                if (files.isEmpty())
+                {
+                    notifyObservers("ERROR", "No Data Files", "No CSV files found in resources folder.");
+                    return;
+                }
 
-        if (employeeFiles.isEmpty()) {
-            notifyObservers("ERROR", "No Data Files", "No CSV files found in resources folder.");
-            return;
+                // Add exit option
+                files.addFirst("Exit");
+                int choice = consoleObserver.requestInput("LOAD DATA",
+                        "Select the CSV file to use from the resources folder\n" + consoleObserver.getLoadedDataStatus(),
+                        files.toArray(new String[0]));
+
+                if (choice == 0)
+                {
+                    return;
+                }
+
+                try
+                {
+                    loadSelectedData("employees", files.get(choice));
+                }
+                catch (LoadDataException e)
+                {
+                    try
+                    {
+                        loadSelectedData("tasks", files.get(choice));
+                    }
+                    catch (LoadDataException e1)
+                    {
+                        notifyObservers("ERROR", "Data Loading Error",
+                                e.getMessage());
+                    }
+                }
+            }
+            catch (LoadDataException e)
+            {
+                notifyObservers("ERROR", "Critical Error Loading Data", e.getMessage());
+                return;
+            }
         }
-
-        // Add exit option
-        employeeFiles.addFirst("Exit");
-
-        int choice = consoleObserver.requestInput("LOAD EMPLOYEE DATA",
-                "Select the CSV file to use from the resources folder\n" + consoleObserver.getLoadedDataStatus(),
-                employeeFiles.toArray(new String[0]));
-
-        if (choice == 0) {
-            return;
-        }
-
+        /*
         try {
             // Load selected employee file
-            String employeesFilePath = employeeFiles.get(choice);
 
-            String[] fileName = employeesFilePath.split("/");
+
+            String[] fileName = filePath.split("/");
             employeesFileName = fileName[fileName.length - 1];
 
             employees = DataGenerator.loadEmployees("/" + employeesFileName);
@@ -177,39 +194,91 @@ public class MenuController{
             // Display loaded tasks
             consoleObserver.displayData("TASKS", tasks);
 
-            notifyObservers("SUCCESS", "Data Loaded",
-                    "Successfully loaded employees from " + employeesFileName +
-                            " and tasks from " + tasksFileName);
+
 
         } catch (LoadDataException e) {
-            notifyObservers("ERROR", "Data Loading Error",
-                    e.getMessage());
+
         }
+
+         */
+    }
+
+    private void loadSelectedData(String fileType, String filePath) throws LoadDataException
+    {
+
+        String[] fileName = filePath.split("/");
+        if(fileType.equalsIgnoreCase("employees"))
+        {
+            String employeesFileName = fileName[fileName.length - 1];
+            employees = DataGenerator.loadEmployees("/" + employeesFileName);
+            consoleObserver.updateLoadedData("Employees", employeesFileName);
+            // Display loaded employees
+            consoleObserver.displayData("EMPLOYEES", employees);
+            notifyObservers("SUCCESS", "Data Loaded",
+                    "Successfully loaded employees from " + employeesFileName);
+        }
+        else if(fileType.equalsIgnoreCase("tasks"))
+        {
+            String tasksFileName = fileName[fileName.length - 1];
+            tasks = DataGenerator.loadTasks("/" + tasksFileName);
+            consoleObserver.updateLoadedData("Tasks", tasksFileName);
+            // Display Loaded Tasks
+            consoleObserver.displayData("TASKS", tasks);
+
+            notifyObservers("SUCCESS", "Data Loaded",
+                    "Successfully loaded tasks from " + tasksFileName);
+        }
+        else
+        {
+            throw new LoadDataException("Unrecognised file type: " + fileType);
+        }
+
     }
 
     /**
      * Algorithm run menu
      */
-    private void RandomDataMenu() {
+    private void randomDataMenu() {
         boolean exit = false;
+        int employeeCount = 10;
+        int taskCount = 10;
 
         try {
             while (!exit) {
-
-                int taskCount = consoleObserver.requestInput("SET RANDOM PARAMETERS:",
-                        "Enter Task count:",
-                        1, 10000);
-                int employeeCount = consoleObserver.requestInput("SET RANDOM PARAMETERS:",
-                        "Enter Employee count:",
-                        1, 10000);
-                DataSet ds = RandomDataGen.generateDataSet(taskCount, employeeCount);
-                tasks = ds.tasks;
-                employees = ds.employees;
-                consoleObserver.displayData("EMPLOYEES", employees);
-                consoleObserver.displayData("TASKS", tasks);
-                exit = true;
+                int choice = consoleObserver.requestInput("CHOOSE PARAMETERS TO GENERATE",
+                        "Select a choice: ",
+                        new String[]{"Exit", "Employee Size: "+ employeeCount, "Task Size: "+ taskCount, "Generate"});
+                switch (choice) {
+                    case 1:
+                        employeeCount = consoleObserver.requestInput("SET EMPLOYEE SIZE",
+                                "Enter Employee count:",
+                                1, 10000);
+                        break;
+                    case 2:
+                        taskCount = consoleObserver.requestInput("SET TASK SIZe",
+                                "Enter Task count:",
+                                1, 10000);
+                        break;
+                    case 3:
+                        DataSet ds = RandomDataGen.generateDataSet(taskCount, employeeCount);
+                        tasks = ds.tasks;
+                        employees = ds.employees;
+                        consoleObserver.updateLoadedData("Employees", "Random of size " + taskCount);
+                        consoleObserver.updateLoadedData("Tasks" , "Random of size " + employeeCount);
+                        consoleObserver.displayData("EMPLOYEES", employees);
+                        consoleObserver.displayData("TASKS", tasks);
+                        exit = true;
+                        break;
+                    case 0:
+                        exit = true;
+                        break;
+                    default:
+                        break;
+                }
             }
-        } catch (InputException e) {
+        }
+        catch (InputException e)
+        {
             notifyObservers("ERROR", "Error occurred while getting input", e.getMessage());
         }
     }
@@ -272,7 +341,6 @@ public class MenuController{
         boolean exit = false;
 
         while (!exit) {
-            StringBuilder sb = new StringBuilder();
 
             int choice = consoleObserver.requestInput("DEFINE ANT COLONY OPTIMISATION ",
                     "Specify the parameters to use for this algorithm or proceed",
@@ -403,77 +471,6 @@ public class MenuController{
         return ((choice == min - 1.0) ? defaultVal : choice);
     }
 
-    /**
-     * Scan and return a list of all csv files in resource folder
-     * 
-     * @return String List of all file paths found
-     */
 
-    /*
-     * private List<String> getResourceFiles() {
-     * List<String> fileNames = new ArrayList<>();
-     * try {
-     * URL resourceURL = getClass().getResource(".");
-     * 
-     * System.err.println(resourceURL);
-     * if (resourceURL == null) {
-     * System.out.println("Resource path not found.");
-     * return fileNames;
-     * }
-     * 
-     * File directory = new File(resourceURL.toURI());
-     * File[] files = directory.listFiles();
-     * 
-     * // Print name of the all files present in that path
-     * if (files != null) {
-     * for (File file : files) {
-     * if (file.getName().endsWith(".csv")) {
-     * System.err.println("wrtiting" + file.getAbsolutePath());
-     * fileNames.add(file.getPath());
-     * }
-     * }
-     * }
-     * } catch (NullPointerException e) {
-     * System.out.println("JEL:P");
-     * notifyObservers("ERROR", "File Scanning Error",
-     * "Error scanning resource files: " + e.getMessage());
-     * } catch (URISyntaxException e) {
-     * System.out.println("JE:PP");
-     * notifyObservers("ERROR", "URI Syntax Error",
-     * "Error scanning resource files: " + e.getMessage());
-     * }
-     * return fileNames;
-     * }
-     * }
-     */
-    private List<String> getResourceFiles() {
-        List<String> fileNames = new ArrayList<>();
-        try {
-            // Root of classpath
-            URL resourceURL = getClass().getClassLoader().getResource("");
-
-            System.err.println("Resource root: " + resourceURL);
-
-            if (resourceURL == null) {
-                System.out.println("Resource path not found.");
-                return fileNames;
-            }
-
-            File directory = new File(resourceURL.toURI());
-            File[] files = directory.listFiles();
-
-            if (files != null) {
-                for (File file : files) {
-                    if (file.getName().endsWith(".csv")) {
-                        System.err.println("Adding: " + file.getAbsolutePath());
-                        fileNames.add(file.getPath());
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return fileNames;
-    }
 
 }
