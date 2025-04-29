@@ -179,35 +179,41 @@ public class CostCalculator
     public static double calculateDeadlineViolationPenalty(int[] solution, List<Task> tasks, List<Employee> employees)
     {
         int violationHrs = 0;
+        Queue<Task> queue = new PriorityQueue<>(Comparator.comparingInt(task -> task.getEstimatedTime()));
 
         // For each employee, track their current workload time
         Map<String, Integer> employeeWorkloadTimes = new HashMap<>();
 
         for (Task task : tasks)
         {
-            String employeeId = employees.get(solution[task.getIdx()]).getId();
-            if (employeeId != null)
-            {
-                // Initialize workload time if not already present
-                employeeWorkloadTimes.putIfAbsent(employeeId, 0);
-
-                // Get current workload time for the employee
-                int currentWorkloadTime = employeeWorkloadTimes.get(employeeId);
-
-                // Add the task's estimated time to the workload
-                currentWorkloadTime += task.getEstimatedTime();
-
-                // Check if the deadline is violated
-                if (currentWorkloadTime > task.getDeadline())
-                {
-                    violationHrs += (currentWorkloadTime - task.getDeadline());
-                }
-
-                // Update the workload time
-                employeeWorkloadTimes.put(employeeId, currentWorkloadTime);
-            }
+            queue.add(task);
         }
 
+        while(queue.peek() != null)
+        {
+            Task task = queue.poll();
+            String employeeId = employees.get(solution[task.getIdx()]).getId();
+                if (employeeId != null)
+                {
+                    // Initialize workload time if not already present
+                    employeeWorkloadTimes.putIfAbsent(employeeId, 0);
+
+                    // Get current workload time for the employee
+                    int currentWorkloadTime = employeeWorkloadTimes.get(employeeId);
+
+                    // Add the task's estimated time to the workload
+                    currentWorkloadTime += task.getEstimatedTime();
+
+                    // Check if the deadline is violated
+                    if (currentWorkloadTime > task.getDeadline())
+                    {
+                        violationHrs += (currentWorkloadTime - task.getDeadline());
+                    }
+
+                    // Update the workload time
+                    employeeWorkloadTimes.put(employeeId, currentWorkloadTime);
+                }
+        }
         return violationHrs;
     }
 
