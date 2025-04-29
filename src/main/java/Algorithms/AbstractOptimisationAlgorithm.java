@@ -3,6 +3,8 @@ package Algorithms;
 import Model.Employee;
 import Model.Task;
 import Utilities.Observer;
+import Utilities.PerformanceLogger;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,12 +21,16 @@ public abstract class AbstractOptimisationAlgorithm implements Algorithm {
     protected final boolean fileOutput;
     protected String output = "";
 
+    protected final PerformanceLogger performanceLogger;
+
     public AbstractOptimisationAlgorithm(List<Task> tasks, List<Employee> employees,
                                          int reportingFrequency, boolean fileOutput) {
         this.tasks = tasks;
         this.employees = employees;
         this.REPORTING_FREQUENCY = reportingFrequency;
         this.fileOutput = fileOutput;
+
+        this.performanceLogger = new PerformanceLogger(getAlgorithmName(), tasks, employees);
     }
 
     @Override

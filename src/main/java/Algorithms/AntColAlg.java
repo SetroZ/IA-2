@@ -4,6 +4,8 @@ import Model.Employee;
 import Model.Task;
 import Utilities.Initialise;
 import Utilities.Observer;
+import Utilities.PerformanceLogger;
+
 import java.util.*;
 
 
@@ -44,8 +46,13 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
     @Override
     public void run()
     {
+        //Start timing performance
+        performanceLogger.startTimer();
+
         int[][] antMatrix = Initialise.getInitialPopulation(employees, tasks, numAnts);
         initPherMatrix(this.initPheromone, employees.size(), tasks.size());
+
+
         while(this.iterationCount < this.maxIterations && !foundPerfectSolution)
         {
             this.iterationCount++;
@@ -60,7 +67,19 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
             {
                 reportProgress(bestSolution, iterationCount);
             }
+
+            // Log metrics for this generation
+            performanceLogger.logIteration(
+                    iterationCount,
+                    bestSolution,
+                    bestCost,
+                    PerformanceLogger.getCurrentMemoryUsageMB()
+            );
         }
+
+        // Stop timer and save all metrics to CSV files
+        performanceLogger.stopTimer();
+        performanceLogger.saveMetricsToCSV();
 
         reportFinalResult(bestSolution, iterationCount);
     }
@@ -188,7 +207,7 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
     @Override
     protected String getAlgorithmName()
     {
-        return "Ant Colony Algorithm";
+        return "AntColonyAlg";
     }
 
     @Override

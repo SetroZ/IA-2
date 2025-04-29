@@ -7,13 +7,16 @@ You can compile and execute it using the provided build scripts.
 
 ```
 ## 📁 Project Structure
+├──out/ # All classes from java compiling with build
 ├── src/
 │ └── main/
 │ ├── java/ # Java source code
 │ │ └── Main.java
 │ └── resources/ # CSV and other resource files
+├── results/
+|   └── /performance # Performance Log CSV's
+├── lib/ #External Libraries
 ├── build.sh # Build script for macOS/Linux
-├── build.bat # Build script for Windows
 └── README.md # You're reading it!
 ```
 
@@ -37,18 +40,9 @@ If you see this error:
 This means the script isn't executable. Fix it with:
 chmod +x build.sh
 
-### Running build on Windows
-
-1. Open Command Prompt or PowerShell
-2. Navigate to your project directory (where) this file is located.
-3. Run the batch file:
-   build.bat
-
-- Alternatively, you can double-click the build.bat file in Windows Explorer.
-
 ## Finding results files
 
-- All results files will be located in /out/results/
+- All results files will be located in /results/
 
 # Algorithms
 
