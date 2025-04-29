@@ -20,7 +20,6 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
     private final int maxGenerations;
     private final int elitismCount;
 
-    private final PerformanceLogger performanceLogger;
 
     /**
      * Constructor for the Genetic Algorithm.
@@ -45,8 +44,6 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
         this.mutationRate = mutationRate;
         this.maxGenerations = maxGenerations;
         this.elitismCount = 2; // Keep the best 2 solutions
-
-        this.performanceLogger = new PerformanceLogger("GeneticAlg", tasks, employees);
 
     }
 
@@ -147,11 +144,11 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
                     globalBestCost,
                     PerformanceLogger.getCurrentMemoryUsageMB()
             );
-
-            // Stop timer and save all metrics to CSV files
-            performanceLogger.stopTimer();
-            performanceLogger.saveMetricsToCSV();
         }
+
+        // Stop timer and save all metrics to CSV files
+        performanceLogger.stopTimer();
+        performanceLogger.saveMetricsToCSV();
 
         // Print final result
         reportFinalResult(globalBestSolution, generation);
@@ -294,7 +291,7 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
     @Override
     protected String getAlgorithmName()
     {
-        return "Genetic Algorithm";
+        return "GeneticAlg";
     }
 
     @Override

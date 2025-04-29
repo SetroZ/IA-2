@@ -8,6 +8,7 @@ import Model.Employee;
 import Model.Task;
 import Utilities.Initialise;
 import Utilities.Observer;
+import Utilities.PerformanceLogger;
 
 public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm
 {
@@ -24,6 +25,8 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm
     int STAG_LIMIT = 20;
     int lastgBestUpdate = 0;
 
+
+
     public ParticleSwarmAlg(List<Task> tasks, List<Employee> employees,
                             int populationSize, int maxIterations, int reportingFrequency, boolean fileOutput) {
         super(tasks, employees, reportingFrequency, fileOutput);
@@ -31,6 +34,8 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm
         this.employees = employees;
         this.tasks = tasks;
         this.maxIterations = maxIterations;
+
+
     }
 
 
@@ -44,7 +49,7 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm
     @Override
     protected String getAlgorithmName()
     {
-        return "Particle Swarm";
+        return "ParticleSwarmAlg";
     }
 
     @Override
@@ -56,6 +61,9 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm
     @Override
 
     public void run() {
+
+        //Start timing performance
+        performanceLogger.startTimer();
 
         int[][] swarms = Initialise.getInitialPopulation(employees, tasks, populationSize);
         double[][] v = new double[populationSize][tasks.size()]; // contains velocities for each position.
@@ -78,6 +86,15 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm
         }
         gBestData = findGbest(gBestData, fitnessPBest, pBest);
         int n = 0;
+
+        // Log initial state
+        performanceLogger.logIteration(
+                n,
+                gBestData.gBestArr,
+                gBestData.gBest,
+                PerformanceLogger.getCurrentMemoryUsageMB()
+        );
+
         // Main loop.
         for (; n < maxIterations; n++) {
             if (gBestData.gBest == 0) {
@@ -100,7 +117,20 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm
 
             gBestData = findGbest(gBestData, fitnessPBest, pBest);
             reportProgress(gBestData.gBestArr, n);
+
+            // Log metrics for this generation
+            performanceLogger.logIteration(
+                    n,
+                    gBestData.gBestArr,
+                    gBestData.gBest,
+                    PerformanceLogger.getCurrentMemoryUsageMB()
+            );
         }
+
+        // Stop timer and save all metrics to CSV files
+        performanceLogger.stopTimer();
+        performanceLogger.saveMetricsToCSV();
+
         reportFinalResult(gBestData.gBestArr, n);
         //System.out.println("Gen:" + n + "  Gbest:" + gBestData.gBest);
     }

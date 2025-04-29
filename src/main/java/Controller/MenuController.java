@@ -1,5 +1,6 @@
 package Controller;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +20,7 @@ import Exceptions.ObserverException;
 import Utilities.RandomDataGen;
 import Utilities.RandomDataGen.DataSet;
 import View.ConsoleObserver;
+import View.PerformanceVisualiser;
 
 public class MenuController{
     private final List<Observer> observers;
@@ -70,12 +72,11 @@ public class MenuController{
     public void start() throws ObserverException {
         boolean exit = false;
 
-
-
         while (!exit) {
             try {
                 int choice = consoleObserver.requestInput("WELCOME", consoleObserver.getLoadedDataStatus(),
-                        new String[] { "Exit", "Load stored data from csv", "Run an algorithm", "Load Random Data" });
+                        new String[] { "Exit", "Load stored data from csv", "Run an algorithm",
+                                "Load Random Data", "Generate Visualisations" });
                 switch (choice) {
                     case 1:
                         loadDataMenu();
@@ -86,6 +87,9 @@ public class MenuController{
                     case 3:
                         randomDataMenu();
                         break;
+                    case 4:
+                        generateVisualisationsMenu();
+                        break;
                     case 0:
                         exit = true;
                         notifyObservers("INFO", "Goodbye", "Exiting application...");
@@ -95,6 +99,74 @@ public class MenuController{
                 notifyObservers("ERROR", "Error occurred while getting input", e.getMessage());
                 throw new InputException(e.getMessage());
             }
+        }
+    }
+
+    /**
+     * Menu for generating performance visualizations
+     */
+    private void generateVisualisationsMenu() {
+        boolean exit = false;
+
+        try {
+            VisualisationController visualController = new VisualisationController();
+
+            while (!exit) {
+                int choice = consoleObserver.requestInput("GENERATE VISUALIZATIONS",
+                        "Select which charts to generate",
+                        new String[] { "Exit",
+                                "Solution Quality Comparison",
+                                "Computational Efficiency Comparison",
+                                "Constraint Satisfaction Comparison",
+                                "Generate All Charts" });
+
+                switch (choice) {
+                    case 0:
+                        exit = true;
+                        break;
+                    case 1:
+                        try {
+                            String result = visualController.generateSolutionQualityChart();
+                            notifyObservers("SUCCESS", "Solution Quality Chart", result);
+                        } catch (IOException e) {
+                            notifyObservers("ERROR", "Chart Generation Failed",
+                                    "Failed to generate solution quality chart: " + e.getMessage());
+                        }
+                        break;
+                    case 2:
+                        try {
+                            String result = visualController.generateComputationalEfficiencyChart();
+                            notifyObservers("SUCCESS", "Computational Efficiency Chart", result);
+                        } catch (IOException e) {
+                            notifyObservers("ERROR", "Chart Generation Failed",
+                                    "Failed to generate computational efficiency chart: " + e.getMessage());
+                        }
+                        break;
+                    case 3:
+                        try {
+                            String result = visualController.generateConstraintSatisfactionChart();
+                            notifyObservers("SUCCESS", "Constraint Satisfaction Chart", result);
+                        } catch (IOException e) {
+                            notifyObservers("ERROR", "Chart Generation Failed",
+                                    "Failed to generate constraint satisfaction chart: " + e.getMessage());
+                        }
+                        break;
+                    case 4:
+                        try {
+                            String result = visualController.generateAllCharts();
+                            notifyObservers("SUCCESS", "All Charts Generated", result);
+                        } catch (ObserverException e) {
+                            notifyObservers("ERROR", "Chart Generation Failed",
+                                    "Failed to generate charts: " + e.getMessage());
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        } catch (Exception e) {
+            notifyObservers("ERROR", "Visualization Error",
+                    "An error occurred while trying to generate visualizations: " + e.getMessage());
         }
     }
 
@@ -446,6 +518,11 @@ public class MenuController{
             }
 
         }
+    }
+
+    private void runVisualiserMenu()
+    {
+        PerformanceVisualiser pV = new PerformanceVisualiser();
     }
 
     private void runMenu(Algorithm algorithm, String name) {
