@@ -4,7 +4,7 @@ import Algorithms.CostCalculator;
 import Model.Employee;
 import Model.Task;
 import Utilities.Observer;
-import Utilities.ObserverException;
+import Exceptions.ObserverException;
 
 import java.util.*;
 
@@ -16,8 +16,8 @@ public class ConsoleObserver implements Observer
      */
     List<Employee> employeeList;
     List<Task> taskList;
-    private Scanner sc;
-    private Map<String, String> loadedData;
+    private final Scanner sc;
+    private final Map<String, String> loadedData;
     private final int DIV_LENGTH = 60;
 
     /**
@@ -30,23 +30,7 @@ public class ConsoleObserver implements Observer
         this.loadedData.put("Tasks", "none");
     }
 
-    /**
-     * Constructor with initial data
-     * @param employeeList list of employees
-     * @param taskList list of tasks
-     */
-    public ConsoleObserver(List<Employee> employeeList, List<Task> taskList)
-    {
-        this();
-        this.employeeList = employeeList;
-        this.taskList = taskList;
-        if (employeeList != null && !employeeList.isEmpty()) {
-            this.loadedData.put("Employees", "loaded");
-        }
-        if (taskList != null && !taskList.isEmpty()) {
-            this.loadedData.put("Tasks", "loaded");
-        }
-    }
+
 
     @Override
     public void update(String messageType, String title, String content)

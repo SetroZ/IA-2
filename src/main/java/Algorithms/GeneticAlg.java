@@ -4,13 +4,14 @@ import Model.Employee;
 import Model.Task;
 import Utilities.Initialise;
 import Utilities.Observer;
+import Utilities.PerformanceLogger;
 
 import java.util.*;
 
 /**
  * Genetic Algorithm implementation
  */
-public class GeneticAlgorithm extends AbstractOptimisationAlgorithm{
+public class GeneticAlg extends AbstractOptimisationAlgorithm{
 
     // Algorithm parameters
     private final int populationSize;
@@ -19,6 +20,7 @@ public class GeneticAlgorithm extends AbstractOptimisationAlgorithm{
     private final int maxGenerations;
     private final int elitismCount;
 
+    private final PerformanceLogger performanceLogger;
 
     /**
      * Constructor for the Genetic Algorithm.
@@ -34,15 +36,18 @@ public class GeneticAlgorithm extends AbstractOptimisationAlgorithm{
      * @param fileOutput         Whether to output results to a file
      */
 
-    public GeneticAlgorithm(List<Task> tasks, List<Employee> employees,
-                            int populationSize, double crossoverRate, double mutationRate,
-                            int maxGenerations, int reportingFrequency, boolean fileOutput) {
+    public GeneticAlg(List<Task> tasks, List<Employee> employees,
+                      int populationSize, double crossoverRate, double mutationRate,
+                      int maxGenerations, int reportingFrequency, boolean fileOutput) {
         super(tasks, employees, reportingFrequency, fileOutput);
         this.populationSize = populationSize;
         this.crossoverRate = crossoverRate;
         this.mutationRate = mutationRate;
         this.maxGenerations = maxGenerations;
         this.elitismCount = 2; // Keep the best 2 solutions
+
+        this.performanceLogger = new PerformanceLogger("GeneticAlg", tasks, employees);
+
     }
 
     /**
@@ -51,6 +56,8 @@ public class GeneticAlgorithm extends AbstractOptimisationAlgorithm{
 
     @Override
     public void run() {
+        //Start timing performance
+        performanceLogger.startTimer();
 
         // Initialize population
         int[][] population = Initialise.getInitialPopulation(employees, tasks, populationSize);
@@ -60,7 +67,13 @@ public class GeneticAlgorithm extends AbstractOptimisationAlgorithm{
         int[] globalBestSolution = findBestSolution(population);
         double globalBestCost = CostCalculator.calculateTotalCost(globalBestSolution, tasks, employees);
 
-        // recordStatistics(population, generation);
+        // Log initial state
+        performanceLogger.logIteration(
+                generation,
+                globalBestSolution,
+                globalBestCost,
+                PerformanceLogger.getCurrentMemoryUsageMB()
+        );
 
         // Main loop
         while (generation < maxGenerations && !(globalBestCost == 0)) {
@@ -126,6 +139,18 @@ public class GeneticAlgorithm extends AbstractOptimisationAlgorithm{
             }
 
             generation++;
+
+            // Log metrics for this generation
+            performanceLogger.logIteration(
+                    generation,
+                    globalBestSolution,
+                    globalBestCost,
+                    PerformanceLogger.getCurrentMemoryUsageMB()
+            );
+
+            // Stop timer and save all metrics to CSV files
+            performanceLogger.stopTimer();
+            performanceLogger.saveMetricsToCSV();
         }
 
         // Print final result

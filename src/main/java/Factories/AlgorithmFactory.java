@@ -2,9 +2,9 @@ package Factories;
 
 import java.util.List;
 
-import Algorithms.AntColAlgorithm;
-import Algorithms.GeneticAlgorithm;
-import Algorithms.ParticleSwarm;
+import Algorithms.AntColAlg;
+import Algorithms.GeneticAlg;
+import Algorithms.ParticleSwarmAlg;
 import Model.Employee;
 import Model.Task;
 import Utilities.Observer;
@@ -26,10 +26,10 @@ public class AlgorithmFactory
         this.observers = observers;
     }
 
-    public GeneticAlgorithm createGeneticAlgorithm(Integer populationSize, Double crossoverRate, Double mutationRate,
-                                                   Integer maxGenerations, Integer reportingFrequency, Boolean fileOutput)
+    public GeneticAlg createGeneticAlgorithm(Integer populationSize, Double crossoverRate, Double mutationRate,
+                                             Integer maxGenerations, Integer reportingFrequency, Boolean fileOutput)
     {
-        GeneticAlgorithm ga = new GeneticAlgorithm(tasks, employees, populationSize, crossoverRate, mutationRate,
+        GeneticAlg ga = new GeneticAlg(tasks, employees, populationSize, crossoverRate, mutationRate,
                 maxGenerations, reportingFrequency, fileOutput);
         for (Observer observer : observers)
         {
@@ -38,10 +38,10 @@ public class AlgorithmFactory
         return ga;
     }
 
-    public ParticleSwarm createParticleSwarm(Integer populationSize, Integer maxIterations,
-                                             Integer reportingFrequency, Boolean fileOutput)
+    public ParticleSwarmAlg createParticleSwarm(Integer populationSize, Integer maxIterations,
+                                                Integer reportingFrequency, Boolean fileOutput)
     {
-        ParticleSwarm ps = new ParticleSwarm(tasks, employees, populationSize, maxIterations, reportingFrequency, fileOutput);
+        ParticleSwarmAlg ps = new ParticleSwarmAlg(tasks, employees, populationSize, maxIterations, reportingFrequency, fileOutput);
         for (Observer observer : observers)
         {
             ps.registerObserver(observer);
@@ -50,9 +50,9 @@ public class AlgorithmFactory
 
     }
 
-    public AntColAlgorithm createAntColonyOptimisation(Integer numAnts, Double pherDecayRate, Double initPheromone, Integer maxIterations, Integer reportingFrequency, Boolean fileOutput)
+    public AntColAlg createAntColonyOptimisation(Integer numAnts, Double pherDecayRate, Double initPheromone, Integer maxIterations, Integer reportingFrequency, Boolean fileOutput)
     {
-        AntColAlgorithm aco = new AntColAlgorithm(numAnts, pherDecayRate, initPheromone, maxIterations, reportingFrequency, fileOutput, this.tasks, this.employees);
+        AntColAlg aco = new AntColAlg(numAnts, pherDecayRate, initPheromone, maxIterations, reportingFrequency, fileOutput, this.tasks, this.employees);
         for (Observer observer : observers)
         {
             aco.registerObserver(observer);

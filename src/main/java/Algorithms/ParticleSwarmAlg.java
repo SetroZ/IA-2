@@ -9,7 +9,7 @@ import Model.Task;
 import Utilities.Initialise;
 import Utilities.Observer;
 
-public class ParticleSwarm extends AbstractOptimisationAlgorithm
+public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm
 {
 
     static class GBestData {
@@ -24,8 +24,8 @@ public class ParticleSwarm extends AbstractOptimisationAlgorithm
     int STAG_LIMIT = 20;
     int lastgBestUpdate = 0;
 
-    public ParticleSwarm(List<Task> tasks, List<Employee> employees,
-            int populationSize, int maxIterations, int reportingFrequency, boolean fileOutput) {
+    public ParticleSwarmAlg(List<Task> tasks, List<Employee> employees,
+                            int populationSize, int maxIterations, int reportingFrequency, boolean fileOutput) {
         super(tasks, employees, reportingFrequency, fileOutput);
         this.populationSize = populationSize;
         this.employees = employees;
@@ -44,13 +44,13 @@ public class ParticleSwarm extends AbstractOptimisationAlgorithm
     @Override
     protected String getAlgorithmName()
     {
-        return "";
+        return "Particle Swarm";
     }
 
     @Override
     protected int getMaxGenerations()
     {
-        return 0;
+        return maxIterations;
     }
 
     @Override

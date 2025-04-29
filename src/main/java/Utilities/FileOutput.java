@@ -1,5 +1,7 @@
 package Utilities;
 
+import Exceptions.ObserverException;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -15,32 +17,10 @@ public class FileOutput implements Observer
     {
         if(messageType.equalsIgnoreCase("FILE"))
         {
-            String fileName = "results/" + title ;
-
-            String extension = ".txt";
-
-            Path path = Paths.get(fileName+extension);
-            int counter = 1;
-            File f;
-
-            // Create directories if they don't exist
-            File dir = new File("results");
-            if (!dir.exists())
-            {
-                dir.mkdirs();
-            }
-
-            while (Files.exists(path))
-            {
-                fileName = "results/"+title + "(" + counter + ")" + extension;
-                path = Paths.get(fileName);
-                counter++;
-            }
-           if(counter == 1)
-           {
-               fileName += extension;
-           }
-            f = new File(fileName);
+            String uniqueFName = getUniqueFile(title);
+            String[] filepath = uniqueFName.split("/");
+            String fileName = filepath[filepath.length - 1];
+            File f = new File(uniqueFName);
 
             try (FileWriter fw = new FileWriter(f))
             {
@@ -56,7 +36,33 @@ public class FileOutput implements Observer
     }
 
 
-    @Override
+
+    public String getUniqueFile(String title) {
+            String directory = "results";
+            String extension = ".txt";
+
+            // Ensure the directory exists
+            File dir = new File(directory);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            int counter = 0;
+            Path path;
+            String fileName;
+
+            do {
+                fileName = directory + "/" + title + (counter == 0 ? "" : "(" + counter + ")") + extension;
+                path = Paths.get(fileName);
+                counter++;
+            } while (Files.exists(path));
+
+            return fileName;
+        }
+
+
+
+        @Override
     public String getFinalSolution(int[] solution, double cost, int generation, boolean feasible) throws ObserverException
     {
         return "";

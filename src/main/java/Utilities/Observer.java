@@ -1,5 +1,7 @@
 package Utilities;
 
+import Exceptions.ObserverException;
+
 public interface Observer {
     /**
      * Update method called when a subject changes its state.
@@ -18,4 +20,5 @@ public interface Observer {
      * @return A formatted string representing the final solution
      */
     String getFinalSolution(int[] solution, double cost, int generation, boolean isFeasible) throws ObserverException;
+
 }

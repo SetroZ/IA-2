@@ -50,10 +50,6 @@ public class Employee
         return skills.contains(skill);
     }
 
-    public boolean canPerformTask(Task task)
-    {
-        return skillLevel >= task.getDifficulty() && hasSkill(task.getRequiredSkill());
-    }
 
     @Override
     public String toString() {

@@ -1,5 +1,6 @@
 package Utilities;
 
+import Exceptions.LoadDataException;
 import Model.Task;
 import Model.Employee;
 
@@ -33,7 +34,7 @@ public class DataGenerator {
             assert is != null;
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
 
-                // Skip header line
+                //Skip header
                 String line = reader.readLine();
 
                 int idx = 0;

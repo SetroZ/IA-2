@@ -4,18 +4,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import Algorithms.Algorithm;
-import Algorithms.AntColAlgorithm;
-import Algorithms.GeneticAlgorithm;
-import Algorithms.ParticleSwarm;
+import Algorithms.AntColAlg;
+import Algorithms.GeneticAlg;
+import Algorithms.ParticleSwarmAlg;
 import Factories.AlgorithmFactory;
 import Model.Employee;
 import Model.Task;
 import Utilities.DataGenerator;
 import Utilities.FileOutput;
-import Utilities.InputException;
-import Utilities.LoadDataException;
+import Exceptions.InputException;
+import Exceptions.LoadDataException;
 import Utilities.Observer;
-import Utilities.ObserverException;
+import Exceptions.ObserverException;
 import Utilities.RandomDataGen;
 import Utilities.RandomDataGen.DataSet;
 import View.ConsoleObserver;
@@ -320,12 +320,12 @@ public class MenuController{
         int GA_REPORTING_FREQUENCY_DEFAULT = 5;
         boolean GA_FILE_OUTPUT_DEFAULT = true;
 
-        ParticleSwarm ps = new AlgorithmFactory(tasks, employees, observers).createParticleSwarm(
+        ParticleSwarmAlg ps = new AlgorithmFactory(tasks, employees, observers).createParticleSwarm(
                 PS_POPULATION_SIZE_DEFAULT,
                 PS_MAX_GEN_DEFAULT,
                 GA_REPORTING_FREQUENCY_DEFAULT,
                 GA_FILE_OUTPUT_DEFAULT);
-        runMenu(ps, "ParticleSwarm");
+        runMenu(ps, "ParticleSwarmAlg");
 
     }
 
@@ -377,7 +377,7 @@ public class MenuController{
                     ACO_FILE_OUTPUT_DEFAULT = getParameter("Output to File", ACO_FILE_OUTPUT_DEFAULT);
                     break;
                 case 7:
-                    AntColAlgorithm aco = new AlgorithmFactory(tasks, employees, observers).createAntColonyOptimisation(
+                    AntColAlg aco = new AlgorithmFactory(tasks, employees, observers).createAntColonyOptimisation(
                             ACO_NUM_ANTS_DEFAULT, ACO_DECAY_RATE_DEFAULT, ACO_INITIAL_PHEROMONE_DEFAULT, ACO_MAX_ITERATIONS_DEFAULT,
                             ACO_REPORTING_FREQUENCY_DEFAULT, ACO_FILE_OUTPUT_DEFAULT);
                     runMenu(aco, "Ant Colony");
@@ -436,7 +436,7 @@ public class MenuController{
                     GA_FILE_OUTPUT_DEFAULT = getParameter("Output to file", GA_FILE_OUTPUT_DEFAULT);
                     break;
                 case 7:
-                    GeneticAlgorithm ga = new AlgorithmFactory(tasks, employees, observers).createGeneticAlgorithm(
+                    GeneticAlg ga = new AlgorithmFactory(tasks, employees, observers).createGeneticAlgorithm(
                             GA_POPULATION_SIZE_DEFAULT, GA_CROSSOVER_DEFAULT, GA_MUTATION_DEFAULT, GA_MAX_GEN_DEFAULT,
                             GA_REPORTING_FREQUENCY_DEFAULT, GA_FILE_OUTPUT_DEFAULT);
                     runMenu(ga, "Genetic");

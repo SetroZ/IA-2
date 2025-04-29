@@ -7,7 +7,7 @@ import Utilities.Observer;
 import java.util.*;
 
 
-public class AntColAlgorithm extends AbstractOptimisationAlgorithm
+public class AntColAlg extends AbstractOptimisationAlgorithm
 {
     //Algorithm Parameters
     private final int numAnts;
@@ -29,8 +29,8 @@ public class AntColAlgorithm extends AbstractOptimisationAlgorithm
      * 
      */
 
-    public AntColAlgorithm(int numAnts, double pherDecayRate, double initPheromone, int maxIterations, int REPORTING_FREQUENCY, 
-                            boolean fileOutput, List<Task> tasks, List<Employee> employees)
+    public AntColAlg(int numAnts, double pherDecayRate, double initPheromone, int maxIterations, int REPORTING_FREQUENCY,
+                     boolean fileOutput, List<Task> tasks, List<Employee> employees)
     {
         super(tasks, employees, REPORTING_FREQUENCY, fileOutput);
         this.pherDecayRate = pherDecayRate;

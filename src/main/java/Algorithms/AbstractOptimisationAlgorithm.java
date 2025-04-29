@@ -3,7 +3,6 @@ package Algorithms;
 import Model.Employee;
 import Model.Task;
 import Utilities.Observer;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,17 +71,20 @@ public abstract class AbstractOptimisationAlgorithm implements Algorithm {
         boolean isFeasible = CostCalculator.isFeasible(bestSolution, tasks, employees);
 
         String finalResult = !observers.isEmpty() ?
-                observers.get(0).getFinalSolution(bestSolution, cost, iteration, isFeasible) :
+                observers.getFirst().getFinalSolution(bestSolution, cost, iteration, isFeasible) :
                 "No observer to format final solution";
 
         output += finalResult;
 
         if (fileOutput) {
-            notifyObservers("FILE", getAlgorithmName().toLowerCase(), output);
+            notifyObservers("FILE", getAlgorithmName() , output);
         } else {
             notifyObservers("INFO", getAlgorithmName() + " RESULT", output);
         }
     }
+
+
+
 
     /**
      * Get the name of this algorithm
