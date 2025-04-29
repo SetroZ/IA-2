@@ -12,8 +12,6 @@ else
   LIB_PATH="lib/*"
 fi
 
-echo "Libraries in lib directory:"
-ls -la lib/
 
 # Compile all Java files with dependencies in classpath
 find src/main/java -name "*.java" > sources.txt
