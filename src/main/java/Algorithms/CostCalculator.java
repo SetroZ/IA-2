@@ -6,6 +6,9 @@ import Model.Task;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.PriorityQueue;
+import java.util.Comparator;
 
 /**
  * Utility class for calculating costs and penalties in the task solution problem.
