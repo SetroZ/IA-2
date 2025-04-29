@@ -1,10 +1,11 @@
 package Factories;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import Algorithms.AntColAlg;
-import Algorithms.GeneticAlg;
-import Algorithms.ParticleSwarmAlg;
+import Algorithms.*;
 import Model.Employee;
 import Model.Task;
 import Utilities.Observer;
@@ -27,10 +28,10 @@ public class AlgorithmFactory
     }
 
     public GeneticAlg createGeneticAlgorithm(Integer populationSize, Double crossoverRate, Double mutationRate,
-                                             Integer maxGenerations, Integer reportingFrequency, Boolean fileOutput)
+                                             Integer elitismCount, Integer maxGenerations, Integer reportingFrequency, Boolean fileOutput)
     {
         GeneticAlg ga = new GeneticAlg(tasks, employees, populationSize, crossoverRate, mutationRate,
-                maxGenerations, reportingFrequency, fileOutput);
+                elitismCount, maxGenerations, reportingFrequency, fileOutput);
         for (Observer observer : observers)
         {
             ga.registerObserver(observer);
@@ -58,5 +59,18 @@ public class AlgorithmFactory
             aco.registerObserver(observer);
         }
         return aco;
+    }
+
+    public Map<String,AbstractOptimisationAlgorithm> createStandardisedAlgorithms(Integer populationSize, Integer maxIterations,
+                                                                            Integer reportingFrequency, Boolean fileOutput,
+                                                                            Double pherDecayRate, Double initPheromone,
+                                                                            Double crossoverRate, Double mutationRate,
+                                                                            Integer elitismCount)
+    {
+        Map<String, AbstractOptimisationAlgorithm> algos = new HashMap<String, AbstractOptimisationAlgorithm>();
+        algos.put("Genetic Algorithm",createGeneticAlgorithm(populationSize, crossoverRate, mutationRate, elitismCount, maxIterations, reportingFrequency, fileOutput));
+        algos.put("Particle Swarm",createParticleSwarm(populationSize, maxIterations, reportingFrequency, fileOutput));
+        algos.put("Ant Colony",createAntColonyOptimisation(populationSize, pherDecayRate, initPheromone, maxIterations, reportingFrequency, fileOutput));
+        return algos;
     }
 }

@@ -15,20 +15,25 @@ public abstract class AbstractOptimisationAlgorithm implements Algorithm {
     protected List<Observer> observers = new ArrayList<>();
     protected List<Task> tasks;
     protected List<Employee> employees;
+
     protected int[] bestSolution;
     protected double bestCost = Double.MAX_VALUE;
-    protected final int REPORTING_FREQUENCY;
+    protected final int maxIterations;
+    protected final int reportinFrequency;
     protected final boolean fileOutput;
+    protected final int populationSize;
     protected String output = "";
 
     protected final PerformanceLogger performanceLogger;
 
     public AbstractOptimisationAlgorithm(List<Task> tasks, List<Employee> employees,
-                                         int reportingFrequency, boolean fileOutput) {
+                                         int reportingFrequency, boolean fileOutput, int maxIterations, int populationSize) {
         this.tasks = tasks;
         this.employees = employees;
-        this.REPORTING_FREQUENCY = reportingFrequency;
+        this.reportinFrequency = reportingFrequency;
         this.fileOutput = fileOutput;
+        this.maxIterations = maxIterations;
+        this.populationSize = populationSize;
 
         this.performanceLogger = new PerformanceLogger(getAlgorithmName(), tasks, employees);
     }
@@ -64,7 +69,7 @@ public abstract class AbstractOptimisationAlgorithm implements Algorithm {
 
         output += sb.toString();
 
-        if (iteration % REPORTING_FREQUENCY == 0 || iteration == getMaxGenerations() - 1) {
+        if (iteration % reportinFrequency == 0 || iteration == getMaxIterations() - 1) {
             notifyObservers("INFO", getAlgorithmName() + " PROGRESS", sb.toString());
         }
     }
@@ -100,5 +105,5 @@ public abstract class AbstractOptimisationAlgorithm implements Algorithm {
     /**
      * Get the maximum number of iterations
      */
-    protected abstract int getMaxGenerations();
+    protected abstract int getMaxIterations();
 }

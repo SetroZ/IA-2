@@ -12,8 +12,6 @@ import java.util.*;
 public class AntColAlg extends AbstractOptimisationAlgorithm
 {
     //Algorithm Parameters
-    private final int numAnts;
-    private final int maxIterations;
     private final double initPheromone;
 
     // Problem data
@@ -31,13 +29,11 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
      * 
      */
 
-    public AntColAlg(int numAnts, double pherDecayRate, double initPheromone, int maxIterations, int REPORTING_FREQUENCY,
+    public AntColAlg(int populationSize, double pherDecayRate, double initPheromone, int maxIterations, int REPORTING_FREQUENCY,
                      boolean fileOutput, List<Task> tasks, List<Employee> employees)
     {
-        super(tasks, employees, REPORTING_FREQUENCY, fileOutput);
+        super(tasks, employees, REPORTING_FREQUENCY, fileOutput, maxIterations, populationSize);
         this.pherDecayRate = pherDecayRate;
-        this.maxIterations = maxIterations;
-        this.numAnts = numAnts;
         this.initPheromone = initPheromone;
 
         this.pherMatrix = new double[tasks.size()][employees.size()];
@@ -49,21 +45,21 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
         //Start timing performance
         performanceLogger.startTimer();
 
-        int[][] antMatrix = Initialise.getInitialPopulation(employees, tasks, numAnts);
+        int[][] antMatrix = Initialise.getInitialPopulation(employees, tasks, populationSize);
         initPherMatrix(this.initPheromone, employees.size(), tasks.size());
 
 
         while(this.iterationCount < this.maxIterations && !foundPerfectSolution)
         {
             this.iterationCount++;
-            updatePheromones(antMatrix, this.numAnts, employees.size(), tasks.size());
-            generateNextAntPaths(antMatrix, tasks.size(), employees.size(), this.numAnts);
+            updatePheromones(antMatrix, this.populationSize, employees.size(), tasks.size());
+            generateNextAntPaths(antMatrix, tasks.size(), employees.size(), this.populationSize);
             if(this.bestCost == 0.0)
             {
                 this.foundPerfectSolution = true;
             }
 
-            if(iterationCount % REPORTING_FREQUENCY == 0)
+            if(iterationCount % reportinFrequency == 0)
             {
                 reportProgress(bestSolution, iterationCount);
             }
@@ -99,11 +95,11 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
         }
     }
 
-    private void updatePheromones(int[][] antMatrix, int numAnts, int numEmployees, int numTasks)
+    private void updatePheromones(int[][] antMatrix, int populationSize, int numEmployees, int numTasks)
     {
         int[] ant;
         decayPheromones();
-        for(int i = 0; i < numAnts; i++)
+        for(int i = 0; i < populationSize; i++)
         {
             ant = antMatrix[i];
             double antCost = CostCalculator.calculateTotalCost(ant, this.tasks, this.employees);
@@ -132,13 +128,13 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
         }
     }
 
-    private void generateNextAntPaths(int[][] antMatrix, int numTasks, int numEmployees, int numAnts)
+    private void generateNextAntPaths(int[][] antMatrix, int numTasks, int numEmployees, int populationSize)
     {
         double cumulative;
         double totalPheromone;
         double choice;
         
-        for(int i = 0; i < numAnts; i++)
+        for(int i = 0; i < populationSize; i++)
         {
             for(int j = 0; j < numTasks; j++)
             {
@@ -211,7 +207,7 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
     }
 
     @Override
-    protected int getMaxGenerations()
+    protected int getMaxIterations()
     {
         return maxIterations;
     }

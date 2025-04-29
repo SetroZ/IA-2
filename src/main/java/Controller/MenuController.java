@@ -3,11 +3,9 @@ package Controller;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-import Algorithms.Algorithm;
-import Algorithms.AntColAlg;
-import Algorithms.GeneticAlg;
-import Algorithms.ParticleSwarmAlg;
+import Algorithms.*;
 import Factories.AlgorithmFactory;
 import Model.Employee;
 import Model.Task;
@@ -27,7 +25,26 @@ public class MenuController{
     private List<Employee> employees;
     private List<Task> tasks;
     private final ConsoleObserver consoleObserver;
+    
+    //Default params for algorithms
+    //GA
+    private double GA_CROSSOVER_DEFAULT = 0.2;
+    private double GA_MUTATION_DEFAULT = 0.1;
+    private int GA_ELITISM_DEFAULT = 2;
 
+    //PS (None)
+
+    //AC
+    private double ACO_DECAY_RATE_DEFAULT = 0.1;
+    private double ACO_INITIAL_PHEROMONE_DEFAULT = 0.1;
+
+
+    // ALL
+    private int POPULATION_SIZE_DEFAULT = 100;
+    private int MAX_GEN_DEFAULT = 200;
+    private int REPORTING_FREQUENCY_DEFAULT = 5;
+    private boolean FILE_OUTPUT_DEFAULT = true;
+    
     /**
      * Constructor for menu controller
      * 
@@ -165,8 +182,8 @@ public class MenuController{
                 }
             }
         } catch (Exception e) {
-            notifyObservers("ERROR", "Visualization Error",
-                    "An error occurred while trying to generate visualizations: " + e.getMessage());
+            notifyObservers("ERROR", "Visualisation Error",
+                    "An error occurred while trying to generate visualisations: " + e.getMessage());
         }
     }
 
@@ -174,10 +191,11 @@ public class MenuController{
      * Show the loading meny
      */
 
-    private void loadDataMenu() {
+    private void loadDataMenu()
+    {
         // Get a list of all files in /resources
 
-        while(true)
+        while (true)
         {
             try
             {
@@ -222,57 +240,6 @@ public class MenuController{
                 return;
             }
         }
-        /*
-        try {
-            // Load selected employee file
-
-
-            String[] fileName = filePath.split("/");
-            employeesFileName = fileName[fileName.length - 1];
-
-            employees = DataGenerator.loadEmployees("/" + employeesFileName);
-            consoleObserver.updateLoadedData("Employees", employeesFileName);
-
-            // Display loaded employees
-            consoleObserver.displayData("EMPLOYEES", employees);
-
-            List<String> taskFiles = getResourceFiles();
-
-            if (taskFiles.isEmpty()) {
-                notifyObservers("ERROR", "No Data Files", "No CSV files found in resources folder.");
-                return;
-            }
-
-            // Add exit option
-            taskFiles.addFirst("Exit");
-
-            choice = consoleObserver.requestInput("LOAD TASK DATA",
-                    "Select the CSV file to use from the resources folder\n" +
-                            consoleObserver.getLoadedDataStatus(),
-                    taskFiles.toArray(new String[0]));
-
-            if (choice == 0) {
-                return; // User selected exit
-            }
-
-            // Load selected task file
-            String tasksFilePath = taskFiles.get(choice);
-            String[] fname = tasksFilePath.split("/");
-
-            tasksFileName = fname[fname.length - 1];
-            tasks = DataGenerator.loadTasks("/" + tasksFileName);
-            consoleObserver.updateLoadedData("Tasks", tasksFileName);
-
-            // Display loaded tasks
-            consoleObserver.displayData("TASKS", tasks);
-
-
-
-        } catch (LoadDataException e) {
-
-        }
-
-         */
     }
 
     private void loadSelectedData(String fileType, String filePath) throws LoadDataException
@@ -363,7 +330,7 @@ public class MenuController{
 
                 int choice = consoleObserver.requestInput("CHOOSE ALGORITHM",
                         "Select an Algorithm to run",
-                        new String[] { "Exit", "Genetic Algorithm", "Swarm Optimisation", "Ant Colony" });
+                        new String[] { "Exit", "Genetic Algorithm", "Swarm Optimisation", "Ant Colony", "All" });
 
                 switch (choice) {
                     case 0:
@@ -378,6 +345,11 @@ public class MenuController{
                     case 3:
                         runAntColAlgMenu();
                         break;
+                    case 4:
+                        runStandardisedMenu();
+                        break;
+                    default:
+                        break;
                 }
             }
         } catch (InputException e) {
@@ -385,43 +357,23 @@ public class MenuController{
         }
     }
 
-    private void runParticleSwarmMenu() {
-
-        int PS_POPULATION_SIZE_DEFAULT = 100;
-        int PS_MAX_GEN_DEFAULT = 200;
-        int GA_REPORTING_FREQUENCY_DEFAULT = 5;
-        boolean GA_FILE_OUTPUT_DEFAULT = true;
-
-        ParticleSwarmAlg ps = new AlgorithmFactory(tasks, employees, observers).createParticleSwarm(
-                PS_POPULATION_SIZE_DEFAULT,
-                PS_MAX_GEN_DEFAULT,
-                GA_REPORTING_FREQUENCY_DEFAULT,
-                GA_FILE_OUTPUT_DEFAULT);
-        runMenu(ps, "ParticleSwarmAlg");
-
-    }
-
-    private void runAntColAlgMenu() {
-        // Initialise with parameters
-        double ACO_DECAY_RATE_DEFAULT = 0.1;
-        double ACO_INITIAL_PHEROMONE_DEFAULT = 0.1;
-        int ACO_NUM_ANTS_DEFAULT = 5;
-        int ACO_MAX_ITERATIONS_DEFAULT = 500;
-        int ACO_REPORTING_FREQUENCY_DEFAULT = 5;
-        boolean ACO_FILE_OUTPUT_DEFAULT = true;
-
+    private void runStandardisedMenu()
+    {
         boolean exit = false;
 
         while (!exit) {
 
-            int choice = consoleObserver.requestInput("DEFINE ANT COLONY OPTIMISATION ",
-                    "Specify the parameters to use for this algorithm or proceed",
-                    new String[] { "Exit", "Number of Ants: " + ACO_NUM_ANTS_DEFAULT,
-                            "Pheromone Decay Rate: " + ACO_DECAY_RATE_DEFAULT,
-                            "Initial Pheromone Value: " + ACO_INITIAL_PHEROMONE_DEFAULT,
-                            "Maximum Iterations: " + ACO_MAX_ITERATIONS_DEFAULT,
-                            "Reporting Frequency: " + ACO_REPORTING_FREQUENCY_DEFAULT,
-                            "Output to File: " + ACO_FILE_OUTPUT_DEFAULT,
+            int choice = consoleObserver.requestInput("DEFINE ALL PARAMETERS",
+                    "Specify the parameters to use for all algorithms or proceed",
+                    new String[] { "Exit", "Population Size: " + POPULATION_SIZE_DEFAULT,
+                            "(Genetic) Crossover Rate: "+ GA_CROSSOVER_DEFAULT,
+                            "(Genetic) Mutation Rate: "+GA_MUTATION_DEFAULT,
+                            "(Genetic) Elitism Count: "+ GA_ELITISM_DEFAULT,
+                            "(Ant Colony) Pheromone Decay Rate: " + ACO_DECAY_RATE_DEFAULT,
+                            "(Ant Colony) Initial Pheromone Value: " + ACO_INITIAL_PHEROMONE_DEFAULT,
+                            "Maximum Iterations: " + MAX_GEN_DEFAULT,
+                            "Reporting Frequency: " + REPORTING_FREQUENCY_DEFAULT,
+                            "Output to File: " + FILE_OUTPUT_DEFAULT,
                             "Proceed" });
 
             switch (choice) {
@@ -429,7 +381,88 @@ public class MenuController{
                     exit = true;
                     break;
                 case 1:
-                    ACO_NUM_ANTS_DEFAULT = getParameter("Number of Ants", ACO_NUM_ANTS_DEFAULT, 1,
+                    POPULATION_SIZE_DEFAULT = getParameter("Population Size", POPULATION_SIZE_DEFAULT, 1,
+                            Integer.MAX_VALUE);
+                    break;
+                case 2:
+                    GA_MUTATION_DEFAULT = getParameter("Mutation Rate", GA_MUTATION_DEFAULT, 0.0, 1.0);
+                    break;
+                case 3:
+                    GA_CROSSOVER_DEFAULT = getParameter("Crossover Rate", GA_CROSSOVER_DEFAULT, 0.0, 1.0);
+                    break;
+                case 4:
+                    GA_ELITISM_DEFAULT = getParameter("Elitsim Count", GA_ELITISM_DEFAULT, 0, employees.size());
+                    break;
+                case 5:
+                    ACO_DECAY_RATE_DEFAULT = getParameter("Pheromone Decay Rate", ACO_DECAY_RATE_DEFAULT, 0.0, 1.0);
+                    break;
+                case 6:
+                    ACO_INITIAL_PHEROMONE_DEFAULT = getParameter("Initial Pheromone Value", ACO_INITIAL_PHEROMONE_DEFAULT, 0.0, Double.MAX_VALUE);
+                    break;
+                case 7:
+                    MAX_GEN_DEFAULT = getParameter("Maximum Iterations", MAX_GEN_DEFAULT, 1, Integer.MAX_VALUE);
+                    break;
+                case 8:
+                    REPORTING_FREQUENCY_DEFAULT = getParameter("Reporting Frequency", REPORTING_FREQUENCY_DEFAULT,
+                            1, Integer.MAX_VALUE);
+                    break;
+                case 9:
+                    FILE_OUTPUT_DEFAULT = getParameter("Output to File", FILE_OUTPUT_DEFAULT);
+                    break;
+                case 10:
+                    Map<String, AbstractOptimisationAlgorithm> algos =
+                        new AlgorithmFactory(tasks, employees, observers).createStandardisedAlgorithms(
+                        POPULATION_SIZE_DEFAULT, MAX_GEN_DEFAULT, REPORTING_FREQUENCY_DEFAULT,
+                        FILE_OUTPUT_DEFAULT, ACO_DECAY_RATE_DEFAULT, ACO_INITIAL_PHEROMONE_DEFAULT,
+                        GA_CROSSOVER_DEFAULT, GA_MUTATION_DEFAULT, GA_ELITISM_DEFAULT);
+                    runMenu(algos.get("Genetic Algorithm"), "Genetic Algorithm");
+                    runMenu(algos.get("Ant Colony"), "Ant Colony");
+                    runMenu(algos.get("Particle Swarm"), "Particle Swarm");
+                default:
+                    break;
+            }
+
+        }
+
+    }
+
+    private void runParticleSwarmMenu() {
+
+
+
+        ParticleSwarmAlg ps = new AlgorithmFactory(tasks, employees, observers).createParticleSwarm(
+                POPULATION_SIZE_DEFAULT,
+                MAX_GEN_DEFAULT,
+                REPORTING_FREQUENCY_DEFAULT,
+                FILE_OUTPUT_DEFAULT);
+        runMenu(ps, "ParticleSwarmAlg");
+
+    }
+
+    private void runAntColAlgMenu() {
+        // Initialise with parameters
+        
+
+        boolean exit = false;
+
+        while (!exit) {
+
+            int choice = consoleObserver.requestInput("DEFINE ANT COLONY OPTIMISATION ",
+                    "Specify the parameters to use for this algorithm or proceed",
+                    new String[] { "Exit", "Number of Ants (Population Size): " + POPULATION_SIZE_DEFAULT,
+                            "Pheromone Decay Rate: " + ACO_DECAY_RATE_DEFAULT,
+                            "Initial Pheromone Value: " + ACO_INITIAL_PHEROMONE_DEFAULT,
+                            "Maximum Iterations: " + MAX_GEN_DEFAULT,
+                            "Reporting Frequency: " + REPORTING_FREQUENCY_DEFAULT,
+                            "Output to File: " + FILE_OUTPUT_DEFAULT,
+                            "Proceed" });
+
+            switch (choice) {
+                case 0:
+                    exit = true;
+                    break;
+                case 1:
+                    POPULATION_SIZE_DEFAULT = getParameter("Number of Ants", POPULATION_SIZE_DEFAULT, 1,
                             Integer.MAX_VALUE);
                     break;
                 case 2:
@@ -439,19 +472,19 @@ public class MenuController{
                     ACO_INITIAL_PHEROMONE_DEFAULT = getParameter("Initial Pheromone Value", ACO_INITIAL_PHEROMONE_DEFAULT, 0.0, Double.MAX_VALUE);
                     break;
                 case 4:
-                    ACO_MAX_ITERATIONS_DEFAULT = getParameter("Maximum Iterations", ACO_MAX_ITERATIONS_DEFAULT, 1, Integer.MAX_VALUE);
+                    MAX_GEN_DEFAULT = getParameter("Maximum Iterations", MAX_GEN_DEFAULT, 1, Integer.MAX_VALUE);
                     break;
                 case 5:
-                    ACO_REPORTING_FREQUENCY_DEFAULT = getParameter("Reporting Frequency", ACO_REPORTING_FREQUENCY_DEFAULT,
+                    REPORTING_FREQUENCY_DEFAULT = getParameter("Reporting Frequency", REPORTING_FREQUENCY_DEFAULT,
                             1, Integer.MAX_VALUE);
                     break;
                 case 6:
-                    ACO_FILE_OUTPUT_DEFAULT = getParameter("Output to File", ACO_FILE_OUTPUT_DEFAULT);
+                    FILE_OUTPUT_DEFAULT = getParameter("Output to File", FILE_OUTPUT_DEFAULT);
                     break;
                 case 7:
                     AntColAlg aco = new AlgorithmFactory(tasks, employees, observers).createAntColonyOptimisation(
-                            ACO_NUM_ANTS_DEFAULT, ACO_DECAY_RATE_DEFAULT, ACO_INITIAL_PHEROMONE_DEFAULT, ACO_MAX_ITERATIONS_DEFAULT,
-                            ACO_REPORTING_FREQUENCY_DEFAULT, ACO_FILE_OUTPUT_DEFAULT);
+                            POPULATION_SIZE_DEFAULT, ACO_DECAY_RATE_DEFAULT, ACO_INITIAL_PHEROMONE_DEFAULT, MAX_GEN_DEFAULT,
+                            REPORTING_FREQUENCY_DEFAULT, FILE_OUTPUT_DEFAULT);
                     runMenu(aco, "Ant Colony");
                 default:
                     break;
@@ -461,13 +494,6 @@ public class MenuController{
     }
 
     private void runGeneticAlgMenu() {
-        // Initialise with parameters
-        double GA_CROSSOVER_DEFAULT = 0.2;
-        double GA_MUTATION_DEFAULT = 0.1;
-        int GA_POPULATION_SIZE_DEFAULT = 100;
-        int GA_MAX_GEN_DEFAULT = 200;
-        int GA_REPORTING_FREQUENCY_DEFAULT = 5;
-        boolean GA_FILE_OUTPUT_DEFAULT = true;
 
         boolean exit = false;
 
@@ -475,12 +501,13 @@ public class MenuController{
 
             int choice = consoleObserver.requestInput("DEFINE GENETIC ALGORITHM",
                     "Specify the parameters to use for this algorithm or proceed",
-                    new String[] { "Exit", "Population size: " + GA_POPULATION_SIZE_DEFAULT,
+                    new String[] { "Exit", "Population size: " + POPULATION_SIZE_DEFAULT,
                             "Crossover rate: " + GA_CROSSOVER_DEFAULT,
                             "Mutation rate: " + GA_MUTATION_DEFAULT,
-                            "Maximum Generations: " + GA_MAX_GEN_DEFAULT,
-                            "Reporting frequency: " + GA_REPORTING_FREQUENCY_DEFAULT,
-                            "Output to file: " + GA_FILE_OUTPUT_DEFAULT,
+                            "Elitism count: " + GA_ELITISM_DEFAULT,
+                            "Maximum Generations: " + MAX_GEN_DEFAULT,
+                            "Reporting frequency: " + REPORTING_FREQUENCY_DEFAULT,
+                            "Output to file: " + FILE_OUTPUT_DEFAULT,
                             "Proceed" });
 
             switch (choice) {
@@ -488,7 +515,7 @@ public class MenuController{
                     exit = true;
                     break;
                 case 1:
-                    GA_POPULATION_SIZE_DEFAULT = getParameter("Population size", GA_POPULATION_SIZE_DEFAULT, 1,
+                    POPULATION_SIZE_DEFAULT = getParameter("Population size", POPULATION_SIZE_DEFAULT, 1,
                             Integer.MAX_VALUE);
                     break;
                 case 2:
@@ -498,19 +525,22 @@ public class MenuController{
                     GA_MUTATION_DEFAULT = getParameter("Mutation rate", GA_MUTATION_DEFAULT, 0.0, 1.0);
                     break;
                 case 4:
-                    GA_MAX_GEN_DEFAULT = getParameter("Maximum Generations", GA_MAX_GEN_DEFAULT, 1, Integer.MAX_VALUE);
+                    GA_ELITISM_DEFAULT = getParameter("Elitsim Count", GA_ELITISM_DEFAULT, 0, employees.size());
                     break;
                 case 5:
-                    GA_REPORTING_FREQUENCY_DEFAULT = getParameter("Reporting frequency", GA_REPORTING_FREQUENCY_DEFAULT,
-                            1, Integer.MAX_VALUE);
+                    MAX_GEN_DEFAULT = getParameter("Maximum Generations", MAX_GEN_DEFAULT, 1, Integer.MAX_VALUE);
                     break;
                 case 6:
-                    GA_FILE_OUTPUT_DEFAULT = getParameter("Output to file", GA_FILE_OUTPUT_DEFAULT);
+                    REPORTING_FREQUENCY_DEFAULT = getParameter("Reporting frequency", REPORTING_FREQUENCY_DEFAULT,
+                            1, Integer.MAX_VALUE);
                     break;
                 case 7:
+                    FILE_OUTPUT_DEFAULT = getParameter("Output to file", FILE_OUTPUT_DEFAULT);
+                    break;
+                case 8:
                     GeneticAlg ga = new AlgorithmFactory(tasks, employees, observers).createGeneticAlgorithm(
-                            GA_POPULATION_SIZE_DEFAULT, GA_CROSSOVER_DEFAULT, GA_MUTATION_DEFAULT, GA_MAX_GEN_DEFAULT,
-                            GA_REPORTING_FREQUENCY_DEFAULT, GA_FILE_OUTPUT_DEFAULT);
+                            POPULATION_SIZE_DEFAULT, GA_CROSSOVER_DEFAULT, GA_MUTATION_DEFAULT, GA_ELITISM_DEFAULT,
+                            MAX_GEN_DEFAULT, REPORTING_FREQUENCY_DEFAULT, FILE_OUTPUT_DEFAULT);
                     runMenu(ga, "Genetic");
                     break;
                 default:
@@ -520,13 +550,9 @@ public class MenuController{
         }
     }
 
-    private void runVisualiserMenu()
-    {
-        PerformanceVisualiser pV = new PerformanceVisualiser();
-    }
 
     private void runMenu(Algorithm algorithm, String name) {
-        notifyObservers("MENU", "ALGORITHM RUN", name + " algorithm running......");
+        notifyObservers("MENU", "RUN "+ name.toUpperCase(), name + " algorithm running......");
         algorithm.run();
     }
 

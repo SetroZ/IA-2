@@ -221,11 +221,23 @@ public class VisualisationController {
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
                 if (parts.length >= 4) {
-                    // [iteration, cost]
-                    double[] point = new double[2];
-                    point[0] = Double.parseDouble(parts[1]); // Iteration
-                    point[1] = Double.parseDouble(parts[3]); // Cost value
-                    dataPoints.add(point);
+                    try {
+                        // [iteration, cost]
+                        double[] point = new double[2];
+                        point[0] = Double.parseDouble(parts[1]); // Iteration
+
+                        double costValue = Double.parseDouble(parts[3]); // Cost value
+
+                        // Filter out extreme values that might cause visualization issues
+                        if (Double.isFinite(costValue) && costValue < 1.0E10) {
+                            point[1] = costValue;
+                            dataPoints.add(point);
+                        } else {
+                            System.out.println("Skipping extreme cost value: " + costValue);
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("Warning: Could not parse value in line: " + line);
+                    }
                 }
             }
         }

@@ -14,10 +14,8 @@ import java.util.*;
 public class GeneticAlg extends AbstractOptimisationAlgorithm{
 
     // Algorithm parameters
-    private final int populationSize;
     private final double crossoverRate;
     private final double mutationRate;
-    private final int maxGenerations;
     private final int elitismCount;
 
 
@@ -29,7 +27,7 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
      * @param populationSize     Size of the population (number of solutions)
      * @param crossoverRate      Probability of crossover (0.0-1.0)
      * @param mutationRate       Probability of mutation (0.0-1.0)
-     * @param maxGenerations     Maximum number of generations to run
+     * @param maxIterations     Maximum number of generations to run
      * @param reportingFrequency The frequency of progress reports printed to the
      *                           console.
      * @param fileOutput         Whether to output results to a file
@@ -37,13 +35,12 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
 
     public GeneticAlg(List<Task> tasks, List<Employee> employees,
                       int populationSize, double crossoverRate, double mutationRate,
-                      int maxGenerations, int reportingFrequency, boolean fileOutput) {
-        super(tasks, employees, reportingFrequency, fileOutput);
-        this.populationSize = populationSize;
+                      int elitismCount, int maxIterations, int reportingFrequency,
+                      boolean fileOutput) {
+        super(tasks, employees, reportingFrequency, fileOutput, maxIterations, populationSize);
         this.crossoverRate = crossoverRate;
         this.mutationRate = mutationRate;
-        this.maxGenerations = maxGenerations;
-        this.elitismCount = 2; // Keep the best 2 solutions
+        this.elitismCount = elitismCount;
 
     }
 
@@ -73,7 +70,7 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
         );
 
         // Main loop
-        while (generation < maxGenerations && !(globalBestCost == 0)) {
+        while (generation < maxIterations && !(globalBestCost == 0)) {
             int[][] newPopulation = new int[populationSize][tasks.size()];
 
             // Initialise counter for populated solutions
@@ -131,7 +128,7 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
 
 
             // Print progress
-            if (generation % REPORTING_FREQUENCY == 0 || generation == maxGenerations - 1) {
+            if (generation % reportinFrequency == 0 || generation == maxIterations - 1) {
                 reportProgress(globalBestSolution, generation);
             }
 
@@ -295,8 +292,8 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
     }
 
     @Override
-    protected int getMaxGenerations()
+    protected int getMaxIterations()
     {
-        return maxGenerations;
+        return maxIterations;
     }
 }

@@ -30,7 +30,6 @@ public class PerformanceVisualiser {
         System.setProperty("java.awt.headless", "true");
     }
 
-
     /**
      * Creates a comparative performance chart for multiple algorithms.
      *
@@ -43,48 +42,105 @@ public class PerformanceVisualiser {
      */
     public void createComparisonChart(String title, String xLabel, String yLabel,
                                       List<String> algorithmNames, List<List<double[]>> dataPoints, String outputPath) {
+        // Print debug information
+        System.out.println("Creating comparison chart: " + title);
+        System.out.println("Number of algorithms: " + algorithmNames.size());
+
         XYSeriesCollection dataset = new XYSeriesCollection();
 
+        // Validate input data
+        if (algorithmNames.size() != dataPoints.size()) {
+            System.out.println("Warning: Mismatch between algorithm names and data points");
+            return;
+        }
+
+        // Create series for each algorithm with careful validation
         for (int i = 0; i < algorithmNames.size(); i++) {
-            XYSeries series = new XYSeries(algorithmNames.get(i));
+            String algorithmName = algorithmNames.get(i);
             List<double[]> points = dataPoints.get(i);
 
+            System.out.println("Algorithm: " + algorithmName + ", Points: " + points.size());
+
+            XYSeries series = new XYSeries(algorithmName);
+            boolean hasValidData = false;
+
             for (double[] point : points) {
-                series.add(point[0], point[1]);
+                if (point.length < 2) {
+                    System.out.println("Warning: Invalid data point (too few values) for " + algorithmName);
+                    continue;
+                }
+
+                double x = point[0];
+                double y = point[1];
+
+                if (!Double.isFinite(x) || !Double.isFinite(y)) {
+                    System.out.println("Warning: Non-finite value in data for " + algorithmName +
+                            ": [" + x + ", " + y + "]");
+                    continue;
+                }
+
+                // Add the point and mark that we have valid data
+                series.add(x, y);
+                hasValidData = true;
             }
 
-            dataset.addSeries(series);
+            if (hasValidData) {
+                dataset.addSeries(series);
+            } else {
+                System.out.println("Warning: No valid data points for algorithm " + algorithmName);
+            }
         }
 
-        JFreeChart chart = ChartFactory.createXYLineChart(
-                title,
-                xLabel,
-                yLabel,
-                dataset,
-                PlotOrientation.VERTICAL,
-                true,
-                true,
-                false
-        );
-
-        customizeChart(chart);
-
-        // Customize line colors for different algorithms
-        XYPlot plot = chart.getXYPlot();
-        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
-
-        // Define colors for different algorithms
-        Color[] colors = {Color.RED, Color.BLUE, Color.GREEN};
-
-        for (int i = 0; i < algorithmNames.size(); i++) {
-            renderer.setSeriesPaint(i, colors[i % colors.length]);
-            renderer.setSeriesStroke(i, new BasicStroke(2.0f));
-            renderer.setSeriesShapesVisible(i, true);
+        // Check if we have any data to display
+        if (dataset.getSeriesCount() == 0) {
+            System.out.println("Error: No valid data series to display in chart");
+            return;
         }
 
-        plot.setRenderer(renderer);
+        try {
+            JFreeChart chart = ChartFactory.createXYLineChart(
+                    title,
+                    xLabel,
+                    yLabel,
+                    dataset,
+                    PlotOrientation.VERTICAL,
+                    true,
+                    true,
+                    false
+            );
 
-        saveChart(outputPath, chart);
+            customizeChart(chart);
+
+            // Customize line colors for different algorithms
+            XYPlot plot = chart.getXYPlot();
+            XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
+
+            // Define colors for different algorithms
+            Color[] colors = {Color.RED, Color.BLUE, Color.GREEN};
+
+            for (int i = 0; i < dataset.getSeriesCount(); i++) {
+                renderer.setSeriesPaint(i, colors[i % colors.length]);
+                renderer.setSeriesStroke(i, new BasicStroke(2.0f));
+                renderer.setSeriesShapesVisible(i, true);
+            }
+
+            plot.setRenderer(renderer);
+
+            // Ensure the range doesn't include infinity or NaN
+            NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
+            rangeAxis.setAutoRangeIncludesZero(true);
+            rangeAxis.setAutoRange(true);
+
+            // Ensure domain axis also has proper range
+            NumberAxis domainAxis = (NumberAxis) plot.getDomainAxis();
+            domainAxis.setAutoRange(true);
+
+            saveChart(outputPath, chart);
+            System.out.println("Successfully created chart: " + outputPath);
+        } catch (Exception e) {
+            System.out.println("Error creating chart: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -127,60 +183,92 @@ public class PerformanceVisualiser {
      */
     public void createEfficiencyBarChart(String title, String xLabel, String yLabel,
                                          List<String> algorithmNames, List<Double> runtimeValues, String outputPath) {
-        // Create dataset
-        org.jfree.data.category.DefaultCategoryDataset dataset = new org.jfree.data.category.DefaultCategoryDataset();
+        // Print debug information
+        System.out.println("Creating efficiency bar chart: " + title);
+        System.out.println("Number of algorithms: " + algorithmNames.size());
 
-        // Add data to dataset
-        for (int i = 0; i < algorithmNames.size(); i++) {
-            dataset.addValue(runtimeValues.get(i), "Runtime", algorithmNames.get(i));
+        // Validate input
+        if (algorithmNames.isEmpty() || runtimeValues.isEmpty()) {
+            System.out.println("Error: Empty algorithm names or runtime values");
+            return;
         }
 
-        // Create chart
-        JFreeChart chart = ChartFactory.createBarChart(
-                title,
-                xLabel,
-                yLabel,
-                dataset,
-                PlotOrientation.VERTICAL,
-                true,
-                true,
-                false
-        );
+        if (algorithmNames.size() != runtimeValues.size()) {
+            System.out.println("Warning: Mismatch between algorithm names and runtime values");
+            return;
+        }
 
-        // Customize the chart
-        chart.setBackgroundPaint(Color.WHITE);
-        chart.getTitle().setFont(new Font("Serif", Font.BOLD, 18));
+        // Check for non-finite values
+        boolean hasValidData = false;
+        org.jfree.data.category.DefaultCategoryDataset dataset = new org.jfree.data.category.DefaultCategoryDataset();
 
-        // Customize the plot
-        NumberAxis rangeAxis = getRangeAxis(chart);
-        rangeAxis.setLabelFont(new Font("SansSerif", Font.BOLD, 14));
+        for (int i = 0; i < algorithmNames.size(); i++) {
+            String algorithm = algorithmNames.get(i);
+            Double runtime = runtimeValues.get(i);
 
-        saveChart(outputPath, chart);
+            System.out.println("Algorithm: " + algorithm + ", Runtime: " + runtime);
+
+            if (runtime != null && Double.isFinite(runtime)) {
+                dataset.addValue(runtime, "Runtime", algorithm);
+                hasValidData = true;
+            } else {
+                System.out.println("Warning: Non-finite runtime value for " + algorithm + ": " + runtime);
+            }
+        }
+
+        if (!hasValidData) {
+            System.out.println("Error: No valid data to display in chart");
+            return;
+        }
+
+        try {
+            // Create chart
+            JFreeChart chart = ChartFactory.createBarChart(
+                    title,
+                    xLabel,
+                    yLabel,
+                    dataset,
+                    PlotOrientation.VERTICAL,
+                    true,
+                    true,
+                    false
+            );
+
+            // Customize the chart
+            chart.setBackgroundPaint(Color.WHITE);
+            chart.getTitle().setFont(new Font("Serif", Font.BOLD, 18));
+
+            // Customize the plot
+            org.jfree.chart.plot.CategoryPlot plot = chart.getCategoryPlot();
+            plot.setBackgroundPaint(new Color(240, 240, 240));
+            plot.setDomainGridlinePaint(Color.GRAY);
+            plot.setRangeGridlinePaint(Color.GRAY);
+
+            // Customize bars
+            org.jfree.chart.renderer.category.BarRenderer renderer = (org.jfree.chart.renderer.category.BarRenderer) plot.getRenderer();
+            renderer.setSeriesPaint(0, Color.BLUE);
+            renderer.setDrawBarOutline(false);
+            renderer.setItemMargin(0.1);
+
+            // Customize axis
+            org.jfree.chart.axis.CategoryAxis domainAxis = plot.getDomainAxis();
+            domainAxis.setCategoryMargin(0.2);
+            domainAxis.setLabelFont(new Font("SansSerif", Font.BOLD, 14));
+
+            // Ensure range includes zero but avoids infinity
+            NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
+            rangeAxis.setAutoRangeIncludesZero(true);
+            rangeAxis.setLabelFont(new Font("SansSerif", Font.BOLD, 14));
+
+            saveChart(outputPath, chart);
+            System.out.println("Successfully created chart: " + outputPath);
+        } catch (Exception e) {
+            System.out.println("Error creating chart: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
-    private NumberAxis getRangeAxis(JFreeChart chart)
-    {
-        org.jfree.chart.plot.CategoryPlot plot = chart.getCategoryPlot();
-        plot.setBackgroundPaint(new Color(240, 240, 240));
-        plot.setDomainGridlinePaint(Color.GRAY);
-        plot.setRangeGridlinePaint(Color.GRAY);
-
-        // Customize bars
-        org.jfree.chart.renderer.category.BarRenderer renderer = (org.jfree.chart.renderer.category.BarRenderer) plot.getRenderer();
-        renderer.setSeriesPaint(0, Color.BLUE);
-        renderer.setDrawBarOutline(false);
-        renderer.setItemMargin(0.1);
-
-        // Customize axis
-        org.jfree.chart.axis.CategoryAxis domainAxis = plot.getDomainAxis();
-        domainAxis.setCategoryMargin(0.2);
-        domainAxis.setLabelFont(new Font("SansSerif", Font.BOLD, 14));
-
-        return (NumberAxis) plot.getRangeAxis();
-    }
-
-    private void saveChart(String outputPath, JFreeChart chart)
-    {
+    private void saveChart(String outputPath, JFreeChart chart) throws IOException {
         try {
             File outputFile = new File(outputPath);
             // Create directories if they don't exist
@@ -191,7 +279,8 @@ public class PerformanceVisualiser {
 
             ChartUtils.saveChartAsPNG(outputFile, chart, 800, 600);
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Error saving chart: " + e.getMessage());
+            throw e;
         }
     }
 }
