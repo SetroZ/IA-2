@@ -12,9 +12,12 @@ else
   LIB_PATH="lib/*"
 fi
 
+echo "Libraries in lib directory:"
+ls -la lib/
+
 # Compile all Java files with dependencies in classpath
 find src/main/java -name "*.java" > sources.txt
-javac -cp "$LIB_PATH:out" -d out @sources.txt
+javac -cp "lib/jfreechart-1.5.3.jar:lib/jcommon-1.0.24.jar:out" -d out @sources.txt
 BUILD_RESULT=$?
 rm sources.txt
 
@@ -32,4 +35,4 @@ fi
 echo "Build successful!"
 echo "Running..."
 # Run Main class
-java -cp "$LIB_PATH:out" Main
+java -cp "lib/jfreechart-1.5.3.jar:lib/jcommon-1.0.24.jar:out" Main
