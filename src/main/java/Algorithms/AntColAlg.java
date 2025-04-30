@@ -49,7 +49,7 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
         //Start timing performance
         performanceLogger.startTimer();
 
-        initPherMatrix(this.initPheromone, employees.size(), tasks.size());
+        initPherMatrix();
         int[][] antMatrix = new int[this.numAnts][this.tasks.size()];
         generateNextAntPaths(antMatrix, tasks.size(), employees.size(), this.numAnts);
 
@@ -89,15 +89,18 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
      * Initialises every element in the Pheromone Matrix to the initial Value parameter
      * This is only to be called in the Constructor
      */
-    private void initPherMatrix(double initVal, int numEmployees, int numTasks)
+    private void initPherMatrix()
     {
-        for(int i = 0; i < numTasks; i++)
+        for(int i = 0; i < this.tasks.size(); i++)
         {
-            for(int j = 0; j < numEmployees; j++)
+            Task currTask = this.tasks.get(i);
+            for(int j = 0; j < this.employees.size(); j++)
             {
-                if(this.employees.get(j).hasSkill(this.tasks.get(i).getRequiredSkill()) && this.employees.get(j).getSkillLevel() >= this.tasks.get(i).getDifficulty())
+                Employee currEmployee = this.employees.get(j);
+                
+                if(currEmployee.hasSkill(currTask.getRequiredSkill()) && currEmployee.getSkillLevel() >= currTask.getDifficulty())
                 {
-                    this.pherMatrix[i][j] = initVal;
+                    this.pherMatrix[i][j] = this.initPheromone;
                 }
                 else
                 {
@@ -138,7 +141,6 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
                 this.pherMatrix[j][empIdx] += pheromone;
                 
             }
-            
         }
     }
 
@@ -191,7 +193,6 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
             }
         }
     }
-
 
     @Override
     public void registerObserver(Observer observer)
