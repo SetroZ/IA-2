@@ -59,3 +59,23 @@ WHAT DO I WANT TO OUTPUT
     file
 - pheromone matrix every x iterations
 - best solution : cost, iteration, 
+
+
+Heuristic:
+h(E(x), T(y)) = 
+
+When an ant is choosing the employee for the specific task it is up to, they can only choose from pairings that don't result in breaking constraints
+unless no such choice is available, then the next choice will be based entirely on pheromone. 
+
+case: no choice is feasible but an employee has no more feasible pairings remaining
+
+
+Test a basic heuristic function: order of priority skill level and skill type, available hours, deadline. 
+
+employees with correct skill level and type -> score of 
+
+3 choices: 
+
+E1: skill level and type match, would be overworked by 10 hours, would have a deadline vio of 5
+E2: dont match, not overworked, no deadline vio
+E3: 

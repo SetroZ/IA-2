@@ -49,8 +49,9 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
         //Start timing performance
         performanceLogger.startTimer();
 
-        int[][] antMatrix = Initialise.getInitialPopulation(employees, tasks, numAnts);
         initPherMatrix(this.initPheromone, employees.size(), tasks.size());
+        int[][] antMatrix = new int[this.numAnts][this.tasks.size()];
+        generateNextAntPaths(antMatrix, tasks.size(), employees.size(), this.numAnts);
 
 
         while(this.iterationCount < this.maxIterations && !foundPerfectSolution)
@@ -94,8 +95,17 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
         {
             for(int j = 0; j < numEmployees; j++)
             {
-                this.pherMatrix[i][j] = initVal;
+                if(this.employees.get(j).hasSkill(this.tasks.get(i).getRequiredSkill()) && this.employees.get(j).getSkillLevel() >= this.tasks.get(i).getDifficulty())
+                {
+                    this.pherMatrix[i][j] = initVal;
+                }
+                else
+                {
+                    this.pherMatrix[i][j] = 0.0;
+                }
+                System.out.print(this.pherMatrix[i][j] + " ");
             }
+            System.out.println();
         }
     }
 
@@ -111,7 +121,7 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
             if(antCost < bestCost)
             {
                 bestCost = antCost;
-                bestSolution = ant;
+                bestSolution = ant.clone();
             }
             /* 
             * CREATE A BEST SOLUTION SO FAR TRACKER
