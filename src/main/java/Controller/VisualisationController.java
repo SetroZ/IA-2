@@ -176,7 +176,6 @@ public class VisualisationController {
         // Lists to hold data for each algorithm
         List<String> algorithmNames = new ArrayList<>();
         List<List<double[]>> avgDataPoints = new ArrayList<>();
-        List<List<double[]>> stdDevDataPoints = new ArrayList<>();
 
         // Read data for each algorithm
         for (String algorithm : ALGORITHM_NAMES)
@@ -184,16 +183,14 @@ public class VisualisationController {
             try
             {
                 List<double[]> avgData = readConstraintSatisfactionData(algorithm);
-                List<double[]> stdDevData = calculateConstraintSatisfactionStdDev(algorithm);
 
                 if (!avgData.isEmpty())
                 {
                     algorithmNames.add(algorithm);
                     avgDataPoints.add(avgData);
-                    stdDevDataPoints.add(stdDevData);
                 }
             }
-            catch (IOException e)
+            catch (LoadDataException e)
             {
                 throw new LoadDataException(e.getMessage());
             }
@@ -205,14 +202,13 @@ public class VisualisationController {
         }
 
         // Generate the comparison chart
-        String outputPath = CHARTS_DIR + "run"+RUN_ID +"_"+ CONSTRAINT_SATISFACTION_CHART;
-        visualiser.createComparisonChartWithVariability(
+        String outputPath = CHARTS_DIR + "/run"+RUN_ID +"_"+ CONSTRAINT_SATISFACTION_CHART;
+        visualiser.createComparisonChart(
                 "Constraint Satisfaction Comparison",
                 "Iterations",
                 "Average Constraint Violations (Lower is Better)",
                 algorithmNames,
                 avgDataPoints,
-                stdDevDataPoints,
                 outputPath
         );
 

@@ -698,7 +698,7 @@ public class MenuController{
     {
         File dir = new File(RESULTS_DIR);
         File[] files = dir.listFiles((d, name) ->
-                name.contains("run")&&name.contains("solution_quality"));
+                name.contains("run")&&name.contains("computational_efficiency"));
         //System.out.println("Found "+ files.length + "runs");
 
         return files == null ? 0 : files.length;
