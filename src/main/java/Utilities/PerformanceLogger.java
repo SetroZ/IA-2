@@ -284,10 +284,12 @@ public class PerformanceLogger {
         String filename = RESULTS_DIR + "/" +"run" + runId+"_"+ COMPUTATIONAL_EFFICIENCY_FILE;
         boolean fileExists = Files.exists(Paths.get(filename));
 
-        try (FileWriter writer = new FileWriter(filename, false)) {
+        try (FileWriter writer = new FileWriter(filename, true)) {
             // Write header
-            writer.write("Algorithm,Iterations,TotalTimeMs,AvgIterationTimeMs,PeakMemoryMB,FinalCost,FinalConstraintViolations\n");
-
+            if(!fileExists)
+            {
+                writer.write("Algorithm,Iterations,TotalTimeMs,AvgIterationTimeMs,PeakMemoryMB,FinalCost,FinalConstraintViolations\n");
+            }
 
             // Get last iteration data for final metrics
             IterationData lastData = iterationDataList.getLast();

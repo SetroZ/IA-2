@@ -152,7 +152,7 @@ public class VisualisationController {
         }
 
         // Generate the comparison chart
-        String outputPath = CHARTS_DIR + "/" + COMPUTATIONAL_EFFICIENCY_CHART;
+        String outputPath = CHARTS_DIR + "/run"+RUN_ID+"_" + COMPUTATIONAL_EFFICIENCY_CHART;
         visualiser.createEfficiencyBarChart(
                 "Computational Efficiency Comparison",
                 "Algorithm",
@@ -314,7 +314,7 @@ public class VisualisationController {
      * @throws LoadDataException If reading fails
      */
     private Map<String, double[]> readComputationalEfficiencyData(String filePath) throws LoadDataException {
-        Map<String, double[]> dataMap = new HashMap<>();
+        Map<String, List<Double[]>> dataMap = new HashMap<>();
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             // Skip header
@@ -326,12 +326,31 @@ public class VisualisationController {
                 if (parts.length >= 7) {
                     String algorithm = parts[0];
                     double[] metrics = new double[3];
+
                     metrics[0] = Double.parseDouble(parts[2]); // Total runtime
                     metrics[1] = Double.parseDouble(parts[4]); // Peak memory
                     metrics[2] = Double.parseDouble(parts[1]); // Iterations
                     dataMap.put(algorithm, metrics);
                 }
             }
+
+            List<double[]> averagedData = new ArrayList<>();
+            for (Map.Entry<String, double[]> entry : dataMap.entrySet()) {
+                String algorithm = entry.getKey();
+                double[] costs = entry.getValue();
+
+                // Calculate average cost for this iteration
+                double avgCost = costs.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+
+                System.out.println("Average for iteration " + iteration + ": " + avgCost +
+                        " (from " + costs.size() + " runs: " + costs + ")");
+
+                // Add data point [iteration, avgCost]
+                averagedData.add(new double[]{iteration, avgCost});
+            }
+
+            // Sort by iteration
+            averagedData.sort(Comparator.comparingDouble(point -> point[0]));
         }
         catch (IOException e) {
             throw new LoadDataException("Could not read computational efficiency data for " + filePath);
