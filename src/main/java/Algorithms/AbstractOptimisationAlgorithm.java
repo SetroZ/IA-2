@@ -9,7 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Abstract base class for optimization algorithms that handles observer management
+ * Abstract base class for optimization algorithms that handles observer
+ * management
  */
 public abstract class AbstractOptimisationAlgorithm implements Algorithm {
     protected List<Observer> observers = new ArrayList<>();
@@ -27,7 +28,7 @@ public abstract class AbstractOptimisationAlgorithm implements Algorithm {
     protected final PerformanceLogger performanceLogger;
 
     public AbstractOptimisationAlgorithm(List<Task> tasks, List<Employee> employees,
-                                         int reportingFrequency, boolean fileOutput, int maxIterations, int populationSize, int runId) {
+            int reportingFrequency, boolean fileOutput, int maxIterations, int populationSize, int runId) {
         this.tasks = tasks;
         this.employees = employees;
         this.reportinFrequency = reportingFrequency;
@@ -81,21 +82,18 @@ public abstract class AbstractOptimisationAlgorithm implements Algorithm {
         double cost = CostCalculator.calculateTotalCost(bestSolution, tasks, employees);
         boolean isFeasible = CostCalculator.isFeasible(bestSolution, tasks, employees);
 
-        String finalResult = !observers.isEmpty() ?
-                observers.getFirst().getFinalSolution(bestSolution, cost, iteration, isFeasible) :
-                "No observer to format final solution";
+        String finalResult = !observers.isEmpty()
+                ? observers.getFirst().getFinalSolution(bestSolution, cost, iteration, isFeasible)
+                : "No observer to format final solution";
 
         output += finalResult;
 
         if (fileOutput) {
-            notifyObservers("FILE", getAlgorithmName() , output);
+            notifyObservers("FILE", getAlgorithmName(), output);
         } else {
             notifyObservers("INFO", getAlgorithmName() + " RESULT", output);
         }
     }
-
-
-
 
     /**
      * Get the name of this algorithm

@@ -11,13 +11,12 @@ import java.util.*;
 /**
  * Genetic Algorithm implementation
  */
-public class GeneticAlg extends AbstractOptimisationAlgorithm{
+public class GeneticAlg extends AbstractOptimisationAlgorithm {
 
     // Algorithm parameters
     private final double crossoverRate;
     private final double mutationRate;
     private final int elitismCount;
-
 
     /**
      * Constructor for the Genetic Algorithm.
@@ -27,16 +26,16 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
      * @param populationSize     Size of the population (number of solutions)
      * @param crossoverRate      Probability of crossover (0.0-1.0)
      * @param mutationRate       Probability of mutation (0.0-1.0)
-     * @param maxIterations     Maximum number of generations to run
+     * @param maxIterations      Maximum number of generations to run
      * @param reportingFrequency The frequency of progress reports printed to the
      *                           console.
      * @param fileOutput         Whether to output results to a file
      */
 
     public GeneticAlg(List<Task> tasks, List<Employee> employees,
-                      int populationSize, double crossoverRate, double mutationRate,
-                      int elitismCount, int maxIterations, int reportingFrequency,
-                      boolean fileOutput, int runID) {
+            int populationSize, double crossoverRate, double mutationRate,
+            int elitismCount, int maxIterations, int reportingFrequency,
+            boolean fileOutput, int runID) {
         super(tasks, employees, reportingFrequency, fileOutput, maxIterations, populationSize, runID);
         this.crossoverRate = crossoverRate;
         this.mutationRate = mutationRate;
@@ -50,7 +49,7 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
 
     @Override
     public void run() {
-        //Start timing performance
+        // Start timing performance
         performanceLogger.startTimer();
 
         // Initialize population
@@ -118,7 +117,6 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
                 globalBestCost = currentBestCost;
             }
 
-
             // Print progress
             if (generation % reportinFrequency == 0 || generation == maxIterations - 1) {
                 reportProgress(globalBestSolution, generation);
@@ -129,11 +127,9 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
                     generation,
                     globalBestSolution,
                     globalBestCost,
-                    PerformanceLogger.getCurrentMemoryUsageMB()
-            );
+                    PerformanceLogger.getCurrentMemoryUsageMB());
 
             generation++;
-
 
         }
 
@@ -144,7 +140,6 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
         // Print final result
         reportFinalResult(globalBestSolution, generation);
     }
-
 
     /**
      * Finds the best solution in the population.
@@ -272,7 +267,6 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
         }
     }
 
-
     public void notifyObservers(String messageType, String title, String content) {
         for (Observer observer : observers) {
             observer.update(messageType, title, content);
@@ -280,14 +274,12 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
     }
 
     @Override
-    public String getAlgorithmName()
-    {
+    public String getAlgorithmName() {
         return "GeneticAlg";
     }
 
     @Override
-    public int getMaxIterations()
-    {
+    public int getMaxIterations() {
         return maxIterations;
     }
 }
