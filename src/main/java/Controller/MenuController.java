@@ -174,15 +174,7 @@ public class MenuController{
                         break;
                     case 3:
                         try {
-                            int anotherChoice = consoleObserver.requestInput("DEFINE PARAMETER", "What would you like efficiency graph to use",
-                                    new String[]{"Exit", "Total Average Runtime", "Average Runtime/Iteration"});
-                            switch (anotherChoice)
-                            {
-                                case 0 : break;
-                                case 1 : perIteration= false; break;
-                                case 2 : perIteration = true; break;
-                                default: break;
-                            }
+                            perIteration = selectGraphType();
                             String result = visualController.generateComputationalEfficiencyChart(perIteration);
                             notifyObservers("SUCCESS", "Computational Efficiency Chart", result);
                         } catch (LoadDataException e) {
@@ -225,6 +217,19 @@ public class MenuController{
             notifyObservers("ERROR", "Visualisation Error",
                     "An error occurred while trying to generate visualisations: " + e.getMessage());
         }
+    }
+
+    private boolean selectGraphType()
+    {
+        int anotherChoice = consoleObserver.requestInput("DEFINE PARAMETER", "What would you like efficiency graph to use",
+                new String[]{"Total Average Runtime", "Average Runtime/Iteration"});
+        switch (anotherChoice)
+        {
+            case 0 : return false;
+            case 1 : return true;
+            default: break;
+        }
+        return false;
     }
 
     /**
