@@ -65,7 +65,7 @@ public class AlgorithmFactory {
         Map<String, AbstractOptimisationAlgorithm> algos = new HashMap<>();
         algos.put("GeneticAlg", createGeneticAlgorithm(populationSize, crossoverRate, mutationRate, elitismCount,
                 maxIterations, reportingFrequency, fileOutput, runID));
-        algos.put("Particle Swarm",
+        algos.put("ParticleSwarmAlg",
                 createParticleSwarm(populationSize, maxIterations, c1, c2, w, reportingFrequency, fileOutput, runID));
         algos.put("AntColonyAlg", createAntColonyOptimisation(populationSize, pherDecayRate, initPheromone,
                 maxIterations, reportingFrequency, fileOutput, runID));

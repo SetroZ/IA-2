@@ -35,8 +35,8 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm {
     public GeneticAlg(List<Task> tasks, List<Employee> employees,
             int populationSize, double crossoverRate, double mutationRate,
             int elitismCount, int maxIterations, int reportingFrequency,
-            boolean fileOutput) {
-        super(tasks, employees, reportingFrequency, fileOutput, maxIterations, populationSize);
+            boolean fileOutput, int runID) {
+        super(tasks, employees, reportingFrequency, fileOutput, maxIterations, populationSize, runID);
         this.crossoverRate = crossoverRate;
         this.mutationRate = mutationRate;
         this.elitismCount = elitismCount;
@@ -60,19 +60,13 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm {
         int[] globalBestSolution = findBestSolution(population);
         double globalBestCost = CostCalculator.calculateTotalCost(globalBestSolution, tasks, employees);
 
-        // Log initial state
-        performanceLogger.logIteration(
-                generation,
-                globalBestSolution,
-                globalBestCost,
-                PerformanceLogger.getCurrentMemoryUsageMB());
-//        // Log initial state
-//        performanceLogger.logIteration(
-//                generation,
-//                globalBestSolution,
-//                globalBestCost,
-//                PerformanceLogger.getCurrentMemoryUsageMB()
-//        );
+        // // Log initial state
+        // performanceLogger.logIteration(
+        // generation,
+        // globalBestSolution,
+        // globalBestCost,
+        // PerformanceLogger.getCurrentMemoryUsageMB()
+        // );
 
         // Main loop
         while (generation < maxIterations && !(globalBestCost == 0)) {
@@ -142,11 +136,8 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm {
                     globalBestSolution,
                     globalBestCost,
                     PerformanceLogger.getCurrentMemoryUsageMB());
-                    PerformanceLogger.getCurrentMemoryUsageMB()
-            );
 
             generation++;
-
 
         }
 
@@ -291,15 +282,11 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm {
     }
 
     @Override
-    protected String getAlgorithmName() {
-
     public String getAlgorithmName() {
         return "GeneticAlg";
     }
 
     @Override
-    protected int getMaxIterations() {
-
     public int getMaxIterations() {
         return maxIterations;
     }

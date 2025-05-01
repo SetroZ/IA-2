@@ -356,7 +356,8 @@ public class MenuController {
                 }
                 case "ParticleSwarmAlg" -> {
                     ParticleSwarmAlg ps = new AlgorithmFactory(tasks, employees, observers)
-                            .createParticleSwarm(POPULATION_SIZE_DEFAULT, MAX_GEN_DEFAULT,
+                            .createParticleSwarm(POPULATION_SIZE_DEFAULT, MAX_GEN_DEFAULT, PSO_PBEST_W, PSO_GBEST_W,
+                                    PSO_INERTIA_WEIGHT,
                                     REPORTING_FREQUENCY_DEFAULT, FILE_OUTPUT_DEFAULT, ALL_RUN_ID);
                     runMenu(ps, "Particle Swarm Algorithm (Trial " + ALL_RUN_ID + ")");
                 }
@@ -366,7 +367,9 @@ public class MenuController {
                                     POPULATION_SIZE_DEFAULT, MAX_GEN_DEFAULT,
                                     REPORTING_FREQUENCY_DEFAULT, FILE_OUTPUT_DEFAULT,
                                     ACO_DECAY_RATE_DEFAULT, ACO_INITIAL_PHEROMONE_DEFAULT,
-                                    GA_CROSSOVER_DEFAULT, GA_MUTATION_DEFAULT, GA_ELITISM_DEFAULT,
+                                    GA_CROSSOVER_DEFAULT, GA_MUTATION_DEFAULT, GA_ELITISM_DEFAULT, PSO_PBEST_W,
+                                    PSO_GBEST_W,
+                                    PSO_INERTIA_WEIGHT,
                                     ALL_RUN_ID);
 
                     runMenu(algs.get("AntColonyAlg"), "Ant Colony Algorithm (Trial " + ALL_RUN_ID + ")");
@@ -609,7 +612,7 @@ public class MenuController {
                     AntColAlg aco = new AlgorithmFactory(tasks, employees, observers).createAntColonyOptimisation(
                             POPULATION_SIZE_DEFAULT, ACO_DECAY_RATE_DEFAULT, ACO_INITIAL_PHEROMONE_DEFAULT,
                             MAX_GEN_DEFAULT,
-                            REPORTING_FREQUENCY_DEFAULT, FILE_OUTPUT_DEFAULT);
+                            REPORTING_FREQUENCY_DEFAULT, FILE_OUTPUT_DEFAULT, ALL_RUN_ID);
                     runMenu(aco, "Ant Colony");
                     TRIAL_NUMBER_DEFAULT = getParameter("Number of Trials", TRIAL_NUMBER_DEFAULT, 1, Integer.MAX_VALUE);
                     break;
@@ -692,17 +695,15 @@ public class MenuController {
     }
 
     private double getParameter(String parameter, double defaultVal, double min, double max) {
-        double choice = consoleObserver.requestInput("ENTER PARAMETER", "Enter a value for " + parameter.toLowerCase(),
-                min,
-        double choice = consoleObserver.requestInput("ENTER "+parameter.toUpperCase(), "Enter a value for " + parameter.toLowerCase(), min,
+        double choice = consoleObserver.requestInput("ENTER " + parameter.toUpperCase(),
+                "Enter a value for " + parameter.toLowerCase(), min,
                 max);
         return ((choice == min - 1.0) ? defaultVal : choice);
     }
 
     private int getParameter(String parameter, int defaultVal, int min, int max) {
-        int choice = consoleObserver.requestInput("ENTER PARAMETER", "Enter a value for " + parameter.toLowerCase(),
-                min,
-        int choice = consoleObserver.requestInput("ENTER "+parameter.toUpperCase(), "Enter a value for " + parameter.toLowerCase(), min,
+        int choice = consoleObserver.requestInput("ENTER " + parameter.toUpperCase(),
+                "Enter a value for " + parameter.toLowerCase(), min,
                 max);
         return ((choice == min - 1.0) ? defaultVal : choice);
     }
