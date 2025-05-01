@@ -90,55 +90,20 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
         reportFinalResult(bestSolution, iterationCount);
     }
 
-    /*
-     * This is called once at the beginning of the run() method
-     * 
-     * The elements for all possible Employee Task pairs that do not violate the skill mismatch constraint
-     * and the difficulty constraint are set to the initial pheromone value; the pairs that do violate these constraints
-     * are assigned a value of 0 so that they are not considered.
-     * 
-     * If a task exists where no employee satisfies the skill and difficulty constraints, all employees will be given the initial
-     * pheromone value for this task, to avoid a task not being assigned.
-     * 
-     * 
-     */
+    //Sets every element in the pheromone matrix 2D array to the initPheromone parameter
     private void initPherMatrix()
     {
-        //For every task
         for(int i = 0; i < this.tasks.size(); i++)
         {
-            boolean capableEmployeeExists = false;
-            Task currTask = this.tasks.get(i);
-            //For every employee
             for(int j = 0; j < this.employees.size(); j++)
             {
-                Employee currEmployee = this.employees.get(j);
-                
-                //Assign initial pheromone value if skill and difficulty constraints are met
-                if(currEmployee.hasSkill(currTask.getRequiredSkill()) && currEmployee.getSkillLevel() >= currTask.getDifficulty())
-                {
-                    this.pherMatrix[i][j] = this.initPheromone;
-                    capableEmployeeExists = true;
-                }
-                //If constraints violated assign pair a pheromone of 0 (removing it from solution space)
-                else 
-                {
-                    this.pherMatrix[i][j] = 0.0;
-                }
+                this.pherMatrix[i][j] = this.initPheromone;
                 System.out.print(this.pherMatrix[i][j] + " ");
-            }
-            //If a task has no feasible employee then all employees considered
-            if(!capableEmployeeExists)
-            {
-                for(int j = 0; j < this.employees.size(); j++)
-                {
-                    this.pherMatrix[i][j] = this.initPheromone;
-                }
             }
             System.out.println();
         }
     }
-
+    
     private void updatePheromones(int[][] antMatrix, int populationSize, int numEmployees, int numTasks)
     {
         int[] ant;
@@ -160,7 +125,7 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
                 this.foundPerfectSolution = true;
             }
             */
-            double pheromone = 1.0/(5.0 * antCost) + 1.0; // Multiplying by 5 ensures no dividing by a decimal, Adding 1 ensures no division by zero
+            double pheromone = 1.0/(500.0 * antCost) + 1.0; // Multiplying by 5 ensures no dividing by a decimal, Adding 1 ensures no division by zero
             
             for(int j = 0; j < numTasks; j++) //for each task in ant's solution
             {
