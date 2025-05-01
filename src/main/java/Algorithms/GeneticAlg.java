@@ -36,8 +36,8 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
     public GeneticAlg(List<Task> tasks, List<Employee> employees,
                       int populationSize, double crossoverRate, double mutationRate,
                       int elitismCount, int maxIterations, int reportingFrequency,
-                      boolean fileOutput) {
-        super(tasks, employees, reportingFrequency, fileOutput, maxIterations, populationSize);
+                      boolean fileOutput, int runID) {
+        super(tasks, employees, reportingFrequency, fileOutput, maxIterations, populationSize, runID);
         this.crossoverRate = crossoverRate;
         this.mutationRate = mutationRate;
         this.elitismCount = elitismCount;
@@ -61,13 +61,13 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
         int[] globalBestSolution = findBestSolution(population);
         double globalBestCost = CostCalculator.calculateTotalCost(globalBestSolution, tasks, employees);
 
-        // Log initial state
-        performanceLogger.logIteration(
-                generation,
-                globalBestSolution,
-                globalBestCost,
-                PerformanceLogger.getCurrentMemoryUsageMB()
-        );
+//        // Log initial state
+//        performanceLogger.logIteration(
+//                generation,
+//                globalBestSolution,
+//                globalBestCost,
+//                PerformanceLogger.getCurrentMemoryUsageMB()
+//        );
 
         // Main loop
         while (generation < maxIterations && !(globalBestCost == 0)) {
@@ -132,8 +132,6 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
                 reportProgress(globalBestSolution, generation);
             }
 
-            generation++;
-
             // Log metrics for this generation
             performanceLogger.logIteration(
                     generation,
@@ -141,6 +139,10 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
                     globalBestCost,
                     PerformanceLogger.getCurrentMemoryUsageMB()
             );
+
+            generation++;
+
+
         }
 
         // Stop timer and save all metrics to CSV files
@@ -286,13 +288,13 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm{
     }
 
     @Override
-    protected String getAlgorithmName()
+    public String getAlgorithmName()
     {
         return "GeneticAlg";
     }
 
     @Override
-    protected int getMaxIterations()
+    public int getMaxIterations()
     {
         return maxIterations;
     }

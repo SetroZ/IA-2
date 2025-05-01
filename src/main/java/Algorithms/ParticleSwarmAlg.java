@@ -28,8 +28,8 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm
 
 
     public ParticleSwarmAlg(List<Task> tasks, List<Employee> employees,
-                            int populationSize, int maxIterations, int reportingFrequency, boolean fileOutput) {
-        super(tasks, employees, reportingFrequency, fileOutput, maxIterations, populationSize);
+                            int populationSize, int maxIterations, int reportingFrequency, boolean fileOutput, int runId) {
+        super(tasks, employees, reportingFrequency, fileOutput, maxIterations, populationSize, runId);
         this.populationSize = populationSize;
         this.employees = employees;
         this.tasks = tasks;
@@ -47,13 +47,13 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm
     }
 
     @Override
-    protected String getAlgorithmName()
+    public String getAlgorithmName()
     {
         return "ParticleSwarmAlg";
     }
 
     @Override
-    protected int getMaxIterations()
+    public int getMaxIterations()
     {
         return maxIterations;
     }

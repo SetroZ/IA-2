@@ -4,11 +4,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import Exceptions.LoadDataException;
 import Exceptions.ObserverException;
 import View.PerformanceVisualiser;
 
@@ -34,14 +32,23 @@ public class VisualisationController {
     private static final String COMPUTATIONAL_EFFICIENCY_CHART = "computational_efficiency_comparison.png";
     private static final String CONSTRAINT_SATISFACTION_CHART = "constraint_satisfaction_comparison.png";
 
+    // Run id
+    private int RUN_ID;
+
     private final PerformanceVisualiser visualiser;
 
     /**
      * Constructor for VisualizationController
      */
-    public VisualisationController() {
+    public VisualisationController(int runID) {
         this.visualiser = new PerformanceVisualiser();
+        this.RUN_ID = runID;
         createDirectories();
+    }
+
+    public void setRUN_ID(int runID)
+    {
+        this.RUN_ID = runID;
     }
 
     /**
@@ -63,7 +70,7 @@ public class VisualisationController {
             result.append(generateSolutionQualityChart()).append("\n");
             result.append(generateComputationalEfficiencyChart()).append("\n");
             result.append(generateConstraintSatisfactionChart()).append("\n");
-        } catch (IOException e) {
+        } catch (LoadDataException e) {
             throw new ObserverException("Error generating charts: " + e.getMessage());
         }
 
@@ -74,38 +81,37 @@ public class VisualisationController {
      * Generate a chart comparing solution quality across algorithms
      *
      * @return Result message
-     * @throws IOException If reading CSV or generating chart fails
+     * @throws LoadDataException If reading CSV or generating chart fails
      */
-    public String generateSolutionQualityChart() throws IOException {
-        // Lists to hold data for each algorithm
+    public String generateSolutionQualityChart() throws ObserverException
+    {
         List<String> algorithmNames = new ArrayList<>();
         List<List<double[]>> dataPoints = new ArrayList<>();
 
-        // Read data for each algorithm
-        for (String algorithm : ALGORITHM_NAMES) {
-            String filePath = RESULTS_DIR + "/" + algorithm + SOLUTION_QUALITY_SUFFIX;
-            File file = new File(filePath);
+        for (String algorithm : ALGORITHM_NAMES)
+        {
+            try
+            {
+                List<double[]> averagedData = readSolutionQualityData(algorithm);
 
-            if (file.exists()) {
-                List<double[]> algorithmData = readSolutionQualityData(filePath);
-
-                if (!algorithmData.isEmpty()) {
+                if (!averagedData.isEmpty())
+                {
                     algorithmNames.add(algorithm);
-                    dataPoints.add(algorithmData);
+                    dataPoints.add(averagedData);
                 }
+            }
+            catch (LoadDataException e)
+            {
+                throw new ObserverException(e.getMessage());
             }
         }
 
-        if (algorithmNames.isEmpty()) {
-            return "No solution quality data found. Run algorithms first.";
-        }
-
         // Generate the comparison chart
-        String outputPath = CHARTS_DIR + "/" + SOLUTION_QUALITY_CHART;
+        String outputPath = CHARTS_DIR + "/run"+RUN_ID +"_"+ SOLUTION_QUALITY_CHART;
         visualiser.createComparisonChart(
                 "Algorithm Solution Quality Comparison",
                 "Iterations",
-                "Cost Value (Lower is Better)",
+                "Average Cost Value (Lower is Better)",
                 algorithmNames,
                 dataPoints,
                 outputPath
@@ -118,10 +124,10 @@ public class VisualisationController {
      * Generate a chart comparing computational efficiency across algorithms
      *
      * @return Result message
-     * @throws IOException If reading CSV or generating chart fails
+     * @throws LoadDataException If reading CSV or generating chart fails
      */
-    public String generateComputationalEfficiencyChart() throws IOException {
-        String filePath = RESULTS_DIR + "/" + COMPUTATIONAL_EFFICIENCY_FILE;
+    public String generateComputationalEfficiencyChart() throws LoadDataException {
+        String filePath = RESULTS_DIR + "/" +"run"+RUN_ID+"_"+ COMPUTATIONAL_EFFICIENCY_FILE;
         File file = new File(filePath);
 
         if (!file.exists()) {
@@ -163,40 +169,50 @@ public class VisualisationController {
      * Generate a chart comparing constraint satisfaction across algorithms
      *
      * @return Result message
-     * @throws IOException If reading CSV or generating chart fails
+     * @throws LoadDataException If reading CSV or generating chart fails
      */
-    public String generateConstraintSatisfactionChart() throws IOException {
+    public String generateConstraintSatisfactionChart() throws LoadDataException
+    {
         // Lists to hold data for each algorithm
         List<String> algorithmNames = new ArrayList<>();
-        List<List<double[]>> dataPoints = new ArrayList<>();
+        List<List<double[]>> avgDataPoints = new ArrayList<>();
+        List<List<double[]>> stdDevDataPoints = new ArrayList<>();
 
         // Read data for each algorithm
-        for (String algorithm : ALGORITHM_NAMES) {
-            String filePath = RESULTS_DIR + "/" + algorithm + CONSTRAINT_SATISFACTION_SUFFIX;
-            File file = new File(filePath);
+        for (String algorithm : ALGORITHM_NAMES)
+        {
+            try
+            {
+                List<double[]> avgData = readConstraintSatisfactionData(algorithm);
+                List<double[]> stdDevData = calculateConstraintSatisfactionStdDev(algorithm);
 
-            if (file.exists()) {
-                List<double[]> algorithmData = readConstraintSatisfactionData(filePath);
-
-                if (!algorithmData.isEmpty()) {
+                if (!avgData.isEmpty())
+                {
                     algorithmNames.add(algorithm);
-                    dataPoints.add(algorithmData);
+                    avgDataPoints.add(avgData);
+                    stdDevDataPoints.add(stdDevData);
                 }
+            }
+            catch (IOException e)
+            {
+                throw new LoadDataException(e.getMessage());
             }
         }
 
-        if (algorithmNames.isEmpty()) {
+        if (algorithmNames.isEmpty())
+        {
             return "No constraint satisfaction data found. Run algorithms first.";
         }
 
         // Generate the comparison chart
-        String outputPath = CHARTS_DIR + "/" + CONSTRAINT_SATISFACTION_CHART;
-        visualiser.createComparisonChart(
+        String outputPath = CHARTS_DIR + "run"+RUN_ID +"_"+ CONSTRAINT_SATISFACTION_CHART;
+        visualiser.createComparisonChartWithVariability(
                 "Constraint Satisfaction Comparison",
                 "Iterations",
-                "Constraint Violations (Lower is Better)",
+                "Average Constraint Violations (Lower is Better)",
                 algorithmNames,
-                dataPoints,
+                avgDataPoints,
+                stdDevDataPoints,
                 outputPath
         );
 
@@ -204,45 +220,94 @@ public class VisualisationController {
     }
 
     /**
-     * Read solution quality data from CSV file
+     * Read and average the cost of the solution quality data from CSV file
      *
-     * @param filePath Path to the CSV file
+     * @param algorithmName Name of the algorithm
      * @return List of data points [iteration, cost]
-     * @throws IOException If reading fails
+     * @throws LoadDataException If reading fails
      */
-    private List<double[]> readSolutionQualityData(String filePath) throws IOException {
-        List<double[]> dataPoints = new ArrayList<>();
+    private List<double[]> readSolutionQualityData(String algorithmName) throws LoadDataException {
+        Map<Integer, List<Double>> iterationToCostMap = new HashMap<>();
+        int runCount = 0;
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            // Skip header
-            reader.readLine();
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(",");
-                if (parts.length >= 4) {
-                    try {
-                        // [iteration, cost]
-                        double[] point = new double[2];
-                        point[0] = Double.parseDouble(parts[1]); // Iteration
-
-                        double costValue = Double.parseDouble(parts[3]); // Cost value
-
-                        // Filter out extreme values that might cause visualization issues
-                        if (Double.isFinite(costValue) && costValue < 1.0E10) {
-                            point[1] = costValue;
-                            dataPoints.add(point);
-                        } else {
-                            System.out.println("Skipping extreme cost value: " + costValue);
-                        }
-                    } catch (NumberFormatException e) {
-                        System.out.println("Warning: Could not parse value in line: " + line);
-                    }
+        // Debug: Print directory contents
+        System.out.println("Looking for solution quality files for " + algorithmName);
+        File dir = new File(RESULTS_DIR);
+        System.out.println("Directory exists: " + dir.exists());
+        if (dir.exists()) {
+            System.out.println("Files in directory:");
+            File[] allFiles = dir.listFiles();
+            if (allFiles != null) {
+                for (File f : allFiles) {
+                    System.out.println(" - " + f.getName());
                 }
             }
         }
+        System.out.println(RUN_ID);
 
-        return dataPoints;
+        // Find all files for this algorithm using the correct pattern that includes the runID
+        File[] files = dir.listFiles((d, name) ->
+                name.startsWith(algorithmName) && name.contains("_run"+RUN_ID) && name.contains(SOLUTION_QUALITY_SUFFIX));
+
+        System.out.println("Found " + (files != null ? files.length : 0) + " solution quality files for " + algorithmName);
+
+        if (files != null && files.length > 0) {
+            for (File file : files) {
+                System.out.println("Processing file: " + file.getName());
+                Map<Integer, Double> map = new HashMap<Integer, Double>();
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                    // Skip header
+                    reader.readLine();
+
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        String[] parts = line.split(",");
+                        if (parts.length >= 4) {
+                            int iteration = Integer.parseInt(parts[1]);
+                            double costValue = Double.parseDouble(parts[3]);
+                            //map.put(iteration, costValue);
+
+                            System.out.println("  Found data point: iteration=" + iteration + ", cost=" + costValue);
+
+                            // Store cost for this iteration
+                            iterationToCostMap.computeIfAbsent(iteration, k -> new ArrayList<>())
+                                    .add(costValue);
+                        }
+                    }
+                } catch (IOException e) {
+                    throw new LoadDataException("Could not read solution quality data for " + file.getName()
+                            + ": " + e.getMessage());
+                }
+                runCount++;
+            }
+        }
+
+        // If no data was found, return empty list
+        if (runCount == 0) {
+            System.out.println("No solution quality data found for " + algorithmName);
+            return new ArrayList<>();
+        }
+
+        // Calculate averages and print them for debugging
+        List<double[]> averagedData = new ArrayList<>();
+        for (Map.Entry<Integer, List<Double>> entry : iterationToCostMap.entrySet()) {
+            int iteration = entry.getKey();
+            List<Double> costs = entry.getValue();
+
+            // Calculate average cost for this iteration
+            double avgCost = costs.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+
+            System.out.println("Average for iteration " + iteration + ": " + avgCost +
+                    " (from " + costs.size() + " runs: " + costs + ")");
+
+            // Add data point [iteration, avgCost]
+            averagedData.add(new double[]{iteration, avgCost});
+        }
+
+        // Sort by iteration
+        averagedData.sort(Comparator.comparingDouble(point -> point[0]));
+
+        return averagedData;
     }
 
     /**
@@ -250,9 +315,9 @@ public class VisualisationController {
      *
      * @param filePath Path to the CSV file
      * @return Map of algorithm name to metrics array [runtime, memory, iterations]
-     * @throws IOException If reading fails
+     * @throws LoadDataException If reading fails
      */
-    private Map<String, double[]> readComputationalEfficiencyData(String filePath) throws IOException {
+    private Map<String, double[]> readComputationalEfficiencyData(String filePath) throws LoadDataException {
         Map<String, double[]> dataMap = new HashMap<>();
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
@@ -272,6 +337,9 @@ public class VisualisationController {
                 }
             }
         }
+        catch (IOException e) {
+            throw new LoadDataException("Could not read computational efficiency data for " + filePath);
+        }
 
         return dataMap;
     }
@@ -279,30 +347,153 @@ public class VisualisationController {
     /**
      * Read constraint satisfaction data from CSV file
      *
-     * @param filePath Path to the CSV file
+     * @param algorithmName name of the CSV file
      * @return List of data points [iteration, violation count]
-     * @throws IOException If reading fails
+     * @throws LoadDataException If reading fails
      */
-    private List<double[]> readConstraintSatisfactionData(String filePath) throws IOException {
-        List<double[]> dataPoints = new ArrayList<>();
+    private List<double[]> readConstraintSatisfactionData(String algorithmName) throws LoadDataException {
+        Map<Integer, List<Double>> iterationToViolationsMap = new HashMap<>();
+        int runCount = 0;
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            // Skip header
-            reader.readLine();
+        // Find all files for this algorithm with constraint satisfaction data using the correct pattern
+        File dir = new File(RESULTS_DIR);
+        File[] files = dir.listFiles((d, name) ->
+                name.startsWith(algorithmName) && name.contains("_run"+RUN_ID) && name.contains(CONSTRAINT_SATISFACTION_SUFFIX));
 
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(",");
-                if (parts.length >= 4) {
-                    // [iteration, violations]
-                    double[] point = new double[2];
-                    point[0] = Double.parseDouble(parts[1]); // Iteration
-                    point[1] = Double.parseDouble(parts[3]); // Hard constraint violations
-                    dataPoints.add(point);
+        if (files != null) {
+            for (File file : files) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                    // Skip header
+                    reader.readLine();
+
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        String[] parts = line.split(",");
+                        if (parts.length >= 4) {
+                            int iteration = Integer.parseInt(parts[1]);
+                            double violations = Double.parseDouble(parts[3]); // HardConstraintViolations column
+
+                            // Store constraint violations for this iteration
+                            iterationToViolationsMap.computeIfAbsent(iteration, k -> new ArrayList<>())
+                                    .add(violations);
+                        }
+                    }
+                } catch (IOException e) {
+                    throw new LoadDataException("Could not read constraint satisfaction data for " + file.getName());
+                }
+                runCount++;
+            }
+        }
+
+        // If no data was found, return empty list
+        if (runCount == 0) {
+            return new ArrayList<>();
+        }
+
+        // Calculate averages for each iteration
+        List<double[]> averagedData = new ArrayList<>();
+        for (Map.Entry<Integer, List<Double>> entry : iterationToViolationsMap.entrySet()) {
+            int iteration = entry.getKey();
+            List<Double> violations = entry.getValue();
+
+            // Calculate average violations for this iteration
+            double avgViolations = violations.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+
+            System.out.println("Constraint violations average for iteration " + iteration + ": " + avgViolations +
+                    " (from " + violations.size() + " runs)");
+
+            // Add data point [iteration, avgViolations]
+            averagedData.add(new double[]{iteration, avgViolations});
+        }
+
+        // Sort by iteration
+        averagedData.sort(Comparator.comparingDouble(point -> point[0]));
+
+        return averagedData;
+    }
+
+    private List<double[]> getAverageData(Map<Integer, List<Double>> iterationToX){
+        // Calculate averages for each iteration
+        List<double[]> averagedData = new ArrayList<>();
+        for (Map.Entry<Integer, List<Double>> entry : iterationToX.entrySet()) {
+            int iteration = entry.getKey();
+            List<Double> violations = entry.getValue();
+
+            // Calculate average X for this iteration
+            double X = violations.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+
+            // Add data point [iteration, X]
+            averagedData.add(new double[]{iteration, X});
+        }
+
+        // Sort by iteration
+        averagedData.sort(Comparator.comparingDouble(point -> point[0]));
+
+        return averagedData;
+    }
+
+    private List<double[]> calculateConstraintSatisfactionStdDev(String algorithmName) throws IOException {
+        Map<Integer, List<Double>> iterationToViolationsMap = new HashMap<>();
+
+        // Find all files for this algorithm
+        File dir = new File(RESULTS_DIR);
+        File[] files = dir.listFiles((d, name) ->
+                name.startsWith(algorithmName) && name.contains("_constraint_satisfaction.csv"));
+
+        if (files != null) {
+            for (File file : files) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                    // Skip header
+                    reader.readLine();
+
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        String[] parts = line.split(",");
+                        if (parts.length >= 4) {
+                            int iteration = Integer.parseInt(parts[1]);
+                            double violations = Double.parseDouble(parts[3]); // HardConstraintViolations
+
+                            // Store constraint violations for this iteration
+                            iterationToViolationsMap.computeIfAbsent(iteration, k -> new ArrayList<>())
+                                    .add(violations);
+                        }
+                    }
                 }
             }
         }
 
-        return dataPoints;
+        // Calculate standard deviation for each iteration
+        List<double[]> stdDevData = new ArrayList<>();
+        for (Map.Entry<Integer, List<Double>> entry : iterationToViolationsMap.entrySet()) {
+            int iteration = entry.getKey();
+            List<Double> violations = entry.getValue();
+
+            // Need at least 2 data points to calculate standard deviation
+            if (violations.size() < 2) {
+                stdDevData.add(new double[]{iteration, 0.0}); // No std dev with just one sample
+                continue;
+            }
+
+            // Calculate mean
+            double mean = violations.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+
+            // Calculate sum of squared differences
+            double sumSquaredDiff = violations.stream()
+                    .mapToDouble(v -> Math.pow(v - mean, 2))
+                    .sum();
+
+            // Calculate standard deviation
+            double stdDev = Math.sqrt(sumSquaredDiff / (violations.size() - 1));
+
+            // Add data point [iteration, stdDev]
+            stdDevData.add(new double[]{iteration, stdDev});
+        }
+
+        // Sort by iteration
+        stdDevData.sort(Comparator.comparingDouble(point -> point[0]));
+
+        return stdDevData;
     }
+
+
 }

@@ -27,10 +27,10 @@ public class AlgorithmFactory
     }
 
     public GeneticAlg createGeneticAlgorithm(Integer populationSize, Double crossoverRate, Double mutationRate,
-                                             Integer elitismCount, Integer maxGenerations, Integer reportingFrequency, Boolean fileOutput)
+                                             Integer elitismCount, Integer maxGenerations, Integer reportingFrequency, Boolean fileOutput, int runId)
     {
         GeneticAlg ga = new GeneticAlg(tasks, employees, populationSize, crossoverRate, mutationRate,
-                elitismCount, maxGenerations, reportingFrequency, fileOutput);
+                elitismCount, maxGenerations, reportingFrequency, fileOutput, runId);
         for (Observer observer : observers)
         {
             ga.registerObserver(observer);
@@ -39,9 +39,9 @@ public class AlgorithmFactory
     }
 
     public ParticleSwarmAlg createParticleSwarm(Integer populationSize, Integer maxIterations,
-                                                Integer reportingFrequency, Boolean fileOutput)
+                                                Integer reportingFrequency, Boolean fileOutput, int runId)
     {
-        ParticleSwarmAlg ps = new ParticleSwarmAlg(tasks, employees, populationSize, maxIterations, reportingFrequency, fileOutput);
+        ParticleSwarmAlg ps = new ParticleSwarmAlg(tasks, employees, populationSize, maxIterations, reportingFrequency, fileOutput, runId);
         for (Observer observer : observers)
         {
             ps.registerObserver(observer);
@@ -50,9 +50,10 @@ public class AlgorithmFactory
 
     }
 
-    public AntColAlg createAntColonyOptimisation(Integer numAnts, Double pherDecayRate, Double initPheromone, Integer maxIterations, Integer reportingFrequency, Boolean fileOutput)
+    public AntColAlg createAntColonyOptimisation(Integer numAnts, Double pherDecayRate, Double initPheromone,
+                                                 Integer maxIterations, Integer reportingFrequency, Boolean fileOutput, int runId)
     {
-        AntColAlg aco = new AntColAlg(numAnts, pherDecayRate, initPheromone, maxIterations, reportingFrequency, fileOutput, this.tasks, this.employees);
+        AntColAlg aco = new AntColAlg(tasks, employees, numAnts, pherDecayRate, initPheromone, maxIterations, reportingFrequency, fileOutput, runId);
         for (Observer observer : observers)
         {
             aco.registerObserver(observer);
@@ -64,12 +65,12 @@ public class AlgorithmFactory
                                                                             Integer reportingFrequency, Boolean fileOutput,
                                                                             Double pherDecayRate, Double initPheromone,
                                                                             Double crossoverRate, Double mutationRate,
-                                                                            Integer elitismCount)
+                                                                            Integer elitismCount, int runID)
     {
         Map<String, AbstractOptimisationAlgorithm> algos = new HashMap<>();
-        algos.put("Genetic Algorithm",createGeneticAlgorithm(populationSize, crossoverRate, mutationRate, elitismCount, maxIterations, reportingFrequency, fileOutput));
-        algos.put("Particle Swarm",createParticleSwarm(populationSize, maxIterations, reportingFrequency, fileOutput));
-        algos.put("Ant Colony",createAntColonyOptimisation(populationSize, pherDecayRate, initPheromone, maxIterations, reportingFrequency, fileOutput));
+        algos.put("GeneticAlg",createGeneticAlgorithm(populationSize, crossoverRate, mutationRate, elitismCount, maxIterations, reportingFrequency, fileOutput, runID));
+        algos.put("ParticleSwarmAlg",createParticleSwarm(populationSize, maxIterations, reportingFrequency, fileOutput, runID));
+        algos.put("AntColonyAlg",createAntColonyOptimisation(populationSize, pherDecayRate, initPheromone, maxIterations, reportingFrequency, fileOutput,runID));
         return algos;
     }
 }

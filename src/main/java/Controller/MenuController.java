@@ -1,5 +1,6 @@
 package Controller;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,7 @@ import View.ConsoleObserver;
 import View.PerformanceVisualiser;
 
 public class MenuController{
+    private static final String RESULTS_DIR = "results/performance" ;
     private final List<Observer> observers;
     private List<Employee> employees;
     private List<Task> tasks;
@@ -31,12 +33,15 @@ public class MenuController{
     private double GA_CROSSOVER_DEFAULT = 0.2;
     private double GA_MUTATION_DEFAULT = 0.1;
     private int GA_ELITISM_DEFAULT = 2;
+    //private int GA_RUN_ID = 0;
 
     //PS (None)
+    //private int PS_RUN_ID = 0;
 
     //AC
     private double ACO_DECAY_RATE_DEFAULT = 0.1;
     private double ACO_INITIAL_PHEROMONE_DEFAULT = 0.1;
+    //private int AC_RUN_ID = 0;
 
 
     // ALL
@@ -44,6 +49,8 @@ public class MenuController{
     private int MAX_GEN_DEFAULT = 200;
     private int REPORTING_FREQUENCY_DEFAULT = 5;
     private boolean FILE_OUTPUT_DEFAULT = true;
+    private int TRIAL_NUMBER_DEFAULT = 1;
+    private int ALL_RUN_ID = 1;
     
     /**
      * Constructor for menu controller
@@ -88,7 +95,7 @@ public class MenuController{
 
     public void start() throws ObserverException {
         boolean exit = false;
-
+        ALL_RUN_ID = getExistingRun_ID();
         while (!exit) {
             try {
                 int choice = consoleObserver.requestInput("WELCOME", consoleObserver.getLoadedDataStatus(),
@@ -125,13 +132,23 @@ public class MenuController{
     private void generateVisualisationsMenu() {
         boolean exit = false;
 
+
         try {
-            VisualisationController visualController = new VisualisationController();
+            VisualisationController visualController = new VisualisationController(ALL_RUN_ID);
+
+            ALL_RUN_ID = getExistingRun_ID();
+            if(ALL_RUN_ID == 0)
+            {
+                notifyObservers("ERROR", "No existing runs found in results",
+                        "No previous run data exists in results/performance" );
+                return;
+            }
 
             while (!exit) {
                 int choice = consoleObserver.requestInput("GENERATE VISUALIZATIONS",
-                        "Select which charts to generate",
+                        "Select which charts to generate from run "+ ALL_RUN_ID,
                         new String[] { "Exit",
+                                "Run ID: "+ALL_RUN_ID,
                                 "Solution Quality Comparison",
                                 "Computational Efficiency Comparison",
                                 "Constraint Satisfaction Comparison",
@@ -142,33 +159,37 @@ public class MenuController{
                         exit = true;
                         break;
                     case 1:
+                        ALL_RUN_ID = getParameter("run id", ALL_RUN_ID, 0, ALL_RUN_ID);
+                        visualController.setRUN_ID(ALL_RUN_ID);
+                        break;
+                    case 2:
                         try {
                             String result = visualController.generateSolutionQualityChart();
                             notifyObservers("SUCCESS", "Solution Quality Chart", result);
-                        } catch (IOException e) {
+                        } catch (LoadDataException e) {
                             notifyObservers("ERROR", "Chart Generation Failed",
                                     "Failed to generate solution quality chart: " + e.getMessage());
                         }
                         break;
-                    case 2:
+                    case 3:
                         try {
                             String result = visualController.generateComputationalEfficiencyChart();
                             notifyObservers("SUCCESS", "Computational Efficiency Chart", result);
-                        } catch (IOException e) {
+                        } catch (LoadDataException e) {
                             notifyObservers("ERROR", "Chart Generation Failed",
                                     "Failed to generate computational efficiency chart: " + e.getMessage());
                         }
                         break;
-                    case 3:
+                    case 4:
                         try {
                             String result = visualController.generateConstraintSatisfactionChart();
                             notifyObservers("SUCCESS", "Constraint Satisfaction Chart", result);
-                        } catch (IOException e) {
+                        } catch (LoadDataException e) {
                             notifyObservers("ERROR", "Chart Generation Failed",
                                     "Failed to generate constraint satisfaction chart: " + e.getMessage());
                         }
                         break;
-                    case 4:
+                    case 5:
                         try {
                             String result = visualController.generateAllCharts();
                             notifyObservers("SUCCESS", "All Charts Generated", result);
@@ -322,6 +343,74 @@ public class MenuController{
         }
     }
 
+    private void runMenuMultiple(String algorithmType)
+    {
+        System.out.println(ALL_RUN_ID);
+        if(ALL_RUN_ID == getExistingRun_ID())
+        {
+            ALL_RUN_ID++;
+        }
+        notifyObservers("INFO", "RUNNING TRIALS",
+                "Running " + TRIAL_NUMBER_DEFAULT + " trials of " + algorithmType + "...");
+
+        for (int i = 0; i < TRIAL_NUMBER_DEFAULT; i++)
+        {
+            // Create and run algorithm with this run ID
+            switch (algorithmType)
+            {
+                case "GeneticAlg" ->
+                {
+                    GeneticAlg ga = new AlgorithmFactory(tasks, employees, observers)
+                            .createGeneticAlgorithm(POPULATION_SIZE_DEFAULT, GA_CROSSOVER_DEFAULT,
+                                    GA_MUTATION_DEFAULT, GA_ELITISM_DEFAULT,
+                                    MAX_GEN_DEFAULT, REPORTING_FREQUENCY_DEFAULT,
+                                    FILE_OUTPUT_DEFAULT, ALL_RUN_ID);
+                    runMenu(ga, "Genetic Algorithm (Trial " + ALL_RUN_ID + ")");
+                }
+                case "AntColAlg" ->
+                {
+                    AntColAlg ac = new AlgorithmFactory(tasks, employees, observers)
+                            .createAntColonyOptimisation(POPULATION_SIZE_DEFAULT, ACO_DECAY_RATE_DEFAULT,
+                                    ACO_INITIAL_PHEROMONE_DEFAULT,
+                                    MAX_GEN_DEFAULT, REPORTING_FREQUENCY_DEFAULT,
+                                    FILE_OUTPUT_DEFAULT, ALL_RUN_ID);
+                    runMenu(ac, "Ant Colony Algorithm (Trial " + ALL_RUN_ID + ")");
+                }
+                case "ParticleSwarmAlg" ->
+                {
+                    ParticleSwarmAlg ps = new AlgorithmFactory(tasks, employees, observers)
+                            .createParticleSwarm(POPULATION_SIZE_DEFAULT, MAX_GEN_DEFAULT,
+                                    REPORTING_FREQUENCY_DEFAULT, FILE_OUTPUT_DEFAULT, ALL_RUN_ID);
+                    runMenu(ps, "Particle Swarm Algorithm (Trial " + ALL_RUN_ID + ")");
+                }
+                case "All" ->
+                {
+                    Map<String, AbstractOptimisationAlgorithm> algs = new AlgorithmFactory(tasks, employees, observers).createStandardisedAlgorithms(
+                            POPULATION_SIZE_DEFAULT, MAX_GEN_DEFAULT,
+                            REPORTING_FREQUENCY_DEFAULT, FILE_OUTPUT_DEFAULT,
+                            ACO_DECAY_RATE_DEFAULT, ACO_INITIAL_PHEROMONE_DEFAULT,
+                            GA_CROSSOVER_DEFAULT, GA_MUTATION_DEFAULT, GA_ELITISM_DEFAULT,
+                            ALL_RUN_ID
+                    );
+
+                    runMenu(algs.get("AntColonyAlg"), "Ant Colony Algorithm (Trial " + ALL_RUN_ID + ")");
+                    runMenu(algs.get("GeneticAlg"), "Genetic Algorithm (Trial " + ALL_RUN_ID + ")");
+                    runMenu(algs.get("ParticleSwarmAlg"), "Particle Swarm Algorithm (Trial " + ALL_RUN_ID + ")");
+                }
+                default ->
+                {
+                    notifyObservers("ERROR", "Invalid Algorithm Type", "The algorithm type of: " + algorithmType + " cannot be determined");
+                    return;
+                }
+            }
+
+        }
+
+        notifyObservers("SUCCESS", "RUN COMPLETE",
+                "Completed " + TRIAL_NUMBER_DEFAULT + " trials of " + algorithmType);
+    }
+
+
     private void runAlgorithmMenu() {
         boolean exit = false;
 
@@ -374,6 +463,7 @@ public class MenuController{
                             "Maximum Iterations: " + MAX_GEN_DEFAULT,
                             "Reporting Frequency: " + REPORTING_FREQUENCY_DEFAULT,
                             "Output to File: " + FILE_OUTPUT_DEFAULT,
+                            "Number of Trials: " + TRIAL_NUMBER_DEFAULT,
                             "Proceed" });
 
             switch (choice) {
@@ -410,14 +500,11 @@ public class MenuController{
                     FILE_OUTPUT_DEFAULT = getParameter("Output to File", FILE_OUTPUT_DEFAULT);
                     break;
                 case 10:
-                    Map<String, AbstractOptimisationAlgorithm> algos =
-                        new AlgorithmFactory(tasks, employees, observers).createStandardisedAlgorithms(
-                        POPULATION_SIZE_DEFAULT, MAX_GEN_DEFAULT, REPORTING_FREQUENCY_DEFAULT,
-                        FILE_OUTPUT_DEFAULT, ACO_DECAY_RATE_DEFAULT, ACO_INITIAL_PHEROMONE_DEFAULT,
-                        GA_CROSSOVER_DEFAULT, GA_MUTATION_DEFAULT, GA_ELITISM_DEFAULT);
-                    runMenu(algos.get("Genetic Algorithm"), "Genetic Algorithm");
-                    runMenu(algos.get("Ant Colony"), "Ant Colony");
-                    runMenu(algos.get("Particle Swarm"), "Particle Swarm");
+                    TRIAL_NUMBER_DEFAULT = getParameter("Number of Trials", TRIAL_NUMBER_DEFAULT, 1, Integer.MAX_VALUE);
+                    break;
+                case 11:
+                    runMenuMultiple("All");
+                    break;
                 default:
                     break;
             }
@@ -427,15 +514,47 @@ public class MenuController{
     }
 
     private void runParticleSwarmMenu() {
+        boolean exit = false;
 
+        while (!exit) {
 
+            int choice = consoleObserver.requestInput("DEFINE PARTICLE SWARM ALGORITHM ",
+                    "Specify the parameters to use for this algorithm or proceed",
+                    new String[] { "Exit", "Population Size: " + POPULATION_SIZE_DEFAULT,
+                            "Maximum Iterations: " + MAX_GEN_DEFAULT,
+                            "Reporting Frequency: " + REPORTING_FREQUENCY_DEFAULT,
+                            "Output to File: " + FILE_OUTPUT_DEFAULT,
+                            "Number of Trials: " + TRIAL_NUMBER_DEFAULT,
+                            "Proceed" });
 
-        ParticleSwarmAlg ps = new AlgorithmFactory(tasks, employees, observers).createParticleSwarm(
-                POPULATION_SIZE_DEFAULT,
-                MAX_GEN_DEFAULT,
-                REPORTING_FREQUENCY_DEFAULT,
-                FILE_OUTPUT_DEFAULT);
-        runMenu(ps, "ParticleSwarmAlg");
+            switch (choice) {
+                case 0:
+                    exit = true;
+                    break;
+                case 1:
+                    POPULATION_SIZE_DEFAULT = getParameter("Population Size" , POPULATION_SIZE_DEFAULT, 1,
+                            Integer.MAX_VALUE);
+                    break;
+                case 2:
+                    MAX_GEN_DEFAULT = getParameter("Maximum Iterations", MAX_GEN_DEFAULT, 1, Integer.MAX_VALUE);
+                    break;
+                case 3:
+                    REPORTING_FREQUENCY_DEFAULT = getParameter("Reporting Frequency", REPORTING_FREQUENCY_DEFAULT,
+                            1, Integer.MAX_VALUE);
+                    break;
+                case 4:
+                    FILE_OUTPUT_DEFAULT = getParameter("Output to File", FILE_OUTPUT_DEFAULT);
+                    break;
+                case 5:
+                    TRIAL_NUMBER_DEFAULT = getParameter("Number of Trials", TRIAL_NUMBER_DEFAULT, 1, Integer.MAX_VALUE);
+                    break;
+                case 6:
+                    runMenuMultiple("ParticleSwarmAlg");
+                default:
+                    break;
+            }
+
+        }
 
     }
 
@@ -447,7 +566,7 @@ public class MenuController{
 
         while (!exit) {
 
-            int choice = consoleObserver.requestInput("DEFINE ANT COLONY OPTIMISATION ",
+            int choice = consoleObserver.requestInput("DEFINE ANT COLONY ALGORITHM ",
                     "Specify the parameters to use for this algorithm or proceed",
                     new String[] { "Exit", "Number of Ants (Population Size): " + POPULATION_SIZE_DEFAULT,
                             "Pheromone Decay Rate: " + ACO_DECAY_RATE_DEFAULT,
@@ -455,6 +574,7 @@ public class MenuController{
                             "Maximum Iterations: " + MAX_GEN_DEFAULT,
                             "Reporting Frequency: " + REPORTING_FREQUENCY_DEFAULT,
                             "Output to File: " + FILE_OUTPUT_DEFAULT,
+                            "Number of Trials: " + TRIAL_NUMBER_DEFAULT,
                             "Proceed" });
 
             switch (choice) {
@@ -482,10 +602,10 @@ public class MenuController{
                     FILE_OUTPUT_DEFAULT = getParameter("Output to File", FILE_OUTPUT_DEFAULT);
                     break;
                 case 7:
-                    AntColAlg aco = new AlgorithmFactory(tasks, employees, observers).createAntColonyOptimisation(
-                            POPULATION_SIZE_DEFAULT, ACO_DECAY_RATE_DEFAULT, ACO_INITIAL_PHEROMONE_DEFAULT, MAX_GEN_DEFAULT,
-                            REPORTING_FREQUENCY_DEFAULT, FILE_OUTPUT_DEFAULT);
-                    runMenu(aco, "Ant Colony");
+                    TRIAL_NUMBER_DEFAULT = getParameter("Number of Trials", TRIAL_NUMBER_DEFAULT, 1, Integer.MAX_VALUE);
+                    break;
+                case 8:
+                    runMenuMultiple("AntColonyAlg");
                 default:
                     break;
             }
@@ -508,6 +628,7 @@ public class MenuController{
                             "Maximum Generations: " + MAX_GEN_DEFAULT,
                             "Reporting frequency: " + REPORTING_FREQUENCY_DEFAULT,
                             "Output to file: " + FILE_OUTPUT_DEFAULT,
+                            "Number of Trials: " + TRIAL_NUMBER_DEFAULT,
                             "Proceed" });
 
             switch (choice) {
@@ -538,10 +659,9 @@ public class MenuController{
                     FILE_OUTPUT_DEFAULT = getParameter("Output to file", FILE_OUTPUT_DEFAULT);
                     break;
                 case 8:
-                    GeneticAlg ga = new AlgorithmFactory(tasks, employees, observers).createGeneticAlgorithm(
-                            POPULATION_SIZE_DEFAULT, GA_CROSSOVER_DEFAULT, GA_MUTATION_DEFAULT, GA_ELITISM_DEFAULT,
-                            MAX_GEN_DEFAULT, REPORTING_FREQUENCY_DEFAULT, FILE_OUTPUT_DEFAULT);
-                    runMenu(ga, "Genetic");
+                    TRIAL_NUMBER_DEFAULT = getParameter("Number of Trials", TRIAL_NUMBER_DEFAULT, 1, Integer.MAX_VALUE);
+                case 9:
+                    runMenuMultiple("GeneticAlg");
                     break;
                 default:
                     break;
@@ -557,23 +677,31 @@ public class MenuController{
     }
 
     private boolean getParameter(String parameter, boolean defaultVal) {
-        int choice = (consoleObserver.requestInput("ENTER PARAMETER", "Enter a value for " + parameter.toLowerCase(),
+        int choice = (consoleObserver.requestInput("ENTER "+parameter.toUpperCase(), "Enter a value for " + parameter.toLowerCase(),
                 new String[] { "Exit", "True", "False" }));
         return (choice == 0) ? defaultVal : choice != 2;
     }
 
     private double getParameter(String parameter, double defaultVal, double min, double max) {
-        double choice = consoleObserver.requestInput("ENTER PARAMETER", "Enter a value for " + parameter.toLowerCase(), min,
+        double choice = consoleObserver.requestInput("ENTER "+parameter.toUpperCase(), "Enter a value for " + parameter.toLowerCase(), min,
                 max);
         return ((choice == min - 1.0) ? defaultVal : choice);
     }
 
     private int getParameter(String parameter, int defaultVal, int min, int max) {
-        int choice = consoleObserver.requestInput("ENTER PARAMETER", "Enter a value for " + parameter.toLowerCase(), min,
+        int choice = consoleObserver.requestInput("ENTER "+parameter.toUpperCase(), "Enter a value for " + parameter.toLowerCase(), min,
                 max);
         return ((choice == min - 1.0) ? defaultVal : choice);
     }
 
+    public int getExistingRun_ID()
+    {
+        File dir = new File(RESULTS_DIR);
+        File[] files = dir.listFiles((d, name) ->
+                name.contains("run")&&name.contains("solution_quality"));
+        //System.out.println("Found "+ files.length + "runs");
 
+        return files == null ? 0 : files.length;
+    }
 
 }

@@ -27,7 +27,7 @@ public abstract class AbstractOptimisationAlgorithm implements Algorithm {
     protected final PerformanceLogger performanceLogger;
 
     public AbstractOptimisationAlgorithm(List<Task> tasks, List<Employee> employees,
-                                         int reportingFrequency, boolean fileOutput, int maxIterations, int populationSize) {
+                                         int reportingFrequency, boolean fileOutput, int maxIterations, int populationSize, int runId) {
         this.tasks = tasks;
         this.employees = employees;
         this.reportinFrequency = reportingFrequency;
@@ -35,7 +35,7 @@ public abstract class AbstractOptimisationAlgorithm implements Algorithm {
         this.maxIterations = maxIterations;
         this.populationSize = populationSize;
 
-        this.performanceLogger = new PerformanceLogger(getAlgorithmName(), tasks, employees);
+        this.performanceLogger = new PerformanceLogger(getAlgorithmName(), tasks, employees, runId);
     }
 
     @Override
@@ -100,10 +100,10 @@ public abstract class AbstractOptimisationAlgorithm implements Algorithm {
     /**
      * Get the name of this algorithm
      */
-    protected abstract String getAlgorithmName();
+    public abstract String getAlgorithmName();
 
     /**
      * Get the maximum number of iterations
      */
-    protected abstract int getMaxIterations();
+    public abstract int getMaxIterations();
 }
