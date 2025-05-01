@@ -1,6 +1,7 @@
 package Algorithms;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -79,8 +80,9 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
             for (int j = 0; j < tasks.size(); j++) {
                 v[i][j] = rd.nextDouble(0.5, 2) * (rd.nextBoolean() ? 1 : -1);
                 pBest[i][j] = swarms[i][j];
-                fitnessPBest[i] = CostCalculator.calculateTotalCost(pBest[i], tasks, employees);
+
             }
+            fitnessPBest[i] = CostCalculator.calculateTotalCost(pBest[i], tasks, employees);
         }
         gBestData = findGbest(gBestData, fitnessPBest, pBest);
         int n = 0;
@@ -106,12 +108,10 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
                 // Find pBest
                 double newCost = CostCalculator.calculateTotalCost(swarms[i], tasks, employees);
                 if (newCost <= fitnessPBest[i]) {
-
                     fitnessPBest[i] = newCost;
-                    pBest[i] = swarms[i];
+                    pBest[i] = Arrays.copyOf(swarms[i], swarms[i].length);
                 }
             }
-
             gBestData = findGbest(gBestData, fitnessPBest, pBest);
             reportProgress(gBestData.gBestArr, n);
 

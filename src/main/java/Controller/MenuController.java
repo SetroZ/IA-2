@@ -25,6 +25,7 @@ public class MenuController {
     private List<Employee> employees;
     private List<Task> tasks;
     private final ConsoleObserver consoleObserver;
+    private final FileOutput fileOutput;
 
     // Default params for algorithms
     // GA
@@ -57,6 +58,7 @@ public class MenuController {
     public MenuController(ConsoleObserver consoleObserver, FileOutput fileOutput) {
         observers = new ArrayList<>();
         this.consoleObserver = consoleObserver;
+        this.fileOutput = fileOutput;
         registerObserver(consoleObserver);
         registerObserver(fileOutput);
     }
@@ -284,6 +286,7 @@ public class MenuController {
                                 1, 10000);
                         break;
                     case 3:
+
                         DataSet ds = RandomDataGen.generateDataSet(taskCount, employeeCount);
                         tasks = ds.tasks;
                         employees = ds.employees;
@@ -405,15 +408,18 @@ public class MenuController {
                     FILE_OUTPUT_DEFAULT = getParameter("Output to File", FILE_OUTPUT_DEFAULT);
                     break;
                 case 13:
+                    fileOutput.isRunAll = true;
                     Map<String, AbstractOptimisationAlgorithm> algos = new AlgorithmFactory(tasks, employees, observers)
                             .createStandardisedAlgorithms(
                                     POPULATION_SIZE_DEFAULT, MAX_GEN_DEFAULT, REPORTING_FREQUENCY_DEFAULT,
                                     FILE_OUTPUT_DEFAULT, ACO_DECAY_RATE_DEFAULT, ACO_INITIAL_PHEROMONE_DEFAULT,
                                     GA_CROSSOVER_DEFAULT, GA_MUTATION_DEFAULT, GA_ELITISM_DEFAULT, PSO_PBEST_W,
                                     PSO_GBEST_W, PSO_INERTIA_WEIGHT);
+
                     runMenu(algos.get("Genetic Algorithm"), "Genetic Algorithm");
                     runMenu(algos.get("Ant Colony"), "Ant Colony");
                     runMenu(algos.get("Particle Swarm"), "Particle Swarm");
+                    fileOutput.isRunAll = false;
                 default:
                     break;
             }
