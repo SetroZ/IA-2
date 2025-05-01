@@ -87,8 +87,8 @@ public class PerformanceLogger {
         int difficultyViolationCount = countDifficultyViolations(solution);
         int deadlineViolationCount = countDeadlineViolations(solution);
 
-        // Total constraint violations (ignoring deadline violations which are soft constraints)
-        int hardConstraintViolations = skillMismatchCount + overloadCount + difficultyViolationCount;
+        // Total constraint violations
+        int totalConstraintViolations = skillMismatchCount + overloadCount + difficultyViolationCount + deadlineViolationCount;
 
         // Create iteration data entry
         IterationData data = new IterationData(
@@ -96,7 +96,7 @@ public class PerformanceLogger {
                 elapsedTime,
                 cost,
                 memoryUsed,
-                hardConstraintViolations,
+                totalConstraintViolations,
                 skillMismatchCount,
                 overloadCount,
                 difficultyViolationCount,
@@ -230,10 +230,9 @@ public class PerformanceLogger {
             }
 
             for (IterationData data : iterationDataList) {
-                writer.write(String.format("%s,%d,%d,%.2f\n",
+                writer.write(String.format("%s,%d,%.2f\n",
                         algorithmName,
                         data.iteration,
-                        data.elapsedTimeMs,
                         data.cost
                 ));
             }
@@ -259,15 +258,10 @@ public class PerformanceLogger {
             // Write data rows
             for (IterationData data : iterationDataList)
             {
-                writer.write(String.format("%s,%d,%d,%d,%d,%d,%d,%d\n",
+                writer.write(String.format("%s,%d,%d\n",
                         algorithmName,
                         data.iteration,
-                        data.elapsedTimeMs,
-                        data.hardConstraintViolations,
-                        data.skillMismatchCount,
-                        data.overloadCount,
-                        data.difficultyViolationCount,
-                        data.deadlineViolationCount
+                        data.totalConstraintViolations
                 ));
             }
         }
@@ -288,7 +282,7 @@ public class PerformanceLogger {
             // Write header
             if(!fileExists)
             {
-                writer.write("Algorithm,Iterations,TotalTimeMs,AvgIterationTimeMs,PeakMemoryMB,FinalCost,FinalConstraintViolations\n");
+                writer.write("Algorithm,Iterations,TotalTimeMs,AvgIterationTimeMs\n");
             }
 
             // Get last iteration data for final metrics
@@ -297,21 +291,12 @@ public class PerformanceLogger {
             // Calculate average time per iteration
             double avgTimePerIteration = (double) totalExecutionTime / iterationDataList.size();
 
-            // Get peak memory usage
-            double peakMemory = 0;
-            for (IterationData data : iterationDataList) {
-                peakMemory = Math.max(peakMemory, data.memoryUsageMB);
-            }
 
             // Write a single row with summary data
-            writer.write(String.format("%s,%d,%d,%.2f,%.2f,%.4f,%d\n",
+            writer.write(String.format("%s,%d,%.2f\n",
                     algorithmName,
-                    lastData.iteration,
                     totalExecutionTime,
-                    avgTimePerIteration,
-                    peakMemory,
-                    lastData.cost,
-                    lastData.hardConstraintViolations
+                    avgTimePerIteration
             ));
         }
         catch (IOException e) {
@@ -337,7 +322,7 @@ public class PerformanceLogger {
         final long elapsedTimeMs;
         final double cost;
         final double memoryUsageMB;
-        final int hardConstraintViolations;
+        final int totalConstraintViolations;
         final int skillMismatchCount;
         final int overloadCount;
         final int difficultyViolationCount;
@@ -348,7 +333,7 @@ public class PerformanceLogger {
                 long elapsedTimeMs,
                 double cost,
                 double memoryUsageMB,
-                int hardConstraintViolations,
+                int totalConstraintViolations,
                 int skillMismatchCount,
                 int overloadCount,
                 int difficultyViolationCount,
@@ -358,7 +343,7 @@ public class PerformanceLogger {
             this.elapsedTimeMs = elapsedTimeMs;
             this.cost = cost;
             this.memoryUsageMB = memoryUsageMB;
-            this.hardConstraintViolations = hardConstraintViolations;
+            this.totalConstraintViolations = totalConstraintViolations;
             this.skillMismatchCount = skillMismatchCount;
             this.overloadCount = overloadCount;
             this.difficultyViolationCount = difficultyViolationCount;

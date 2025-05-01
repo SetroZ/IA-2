@@ -136,6 +136,7 @@ public class MenuController{
         try {
             VisualisationController visualController = new VisualisationController(ALL_RUN_ID);
 
+            boolean perIteration = false;
             ALL_RUN_ID = getExistingRun_ID();
             if(ALL_RUN_ID == 0)
             {
@@ -173,7 +174,16 @@ public class MenuController{
                         break;
                     case 3:
                         try {
-                            String result = visualController.generateComputationalEfficiencyChart();
+                            int anotherChoice = consoleObserver.requestInput("DEFINE PARAMETER", "What would you like efficiency graph to use",
+                                    new String[]{"Exit", "Total Average Runtime", "Average Runtime/Iteration"});
+                            switch (anotherChoice)
+                            {
+                                case 0 : break;
+                                case 1 : perIteration= false; break;
+                                case 2 : perIteration = true; break;
+                                default: break;
+                            }
+                            String result = visualController.generateComputationalEfficiencyChart(perIteration);
                             notifyObservers("SUCCESS", "Computational Efficiency Chart", result);
                         } catch (LoadDataException e) {
                             notifyObservers("ERROR", "Chart Generation Failed",
@@ -190,8 +200,17 @@ public class MenuController{
                         }
                         break;
                     case 5:
+                        int anotherChoice = consoleObserver.requestInput("DEFINE PARAMETER", "What would you like efficiency graph to use",
+                            new String[]{"Exit", "Total Average Runtime", "Average Runtime/Iteration"});
+                        switch (anotherChoice)
+                        {
+                            case 0 : break;
+                            case 1 : perIteration= false; break;
+                            case 2 : perIteration = true; break;
+                            default: break;
+                        }
                         try {
-                            String result = visualController.generateAllCharts();
+                            String result = visualController.generateAllCharts(perIteration);
                             notifyObservers("SUCCESS", "All Charts Generated", result);
                         } catch (ObserverException e) {
                             notifyObservers("ERROR", "Chart Generation Failed",
@@ -367,7 +386,7 @@ public class MenuController{
                                     FILE_OUTPUT_DEFAULT, ALL_RUN_ID);
                     runMenu(ga, "Genetic Algorithm (Trial " + ALL_RUN_ID + ")");
                 }
-                case "AntColAlg" ->
+                case "AntColonyAlg" ->
                 {
                     AntColAlg ac = new AlgorithmFactory(tasks, employees, observers)
                             .createAntColonyOptimisation(POPULATION_SIZE_DEFAULT, ACO_DECAY_RATE_DEFAULT,

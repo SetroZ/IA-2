@@ -63,12 +63,12 @@ public class VisualisationController {
      *
      * @return String with results of the operation
      */
-    public String generateAllCharts() throws ObserverException {
+    public String generateAllCharts(boolean perIteration) throws ObserverException {
         StringBuilder result = new StringBuilder();
 
         try {
             result.append(generateSolutionQualityChart()).append("\n");
-            result.append(generateComputationalEfficiencyChart()).append("\n");
+            result.append(generateComputationalEfficiencyChart(perIteration)).append("\n");
             result.append(generateConstraintSatisfactionChart()).append("\n");
         } catch (LoadDataException e) {
             throw new ObserverException("Error generating charts: " + e.getMessage());
@@ -126,7 +126,7 @@ public class VisualisationController {
      * @return Result message
      * @throws LoadDataException If reading CSV or generating chart fails
      */
-    public String generateComputationalEfficiencyChart() throws LoadDataException {
+    public String generateComputationalEfficiencyChart(boolean perIteration) throws LoadDataException {
         String filePath = RESULTS_DIR + "/" +"run"+RUN_ID+"_"+ COMPUTATIONAL_EFFICIENCY_FILE;
         File file = new File(filePath);
 
@@ -135,20 +135,34 @@ public class VisualisationController {
         }
 
         // Read the computational efficiency data
-        Map<String, double[]> efficiencyData = readComputationalEfficiencyData(filePath);
+        Map<String, Double[]> efficiencyData = readComputationalEfficiencyData(filePath);
 
         if (efficiencyData.isEmpty()) {
             return "Computational efficiency data is empty.";
         }
 
+        String runtimeTitle = "";
         // Lists for bar chart data
         List<String> algorithmNames = new ArrayList<>(efficiencyData.keySet());
         List<Double> runtimeValues = new ArrayList<>();
 
         // Extract runtime values for each algorithm
-        for (String algorithm : algorithmNames) {
-            double[] metrics = efficiencyData.get(algorithm);
-            runtimeValues.add(metrics[0]); // Runtime is at index 0
+        if(perIteration)
+        {
+
+            for (String algorithm : algorithmNames)
+            {
+                runtimeValues.add(efficiencyData.get(algorithm)[0]); // TotalRuntime is at index 0
+            }
+            runtimeTitle = " Average TotalRuntime (ms)";
+        }
+        else
+        {
+            for (String algorithm : algorithmNames)
+            {
+                runtimeValues.add(efficiencyData.get(algorithm)[1]); // runtime/iteration is at index 0
+            }
+            runtimeTitle = "Average Runtime/Iteration (ms)";
         }
 
         // Generate the comparison chart
@@ -156,7 +170,7 @@ public class VisualisationController {
         visualiser.createEfficiencyBarChart(
                 "Computational Efficiency Comparison",
                 "Algorithm",
-                "Runtime (ms)",
+                runtimeTitle,
                 algorithmNames,
                 runtimeValues,
                 outputPath
@@ -313,8 +327,9 @@ public class VisualisationController {
      * @return Map of algorithm name to metrics array [runtime, memory, iterations]
      * @throws LoadDataException If reading fails
      */
-    private Map<String, double[]> readComputationalEfficiencyData(String filePath) throws LoadDataException {
+    private Map<String, Double[]> readComputationalEfficiencyData(String filePath) throws LoadDataException {
         Map<String, List<Double[]>> dataMap = new HashMap<>();
+        Map<String, Double[]> averagedData = new HashMap<>();
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             // Skip header
@@ -323,40 +338,45 @@ public class VisualisationController {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
-                if (parts.length >= 7) {
+                if (parts.length >= 4) {
                     String algorithm = parts[0];
-                    double[] metrics = new double[3];
+                    Double[] metrics = new Double[3];
 
-                    metrics[0] = Double.parseDouble(parts[2]); // Total runtime
-                    metrics[1] = Double.parseDouble(parts[4]); // Peak memory
-                    metrics[2] = Double.parseDouble(parts[1]); // Iterations
-                    dataMap.put(algorithm, metrics);
+                    metrics[0] = (Double.parseDouble(parts[1])); // Iteration
+                    metrics[1] = (Double.parseDouble(parts[2])); // Total Time
+                    metrics[2] = (Double.parseDouble(parts[3])); // time/iteration
+                    dataMap.computeIfAbsent(algorithm, k -> new ArrayList<>()).add(metrics);
                 }
             }
 
-            List<double[]> averagedData = new ArrayList<>();
-            for (Map.Entry<String, double[]> entry : dataMap.entrySet()) {
+
+            for (Map.Entry<String, List<Double[]>> entry : dataMap.entrySet()) {
                 String algorithm = entry.getKey();
-                double[] costs = entry.getValue();
+                List<Double[]> metricList = entry.getValue();
+                // Calculate average runtime/iteration/algorithm for this iteration
+                double avgTotalRunTime = 0;
+                double avgRunTimePerIteration = 0;
+                for(Double[] metrics : metricList) {
+                    avgTotalRunTime += metrics[0];
+                    avgRunTimePerIteration += metrics[1];
+                }
+                avgRunTimePerIteration = avgRunTimePerIteration/metricList.size();
+                avgTotalRunTime = avgTotalRunTime / avgRunTimePerIteration;
 
-                // Calculate average cost for this iteration
-                double avgCost = costs.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+                System.out.println("Average runtime/itereration for algorithm " + algorithm + ": " + avgRunTimePerIteration +
+                        " (from " + metricList.size() + " runs: " + metricList + ")");
+                System.out.println("Average total runtime for algorithm " + algorithm + ": " + avgTotalRunTime +
+                        " (from " + metricList.size() + " runs: " + metricList + ")");
 
-                System.out.println("Average for iteration " + iteration + ": " + avgCost +
-                        " (from " + costs.size() + " runs: " + costs + ")");
 
-                // Add data point [iteration, avgCost]
-                averagedData.add(new double[]{iteration, avgCost});
+                averagedData.put(algorithm, new Double[]{avgTotalRunTime, avgRunTimePerIteration});
             }
-
-            // Sort by iteration
-            averagedData.sort(Comparator.comparingDouble(point -> point[0]));
         }
         catch (IOException e) {
             throw new LoadDataException("Could not read computational efficiency data for " + filePath);
         }
 
-        return dataMap;
+        return averagedData;
     }
 
     /**
@@ -426,89 +446,5 @@ public class VisualisationController {
 
         return averagedData;
     }
-
-    private List<double[]> getAverageData(Map<Integer, List<Double>> iterationToX){
-        // Calculate averages for each iteration
-        List<double[]> averagedData = new ArrayList<>();
-        for (Map.Entry<Integer, List<Double>> entry : iterationToX.entrySet()) {
-            int iteration = entry.getKey();
-            List<Double> violations = entry.getValue();
-
-            // Calculate average X for this iteration
-            double X = violations.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
-
-            // Add data point [iteration, X]
-            averagedData.add(new double[]{iteration, X});
-        }
-
-        // Sort by iteration
-        averagedData.sort(Comparator.comparingDouble(point -> point[0]));
-
-        return averagedData;
-    }
-
-    private List<double[]> calculateConstraintSatisfactionStdDev(String algorithmName) throws IOException {
-        Map<Integer, List<Double>> iterationToViolationsMap = new HashMap<>();
-
-        // Find all files for this algorithm
-        File dir = new File(RESULTS_DIR);
-        File[] files = dir.listFiles((d, name) ->
-                name.startsWith(algorithmName) && name.contains("_constraint_satisfaction.csv"));
-
-        if (files != null) {
-            for (File file : files) {
-                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                    // Skip header
-                    reader.readLine();
-
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        String[] parts = line.split(",");
-                        if (parts.length >= 4) {
-                            int iteration = Integer.parseInt(parts[1]);
-                            double violations = Double.parseDouble(parts[3]); // HardConstraintViolations
-
-                            // Store constraint violations for this iteration
-                            iterationToViolationsMap.computeIfAbsent(iteration, k -> new ArrayList<>())
-                                    .add(violations);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Calculate standard deviation for each iteration
-        List<double[]> stdDevData = new ArrayList<>();
-        for (Map.Entry<Integer, List<Double>> entry : iterationToViolationsMap.entrySet()) {
-            int iteration = entry.getKey();
-            List<Double> violations = entry.getValue();
-
-            // Need at least 2 data points to calculate standard deviation
-            if (violations.size() < 2) {
-                stdDevData.add(new double[]{iteration, 0.0}); // No std dev with just one sample
-                continue;
-            }
-
-            // Calculate mean
-            double mean = violations.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
-
-            // Calculate sum of squared differences
-            double sumSquaredDiff = violations.stream()
-                    .mapToDouble(v -> Math.pow(v - mean, 2))
-                    .sum();
-
-            // Calculate standard deviation
-            double stdDev = Math.sqrt(sumSquaredDiff / (violations.size() - 1));
-
-            // Add data point [iteration, stdDev]
-            stdDevData.add(new double[]{iteration, stdDev});
-        }
-
-        // Sort by iteration
-        stdDevData.sort(Comparator.comparingDouble(point -> point[0]));
-
-        return stdDevData;
-    }
-
 
 }
