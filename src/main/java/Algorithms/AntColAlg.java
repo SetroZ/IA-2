@@ -37,10 +37,10 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
      * @param employees The list of employees available for solution
      */
 
-    public AntColAlg(int populationSize, double pherDecayRate, double initPheromone, int maxIterations, int REPORTING_FREQUENCY,
-                     boolean fileOutput, List<Task> tasks, List<Employee> employees)
+    public AntColAlg(List<Task> tasks, List<Employee> employees, int populationSize, double pherDecayRate, double initPheromone, int maxIterations, int REPORTING_FREQUENCY,
+                     boolean fileOutput, int runId)
     {
-        super(tasks, employees, REPORTING_FREQUENCY, fileOutput, maxIterations, populationSize);
+        super(tasks, employees, REPORTING_FREQUENCY, fileOutput, maxIterations, populationSize, runId);
         this.pherDecayRate = pherDecayRate;
         this.initPheromone = initPheromone;
 
@@ -90,7 +90,7 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
         reportFinalResult(bestSolution, iterationCount);
     }
 
-    /*
+    /**
      * This is called once at the beginning of the run() method
      * 
      * The elements for all possible Employee Task pairs that do not violate the skill mismatch constraint
@@ -210,6 +210,8 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
         return totalPheromone;
     }
 
+
+
     private void decayPheromones()
     {
         for(int i = 0; i < this.tasks.size(); i++)
@@ -231,13 +233,13 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
     }
 
     @Override
-    protected String getAlgorithmName()
+    public String getAlgorithmName()
     {
         return "AntColonyAlg";
     }
 
     @Override
-    protected int getMaxIterations()
+    public int getMaxIterations()
     {
         return maxIterations;
     }

@@ -28,6 +28,7 @@ public class PerformanceLogger {
     private static final String CONSTRAINT_SATISFACTION_FILE = "constraint_satisfaction.csv";
 
     // Metrics tracking
+    private final int runId;
     private final List<IterationData> iterationDataList = new ArrayList<>();
     private final String algorithmName;
     private final List<Task> tasks;
@@ -37,17 +38,20 @@ public class PerformanceLogger {
     private long startTime;
     private long totalExecutionTime;
 
+
     /**
      * Construct a PerformanceLogger for a specific algorithm run.
      *
      * @param algorithmName The name of the algorithm being logged
      * @param tasks The list of tasks in the problem instance
      * @param employees The list of employees in the problem instance
+     * @param runId The ID of the current run for the algorithm (for averaging)
      */
-    public PerformanceLogger(String algorithmName, List<Task> tasks, List<Employee> employees) {
+    public PerformanceLogger(String algorithmName, List<Task> tasks, List<Employee> employees, int runId) {
         this.algorithmName = algorithmName;
         this.tasks = tasks;
         this.employees = employees;
+        this.runId = runId;
         createResultsDirectory();
     }
 
@@ -203,7 +207,7 @@ public class PerformanceLogger {
         try {
             saveSolutionQualityData();
             saveConstraintSatisfactionData();
-            appendComputationalEfficiencyData();
+            saveComputationalEfficiencyData();
 
             System.out.println("Performance metrics saved successfully to the 'results' directory.");
         } catch (IOException e) {
@@ -216,26 +220,24 @@ public class PerformanceLogger {
      */
     private void saveSolutionQualityData() throws LoadDataException
     {
-        String filename = RESULTS_DIR + "/" + algorithmName + "_" + SOLUTION_QUALITY_FILE;
+        String filename = RESULTS_DIR + "/" + algorithmName + "_run" + runId + "_" + SOLUTION_QUALITY_FILE;
         boolean fileExists = Files.exists(Paths.get(filename));
-
         try (FileWriter writer = new FileWriter(filename, true)) {
-            // Write header if file doesn't exist
-            if (!fileExists) {
-                writer.write("Algorithm,Iteration,ElapsedTimeMs,CostValue\n");
+            // Write header
+            if(!fileExists)
+            {
+                writer.write("Algorithm,Iteration,ElapsedTimeMs,costValue\n");
             }
 
-            // Write data rows
             for (IterationData data : iterationDataList) {
-                writer.write(String.format("%s,%d,%d,%.4f\n",
+                writer.write(String.format("%s,%d,%d,%.2f\n",
                         algorithmName,
                         data.iteration,
                         data.elapsedTimeMs,
                         data.cost
                 ));
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new LoadDataException(e.getMessage());
         }
     }
@@ -245,17 +247,14 @@ public class PerformanceLogger {
      */
     private void saveConstraintSatisfactionData() throws LoadDataException
     {
-        String filename = RESULTS_DIR + "/" + algorithmName + "_" + CONSTRAINT_SATISFACTION_FILE;
-        boolean fileExists = Files.exists(Paths.get(filename));
+        String filename = RESULTS_DIR + "/" + algorithmName + "_run" + runId + "_" + CONSTRAINT_SATISFACTION_FILE;
 
-        try (FileWriter writer = new FileWriter(filename, true))
+        try (FileWriter writer = new FileWriter(filename, false))
         {
-            // Write header if file doesn't exist
-            if (!fileExists)
-            {
-                writer.write("Algorithm,Iteration,ElapsedTimeMs,HardConstraintViolations," +
+            // Write header
+            writer.write("Algorithm,Iteration,ElapsedTimeMs,HardConstraintViolations," +
                         "SkillMismatches,Overloads,DifficultyViolations,DeadlineViolations\n");
-            }
+
 
             // Write data rows
             for (IterationData data : iterationDataList)
@@ -281,15 +280,14 @@ public class PerformanceLogger {
      * Append computational efficiency data (runtime/memory vs. algorithm).
      * This file contains one row per algorithm run.
      */
-    private void appendComputationalEfficiencyData() throws IOException {
-        String filename = RESULTS_DIR + "/" + COMPUTATIONAL_EFFICIENCY_FILE;
+    private void saveComputationalEfficiencyData() throws IOException {
+        String filename = RESULTS_DIR + "/" +"run" + runId+"_"+ COMPUTATIONAL_EFFICIENCY_FILE;
         boolean fileExists = Files.exists(Paths.get(filename));
 
-        try (FileWriter writer = new FileWriter(filename, true)) { // Append mode
-            // Write header if file doesn't exist
-            if (!fileExists) {
-                writer.write("Algorithm,Iterations,TotalTimeMs,AvgIterationTimeMs,PeakMemoryMB,FinalCost,FinalConstraintViolations\n");
-            }
+        try (FileWriter writer = new FileWriter(filename, false)) {
+            // Write header
+            writer.write("Algorithm,Iterations,TotalTimeMs,AvgIterationTimeMs,PeakMemoryMB,FinalCost,FinalConstraintViolations\n");
+
 
             // Get last iteration data for final metrics
             IterationData lastData = iterationDataList.getLast();
