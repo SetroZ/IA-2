@@ -251,8 +251,7 @@ public class PerformanceLogger {
         try (FileWriter writer = new FileWriter(filename, false))
         {
             // Write header
-            writer.write("Algorithm,Iteration,ElapsedTimeMs,HardConstraintViolations," +
-                        "SkillMismatches,Overloads,DifficultyViolations,DeadlineViolations\n");
+            writer.write("Algorithm,Iteration,TotalConstraintViolations\n");
 
 
             // Write data rows

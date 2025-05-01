@@ -141,7 +141,7 @@ public class VisualisationController {
             return "Computational efficiency data is empty.";
         }
 
-        String runtimeTitle = "";
+        String runtimeTitle;
         // Lists for bar chart data
         List<String> algorithmNames = new ArrayList<>(efficiencyData.keySet());
         List<Double> runtimeValues = new ArrayList<>();
@@ -272,9 +272,9 @@ public class VisualisationController {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         String[] parts = line.split(",");
-                        if (parts.length >= 4) {
+                        if (parts.length >= 3) {
                             int iteration = Integer.parseInt(parts[1]);
-                            double costValue = Double.parseDouble(parts[3]);
+                            double costValue = Double.parseDouble(parts[2]);
                             //map.put(iteration, costValue);
 
                             System.out.println("  Found data point: iteration=" + iteration + ", cost=" + costValue);
@@ -338,13 +338,12 @@ public class VisualisationController {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
-                if (parts.length >= 4) {
+                if (parts.length >= 3) {
                     String algorithm = parts[0];
-                    Double[] metrics = new Double[3];
+                    Double[] metrics = new Double[2];
 
-                    metrics[0] = (Double.parseDouble(parts[1])); // Iteration
-                    metrics[1] = (Double.parseDouble(parts[2])); // Total Time
-                    metrics[2] = (Double.parseDouble(parts[3])); // time/iteration
+                    metrics[0] = (Double.parseDouble(parts[1])); // Total Time
+                    metrics[1] = (Double.parseDouble(parts[2])); // time/iteration
                     dataMap.computeIfAbsent(algorithm, k -> new ArrayList<>()).add(metrics);
                 }
             }
@@ -404,9 +403,9 @@ public class VisualisationController {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         String[] parts = line.split(",");
-                        if (parts.length >= 4) {
+                        if (parts.length >= 3) {
                             int iteration = Integer.parseInt(parts[1]);
-                            double violations = Double.parseDouble(parts[3]); // HardConstraintViolations column
+                            double violations = Double.parseDouble(parts[2]); // TotalConstraintViolations column
 
                             // Store constraint violations for this iteration
                             iterationToViolationsMap.computeIfAbsent(iteration, k -> new ArrayList<>())

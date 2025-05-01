@@ -1,7 +1,6 @@
 package Controller;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +18,6 @@ import Exceptions.ObserverException;
 import Utilities.RandomDataGen;
 import Utilities.RandomDataGen.DataSet;
 import View.ConsoleObserver;
-import View.PerformanceVisualiser;
 
 public class MenuController{
     private static final String RESULTS_DIR = "results/performance" ;
@@ -136,7 +134,7 @@ public class MenuController{
         try {
             VisualisationController visualController = new VisualisationController(ALL_RUN_ID);
 
-            boolean perIteration = false;
+            boolean perIteration;
             ALL_RUN_ID = getExistingRun_ID();
             if(ALL_RUN_ID == 0)
             {
@@ -192,15 +190,7 @@ public class MenuController{
                         }
                         break;
                     case 5:
-                        int anotherChoice = consoleObserver.requestInput("DEFINE PARAMETER", "What would you like efficiency graph to use",
-                            new String[]{"Exit", "Total Average Runtime", "Average Runtime/Iteration"});
-                        switch (anotherChoice)
-                        {
-                            case 0 : break;
-                            case 1 : perIteration= false; break;
-                            case 2 : perIteration = true; break;
-                            default: break;
-                        }
+                        perIteration = selectGraphType();
                         try {
                             String result = visualController.generateAllCharts(perIteration);
                             notifyObservers("SUCCESS", "All Charts Generated", result);
@@ -218,18 +208,20 @@ public class MenuController{
                     "An error occurred while trying to generate visualisations: " + e.getMessage());
         }
     }
+    /**
+     * Gets the users graph choice
+     */
 
     private boolean selectGraphType()
     {
-        int anotherChoice = consoleObserver.requestInput("DEFINE PARAMETER", "What would you like efficiency graph to use",
+        int anotherChoice = consoleObserver.requestInput("DEFINE PARAMETER", "What efficiency graph to use",
                 new String[]{"Total Average Runtime", "Average Runtime/Iteration"});
-        switch (anotherChoice)
+        return switch (anotherChoice)
         {
-            case 0 : return false;
-            case 1 : return true;
-            default: break;
-        }
-        return false;
+            case 0 -> false;
+            case 1 -> true;
+            default -> false;
+        };
     }
 
     /**
@@ -437,7 +429,11 @@ public class MenuController{
 
     private void runAlgorithmMenu() {
         boolean exit = false;
-
+        if(employees == null || tasks == null)
+        {
+            notifyObservers("ERROR", "Invalid Data", "Employee or Task data has not been loaded \n"+consoleObserver.getLoadedDataStatus());
+            return;
+        }
         try {
             while (!exit) {
 
