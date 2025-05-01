@@ -3,7 +3,6 @@ package Utilities;
 import Model.Employee;
 import Model.Task;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -49,14 +48,3 @@ public class Initialise
         return population;
     }
 }
-//
-//    public static int[][] getTestPopulation(List<Employee> employees, List<Task> tasks)
-//    {
-//        int[][] population = new int[3][tasks.size()];
-//
-//        for(Task task : tasks)
-//        {
-//            population[0][task.getIdx()] = getRandomEmployeeIndex(employees.size());
-//        }
-//    }
-//}

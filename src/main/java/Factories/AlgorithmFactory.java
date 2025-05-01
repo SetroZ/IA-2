@@ -1,6 +1,5 @@
 package Factories;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +66,7 @@ public class AlgorithmFactory
                                                                             Double crossoverRate, Double mutationRate,
                                                                             Integer elitismCount)
     {
-        Map<String, AbstractOptimisationAlgorithm> algos = new HashMap<String, AbstractOptimisationAlgorithm>();
+        Map<String, AbstractOptimisationAlgorithm> algos = new HashMap<>();
         algos.put("Genetic Algorithm",createGeneticAlgorithm(populationSize, crossoverRate, mutationRate, elitismCount, maxIterations, reportingFrequency, fileOutput));
         algos.put("Particle Swarm",createParticleSwarm(populationSize, maxIterations, reportingFrequency, fileOutput));
         algos.put("Ant Colony",createAntColonyOptimisation(populationSize, pherDecayRate, initPheromone, maxIterations, reportingFrequency, fileOutput));

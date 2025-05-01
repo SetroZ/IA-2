@@ -10,12 +10,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import Exceptions.LoadDataException;
 import Model.Employee;
 import Model.Task;
 
 /**
- * A utility class for logging performance metrics during algorithm execution
- * and generating CSV files for visualization and analysis.
+ * Class for logging performance metrics during algorithm execution
+ * and generating CSV files for visualisations
  */
 public class PerformanceLogger {
     // Directory for storing CSV results
@@ -213,7 +214,8 @@ public class PerformanceLogger {
     /**
      * Save solution quality data (cost vs. iteration/time).
      */
-    private void saveSolutionQualityData() throws IOException {
+    private void saveSolutionQualityData() throws LoadDataException
+    {
         String filename = RESULTS_DIR + "/" + algorithmName + "_" + SOLUTION_QUALITY_FILE;
         boolean fileExists = Files.exists(Paths.get(filename));
 
@@ -233,24 +235,31 @@ public class PerformanceLogger {
                 ));
             }
         }
+        catch (IOException e) {
+            throw new LoadDataException(e.getMessage());
+        }
     }
 
     /**
      * Save constraint satisfaction data (violations vs. iteration/time).
      */
-    private void saveConstraintSatisfactionData() throws IOException {
+    private void saveConstraintSatisfactionData() throws LoadDataException
+    {
         String filename = RESULTS_DIR + "/" + algorithmName + "_" + CONSTRAINT_SATISFACTION_FILE;
         boolean fileExists = Files.exists(Paths.get(filename));
 
-        try (FileWriter writer = new FileWriter(filename, true)) {
+        try (FileWriter writer = new FileWriter(filename, true))
+        {
             // Write header if file doesn't exist
-            if (!fileExists) {
+            if (!fileExists)
+            {
                 writer.write("Algorithm,Iteration,ElapsedTimeMs,HardConstraintViolations," +
                         "SkillMismatches,Overloads,DifficultyViolations,DeadlineViolations\n");
             }
 
             // Write data rows
-            for (IterationData data : iterationDataList) {
+            for (IterationData data : iterationDataList)
+            {
                 writer.write(String.format("%s,%d,%d,%d,%d,%d,%d,%d\n",
                         algorithmName,
                         data.iteration,
@@ -262,6 +271,9 @@ public class PerformanceLogger {
                         data.deadlineViolationCount
                 ));
             }
+        }
+        catch (IOException e) {
+            throw new LoadDataException(e.getMessage());
         }
     }
 
@@ -280,7 +292,7 @@ public class PerformanceLogger {
             }
 
             // Get last iteration data for final metrics
-            IterationData lastData = iterationDataList.get(iterationDataList.size() - 1);
+            IterationData lastData = iterationDataList.getLast();
 
             // Calculate average time per iteration
             double avgTimePerIteration = (double) totalExecutionTime / iterationDataList.size();
@@ -301,6 +313,9 @@ public class PerformanceLogger {
                     lastData.cost,
                     lastData.hardConstraintViolations
             ));
+        }
+        catch (IOException e) {
+            throw new LoadDataException(e.getMessage());
         }
     }
 

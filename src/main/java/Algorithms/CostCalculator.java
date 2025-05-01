@@ -21,8 +21,6 @@ public class CostCalculator
     private static final double DIFFICULTY_VIOLATION_WEIGHT = 0.2;
     private static final double UNIQUE_ASSIGNMENT_WEIGHT = 0.2;
 
-    // Every constraint except deadline violation is a hard constraint; violations should be prioritised
-    private static final int HARD_CONSTRAINT_MULTIPLIER = 100000;
 
 
     /**
@@ -70,7 +68,7 @@ public class CostCalculator
                 violationCount++;
             }
         }
-        return HARD_CONSTRAINT_MULTIPLIER * violationCount;
+        return violationCount;
     }
 
     /**
@@ -94,7 +92,7 @@ public class CostCalculator
             totalPenalty += overload;
         }
 
-        return HARD_CONSTRAINT_MULTIPLIER * totalPenalty;
+        return totalPenalty;
     }
 
     /**
@@ -130,7 +128,7 @@ public class CostCalculator
                 }
             }
         }
-        return HARD_CONSTRAINT_MULTIPLIER * mismatchCount;
+        return mismatchCount;
     }
 
     /**
@@ -162,7 +160,7 @@ public class CostCalculator
                 }
             }
         }
-        return HARD_CONSTRAINT_MULTIPLIER * skillLvlViolationCount;
+        return skillLvlViolationCount;
     }
 
 

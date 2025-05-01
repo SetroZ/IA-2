@@ -29,7 +29,13 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm
 
     public ParticleSwarmAlg(List<Task> tasks, List<Employee> employees,
                             int populationSize, int maxIterations, int reportingFrequency, boolean fileOutput) {
-        super(tasks, employees, reportingFrequency, fileOutput, maxIterations,populationSize);
+        super(tasks, employees, reportingFrequency, fileOutput, maxIterations, populationSize);
+        this.populationSize = populationSize;
+        this.employees = employees;
+        this.tasks = tasks;
+        this.maxIterations = maxIterations;
+
+
     }
 
 
@@ -52,6 +58,7 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm
         return maxIterations;
     }
 
+
     @Override
 
     public void run() {
@@ -62,7 +69,7 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm
         int[][] swarms = Initialise.getInitialPopulation(employees, tasks, populationSize);
         double[][] v = new double[populationSize][tasks.size()]; // contains velocities for each position.
         int[][] pBest = new int[populationSize][tasks.size()]; // contains pbest for each particle. which is an array of
-                                                               // the best positions for each position.
+        // the best positions for each position.
         GBestData gBestData = new GBestData();// contains the best pBest found i.e. gBest. which is an array of
         // the best positions found.
         gBestData.gBest = Double.MAX_VALUE;
@@ -75,15 +82,7 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm
             for (int j = 0; j < tasks.size(); j++) {
                 v[i][j] = rd.nextDouble(0.5, 2) * (rd.nextBoolean() ? 1 : -1);
                 pBest[i][j] = swarms[i][j];
-                //fitnessPBest[i] = CostCalculator.calculateTotalCost(pBest[i], tasks, employees);
-            }
-            // Calculate fitness for each particle and update if better than gBest
-            fitnessPBest[i] = CostCalculator.calculateTotalCost(pBest[i], tasks, employees);
-
-            // Update global best if this particle is better
-            if (fitnessPBest[i] < gBestData.gBest) {
-                gBestData.gBest = fitnessPBest[i];
-                System.arraycopy(pBest[i], 0, gBestData.gBestArr, 0, tasks.size());
+                fitnessPBest[i] = CostCalculator.calculateTotalCost(pBest[i], tasks, employees);
             }
         }
         gBestData = findGbest(gBestData, fitnessPBest, pBest);
