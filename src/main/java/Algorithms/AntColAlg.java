@@ -11,24 +11,31 @@ import java.util.*;
 
 public class AntColAlg extends AbstractOptimisationAlgorithm
 {
-    //Algorithm Parameters
-    private final int numAnts;
-    private final int maxIterations;
-    private final double initPheromone;
+    //ACO Parameters - (algorithm-specific settings)
+    private final int numAnts; //How many different entire solutions will be generated within each iteration
+    private final double initPheromone; 
+    private final double pherDecayRate; //decimal representation of the % decrease of all pheromone values after each decay
 
-    // Problem data
-    private double[][] pherMatrix;
-    private final double pherDecayRate;
-
+    // Internal State Variables
+    private double[][] pherMatrix; //2D array storing the pheromone value for each Employee Task pairing; where [i][j] represents pheromone for assigning task i to employee j
+    private final int maxIterations; 
+    
     // Tracking and reporting
-    private boolean foundPerfectSolution = false;
+    private boolean foundPerfectSolution = false; //If solution with cost = 0 has been found.
     // private double[] globalBestPheromone;
-    private int iterationCount = 0;
+    private int iterationCount = 0; 
 
 
     /**
      * Constructor for Ant Colony Optimisation Algorithm
-     * 
+     * @param numAnts number of solutions per iteration (same as class field)
+     * @param pherDecayRate (see class field)
+     * @param initPheromone initial pheromone value for all possible employee task pairings
+     * @param maxIterations number of iterations before algorithm stops
+     * @param REPORTING_FREQUENCY After how many generations the solutions are reported
+     * @param fileOutput If it will be reported to file
+     * @param tasks The list of tasks to be assigned
+     * @param employees The list of employees available for solution
      */
 
     public AntColAlg(int numAnts, double pherDecayRate, double initPheromone, int maxIterations, int REPORTING_FREQUENCY,
@@ -48,8 +55,9 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
     {
         //Start timing performance
         performanceLogger.startTimer();
-
-        initPherMatrix();
+        //Initialising values stored in pheromone matrix
+        initPherMatrix(); 
+        //Creating Matrix to store each ant's solution; [i][j] = z means that ant i has assigned task j to employee z.
         int[][] antMatrix = new int[this.numAnts][this.tasks.size()];
         generateNextAntPaths(antMatrix, tasks.size(), employees.size(), this.numAnts);
 
@@ -61,7 +69,7 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
             generateNextAntPaths(antMatrix, tasks.size(), employees.size(), this.numAnts);
             if(this.bestCost == 0.0)
             {
-                this.foundPerfectSolution = true;
+                this.foundPerfectSolution = true; //Flag to stop algorithm if a perfect solution has been found
             }
 
             if(iterationCount % REPORTING_FREQUENCY == 0)
@@ -86,27 +94,49 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
     }
 
     /*
-     * Initialises every element in the Pheromone Matrix to the initial Value parameter
-     * This is only to be called in the Constructor
+     * This is called once at the beginning of the run() method
+     * 
+     * The elements for all possible Employee Task pairs that do not violate the skill mismatch constraint
+     * and the difficulty constraint are set to the initial pheromone value; the pairs that do violate these constraints
+     * are assigned a value of 0 so that they are not considered.
+     * 
+     * If a task exists where no employee satisfies the skill and difficulty constraints, all employees will be given the initial
+     * pheromone value for this task, to avoid a task not being assigned.
+     * 
+     * 
      */
     private void initPherMatrix()
     {
+        //For every task
         for(int i = 0; i < this.tasks.size(); i++)
         {
+            boolean capableEmployeeExists = false;
             Task currTask = this.tasks.get(i);
+            //For every employee
             for(int j = 0; j < this.employees.size(); j++)
             {
                 Employee currEmployee = this.employees.get(j);
                 
+                //Assign initial pheromone value if skill and difficulty constraints are met
                 if(currEmployee.hasSkill(currTask.getRequiredSkill()) && currEmployee.getSkillLevel() >= currTask.getDifficulty())
                 {
                     this.pherMatrix[i][j] = this.initPheromone;
+                    capableEmployeeExists = true;
                 }
-                else
+                //If constraints violated assign pair a pheromone of 0 (removing it from solution space)
+                else 
                 {
                     this.pherMatrix[i][j] = 0.0;
                 }
                 System.out.print(this.pherMatrix[i][j] + " ");
+            }
+            //If a task has no feasible employee then all employees considered
+            if(!capableEmployeeExists)
+            {
+                for(int j = 0; j < this.employees.size(); j++)
+                {
+                    this.pherMatrix[i][j] = this.initPheromone;
+                }
             }
             System.out.println();
         }

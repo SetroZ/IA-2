@@ -182,6 +182,7 @@ public class CostCalculator
     public static double calculateDeadlineViolationPenalty(int[] solution, List<Task> tasks, List<Employee> employees)
     {
         int violationHrs = 0;
+        //Tasks are considered to be completed in ascending order of estimated completion time
         Queue<Task> queue = new PriorityQueue<>(Comparator.comparingInt(task -> task.getEstimatedTime()));
 
         // For each employee, track their current workload time
