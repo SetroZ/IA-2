@@ -64,7 +64,7 @@ public class RandomDataGen {
                         emp.getId(),
                         emp.getAvailableHours(),
                         emp.getSkillLevel(),
-                        String.join(";", emp.getSkills())));
+                        String.join(" ", emp.getSkills())));
             }
             System.out.println("Employees exported to " + filePath);
         } catch (IOException e) {
@@ -110,7 +110,7 @@ public class RandomDataGen {
         }
         System.out.println("Generated");
         int dirNum = 0;
-        String directory = "resources";
+        String directory = "out/resources";
         File runDir;
         do {
             runDir = new File(directory, "RandomData(" + dirNum + ")");
