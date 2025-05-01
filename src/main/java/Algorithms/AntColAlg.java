@@ -2,7 +2,6 @@ package Algorithms;
 
 import Model.Employee;
 import Model.Task;
-import Utilities.Initialise;
 import Utilities.Observer;
 import Utilities.PerformanceLogger;
 
@@ -61,7 +60,9 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
 
         while(this.iterationCount < this.maxIterations && !foundPerfectSolution)
         {
-            this.iterationCount++;
+
+
+
             updatePheromones(antMatrix, this.populationSize, employees.size(), tasks.size());
             generateNextAntPaths(antMatrix, tasks.size(), employees.size(), this.populationSize);
             if(this.bestCost == 0.0)
@@ -69,10 +70,6 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
                 this.foundPerfectSolution = true; //Flag to stop algorithm if a perfect solution has been found
             }
 
-            if(iterationCount % reportinFrequency == 0)
-            {
-                reportProgress(bestSolution, iterationCount);
-            }
 
             // Log metrics for this generation
             performanceLogger.logIteration(
@@ -81,6 +78,14 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
                     bestCost,
                     PerformanceLogger.getCurrentMemoryUsageMB()
             );
+
+
+            if(iterationCount % reportinFrequency == 0)
+            {
+                reportProgress(bestSolution, iterationCount);
+            }
+            this.iterationCount++;
+
         }
 
         // Stop timer and save all metrics to CSV files
@@ -92,11 +97,9 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
 
     /**
      * This is called once at the beginning of the run() method
-     * 
      * The elements for all possible Employee Task pairs that do not violate the skill mismatch constraint
      * and the difficulty constraint are set to the initial pheromone value; the pairs that do violate these constraints
      * are assigned a value of 0 so that they are not considered.
-     * 
      * If a task exists where no employee satisfies the skill and difficulty constraints, all employees will be given the initial
      * pheromone value for this task, to avoid a task not being assigned.
      * 

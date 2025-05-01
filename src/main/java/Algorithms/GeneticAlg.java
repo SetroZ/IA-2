@@ -60,14 +60,6 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm {
         int[] globalBestSolution = findBestSolution(population);
         double globalBestCost = CostCalculator.calculateTotalCost(globalBestSolution, tasks, employees);
 
-        // // Log initial state
-        // performanceLogger.logIteration(
-        // generation,
-        // globalBestSolution,
-        // globalBestCost,
-        // PerformanceLogger.getCurrentMemoryUsageMB()
-        // );
-
         // Main loop
         while (generation < maxIterations && !(globalBestCost == 0)) {
             int[][] newPopulation = new int[populationSize][tasks.size()];

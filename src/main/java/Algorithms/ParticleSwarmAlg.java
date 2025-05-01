@@ -1,7 +1,6 @@
 package Algorithms;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -35,9 +34,6 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
         this.employees = employees;
         this.tasks = tasks;
         this.maxIterations = maxIterations;
-        this.w = w;
-        this.c1 = c1;
-        this.c2 = c2;
 
     }
 
@@ -82,9 +78,8 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
             for (int j = 0; j < tasks.size(); j++) {
                 v[i][j] = rd.nextDouble(0.5, 2) * (rd.nextBoolean() ? 1 : -1);
                 pBest[i][j] = swarms[i][j];
-
+                fitnessPBest[i] = CostCalculator.calculateTotalCost(pBest[i], tasks, employees);
             }
-            fitnessPBest[i] = CostCalculator.calculateTotalCost(pBest[i], tasks, employees);
         }
         gBestData = findGbest(gBestData, fitnessPBest, pBest);
         int n = 0;
@@ -110,10 +105,12 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
                 // Find pBest
                 double newCost = CostCalculator.calculateTotalCost(swarms[i], tasks, employees);
                 if (newCost <= fitnessPBest[i]) {
+
                     fitnessPBest[i] = newCost;
-                    pBest[i] = Arrays.copyOf(swarms[i], swarms[i].length);
+                    pBest[i] = swarms[i];
                 }
             }
+
             gBestData = findGbest(gBestData, fitnessPBest, pBest);
             reportProgress(gBestData.gBestArr, n);
 
@@ -134,7 +131,9 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
     }
 
     private double calculateVelocity(double gBest, int pBest, double v, int currP) {
-
+        final double c1 = 1.5;
+        final double c2 = 1.5;
+        final double w = 0.5;
         final int maxV = employees.size();
 
         Random rd = new Random();

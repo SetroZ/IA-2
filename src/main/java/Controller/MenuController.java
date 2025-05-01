@@ -1,7 +1,6 @@
 package Controller;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +18,6 @@ import Exceptions.ObserverException;
 import Utilities.RandomDataGen;
 import Utilities.RandomDataGen.DataSet;
 import View.ConsoleObserver;
-import View.PerformanceVisualiser;
 
 public class MenuController {
     private static final String RESULTS_DIR = "results/performance";
@@ -27,7 +25,7 @@ public class MenuController {
     private List<Employee> employees;
     private List<Task> tasks;
     private final ConsoleObserver consoleObserver;
-    private final FileOutput fileOutput;
+    FileOutput fileOutput;
 
     // Default params for algorithms
     // GA
@@ -41,6 +39,8 @@ public class MenuController {
     private double PSO_PBEST_W = 1.5;
     private double PSO_GBEST_W = 1.5;
 
+    // private int PS_RUN_ID = 0;
+
     // AC
     private double ACO_DECAY_RATE_DEFAULT = 0.1;
     private double ACO_INITIAL_PHEROMONE_DEFAULT = 0.1;
@@ -51,7 +51,6 @@ public class MenuController {
     private int MAX_GEN_DEFAULT = 200;
     private int REPORTING_FREQUENCY_DEFAULT = 5;
     private boolean FILE_OUTPUT_DEFAULT = true;
-
     private int TRIAL_NUMBER_DEFAULT = 1;
     private int ALL_RUN_ID = 1;
 
@@ -139,6 +138,7 @@ public class MenuController {
         try {
             VisualisationController visualController = new VisualisationController(ALL_RUN_ID);
 
+            boolean perIteration;
             ALL_RUN_ID = getExistingRun_ID();
             if (ALL_RUN_ID == 0) {
                 notifyObservers("ERROR", "No existing runs found in results",
@@ -175,7 +175,8 @@ public class MenuController {
                         break;
                     case 3:
                         try {
-                            String result = visualController.generateComputationalEfficiencyChart();
+                            perIteration = selectGraphType();
+                            String result = visualController.generateComputationalEfficiencyChart(perIteration);
                             notifyObservers("SUCCESS", "Computational Efficiency Chart", result);
                         } catch (LoadDataException e) {
                             notifyObservers("ERROR", "Chart Generation Failed",
@@ -192,8 +193,9 @@ public class MenuController {
                         }
                         break;
                     case 5:
+                        perIteration = selectGraphType();
                         try {
-                            String result = visualController.generateAllCharts();
+                            String result = visualController.generateAllCharts(perIteration);
                             notifyObservers("SUCCESS", "All Charts Generated", result);
                         } catch (ObserverException e) {
                             notifyObservers("ERROR", "Chart Generation Failed",
@@ -208,6 +210,20 @@ public class MenuController {
             notifyObservers("ERROR", "Visualisation Error",
                     "An error occurred while trying to generate visualisations: " + e.getMessage());
         }
+    }
+
+    /**
+     * Gets the users graph choice
+     */
+
+    private boolean selectGraphType() {
+        int anotherChoice = consoleObserver.requestInput("DEFINE PARAMETER", "What efficiency graph to use",
+                new String[] { "Total Average Runtime", "Average Runtime/Iteration" });
+        return switch (anotherChoice) {
+            case 0 -> false;
+            case 1 -> true;
+            default -> false;
+        };
     }
 
     /**
@@ -305,7 +321,6 @@ public class MenuController {
                                 1, 10000);
                         break;
                     case 3:
-
                         DataSet ds = RandomDataGen.generateDataSet(taskCount, employeeCount);
                         tasks = ds.tasks;
                         employees = ds.employees;
@@ -346,7 +361,7 @@ public class MenuController {
                                     FILE_OUTPUT_DEFAULT, ALL_RUN_ID);
                     runMenu(ga, "Genetic Algorithm (Trial " + ALL_RUN_ID + ")");
                 }
-                case "AntColAlg" -> {
+                case "AntColonyAlg" -> {
                     AntColAlg ac = new AlgorithmFactory(tasks, employees, observers)
                             .createAntColonyOptimisation(POPULATION_SIZE_DEFAULT, ACO_DECAY_RATE_DEFAULT,
                                     ACO_INITIAL_PHEROMONE_DEFAULT,
@@ -391,7 +406,11 @@ public class MenuController {
 
     private void runAlgorithmMenu() {
         boolean exit = false;
-
+        if (employees == null || tasks == null) {
+            notifyObservers("ERROR", "Invalid Data",
+                    "Employee or Task data has not been loaded \n" + consoleObserver.getLoadedDataStatus());
+            return;
+        }
         try {
             while (!exit) {
 
@@ -422,6 +441,65 @@ public class MenuController {
         } catch (InputException e) {
             notifyObservers("ERROR", "Error occurred while getting input", e.getMessage());
         }
+    }
+
+    private void runParticleSwarmMenu() {
+
+        boolean exit = false;
+
+        while (!exit) {
+
+            int choice = consoleObserver.requestInput("DEFINE Particle Swarm Algorithm",
+                    "Specify the parameters to use for this algorithm or proceed",
+                    new String[] { "Exit", "Population size: " + POPULATION_SIZE_DEFAULT,
+                            "Personal Best Weight " + PSO_PBEST_W,
+                            "Global Best Weight: " + PSO_GBEST_W,
+                            "Intertia Weight" + PSO_INERTIA_WEIGHT,
+                            "Maximum Generations: " + MAX_GEN_DEFAULT,
+                            "Reporting frequency: " + REPORTING_FREQUENCY_DEFAULT,
+                            "Output to file: " + FILE_OUTPUT_DEFAULT,
+                            "Number of Trials: " + TRIAL_NUMBER_DEFAULT,
+                            "Proceed" });
+
+            switch (choice) {
+                case 0:
+                    exit = true;
+                    break;
+                case 1:
+                    POPULATION_SIZE_DEFAULT = getParameter("Population size", POPULATION_SIZE_DEFAULT, 1,
+                            Integer.MAX_VALUE);
+                    break;
+                case 2:
+                    PSO_PBEST_W = getParameter("Personal Best Weight", PSO_PBEST_W, 0.0, 10.0);
+                    break;
+                case 3:
+                    PSO_GBEST_W = getParameter("Global Best Weight", PSO_GBEST_W, 0.0, 10.0);
+                    break;
+                case 4:
+                    PSO_INERTIA_WEIGHT = getParameter("Intertia Weight", PSO_INERTIA_WEIGHT, 0, 1.0);
+                    break;
+                case 5:
+                    MAX_GEN_DEFAULT = getParameter("Maximum Generations", MAX_GEN_DEFAULT, 1, Integer.MAX_VALUE);
+                    break;
+                case 6:
+                    REPORTING_FREQUENCY_DEFAULT = getParameter("Reporting frequency", REPORTING_FREQUENCY_DEFAULT,
+                            1, Integer.MAX_VALUE);
+                    break;
+                case 7:
+                    FILE_OUTPUT_DEFAULT = getParameter("Output to file", FILE_OUTPUT_DEFAULT);
+                    break;
+                case 8:
+                    TRIAL_NUMBER_DEFAULT = getParameter("Number of Trials", TRIAL_NUMBER_DEFAULT, 1, Integer.MAX_VALUE);
+                    break;
+                case 9:
+                    runMenuMultiple("ParticleSwarmAlg");
+                    break;
+                default:
+                    break;
+            }
+
+        }
+
     }
 
     private void runStandardisedMenu() {
@@ -506,65 +584,6 @@ public class MenuController {
 
     }
 
-    private void runParticleSwarmMenu() {
-
-        boolean exit = false;
-
-        while (!exit) {
-
-            int choice = consoleObserver.requestInput("DEFINE Particle Swarm Algorithm",
-                    "Specify the parameters to use for this algorithm or proceed",
-                    new String[] { "Exit", "Population size: " + POPULATION_SIZE_DEFAULT,
-                            "Personal Best Weight " + PSO_PBEST_W,
-                            "Global Best Weight: " + PSO_GBEST_W,
-                            "Intertia Weight" + PSO_INERTIA_WEIGHT,
-                            "Maximum Generations: " + MAX_GEN_DEFAULT,
-                            "Reporting frequency: " + REPORTING_FREQUENCY_DEFAULT,
-                            "Output to file: " + FILE_OUTPUT_DEFAULT,
-                            "Number of Trials: " + TRIAL_NUMBER_DEFAULT,
-                            "Proceed" });
-
-            switch (choice) {
-                case 0:
-                    exit = true;
-                    break;
-                case 1:
-                    POPULATION_SIZE_DEFAULT = getParameter("Population size", POPULATION_SIZE_DEFAULT, 1,
-                            Integer.MAX_VALUE);
-                    break;
-                case 2:
-                    PSO_PBEST_W = getParameter("Personal Best Weight", PSO_PBEST_W, 0.0, 10.0);
-                    break;
-                case 3:
-                    PSO_GBEST_W = getParameter("Global Best Weight", PSO_GBEST_W, 0.0, 10.0);
-                    break;
-                case 4:
-                    PSO_INERTIA_WEIGHT = getParameter("Intertia Weight", PSO_INERTIA_WEIGHT, 0, 1.0);
-                    break;
-                case 5:
-                    MAX_GEN_DEFAULT = getParameter("Maximum Generations", MAX_GEN_DEFAULT, 1, Integer.MAX_VALUE);
-                    break;
-                case 6:
-                    REPORTING_FREQUENCY_DEFAULT = getParameter("Reporting frequency", REPORTING_FREQUENCY_DEFAULT,
-                            1, Integer.MAX_VALUE);
-                    break;
-                case 7:
-                    FILE_OUTPUT_DEFAULT = getParameter("Output to file", FILE_OUTPUT_DEFAULT);
-                    break;
-                case 8:
-                    TRIAL_NUMBER_DEFAULT = getParameter("Number of Trials", TRIAL_NUMBER_DEFAULT, 1, Integer.MAX_VALUE);
-                    break;
-                case 9:
-                    runMenuMultiple("ParticleSwarmAlg");
-                    break;
-                default:
-                    break;
-            }
-
-        }
-
-    }
-
     private void runAntColAlgMenu() {
         // Initialise with parameters
 
@@ -609,11 +628,6 @@ public class MenuController {
                     FILE_OUTPUT_DEFAULT = getParameter("Output to File", FILE_OUTPUT_DEFAULT);
                     break;
                 case 7:
-                    AntColAlg aco = new AlgorithmFactory(tasks, employees, observers).createAntColonyOptimisation(
-                            POPULATION_SIZE_DEFAULT, ACO_DECAY_RATE_DEFAULT, ACO_INITIAL_PHEROMONE_DEFAULT,
-                            MAX_GEN_DEFAULT,
-                            REPORTING_FREQUENCY_DEFAULT, FILE_OUTPUT_DEFAULT, ALL_RUN_ID);
-                    runMenu(aco, "Ant Colony");
                     TRIAL_NUMBER_DEFAULT = getParameter("Number of Trials", TRIAL_NUMBER_DEFAULT, 1, Integer.MAX_VALUE);
                     break;
                 case 8:
@@ -710,7 +724,7 @@ public class MenuController {
 
     public int getExistingRun_ID() {
         File dir = new File(RESULTS_DIR);
-        File[] files = dir.listFiles((d, name) -> name.contains("run") && name.contains("solution_quality"));
+        File[] files = dir.listFiles((d, name) -> name.contains("run") && name.contains("computational_efficiency"));
         // System.out.println("Found "+ files.length + "runs");
 
         return files == null ? 0 : files.length;
