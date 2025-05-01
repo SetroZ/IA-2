@@ -286,6 +286,7 @@ public class MenuController {
                                 1, 10000);
                         break;
                     case 3:
+
                         DataSet ds = RandomDataGen.generateDataSet(taskCount, employeeCount);
                         tasks = ds.tasks;
                         employees = ds.employees;

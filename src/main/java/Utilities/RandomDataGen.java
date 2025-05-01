@@ -1,5 +1,11 @@
 package Utilities;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -30,6 +36,39 @@ public class RandomDataGen {
                 res.concat("\n" + employee.toString());
             }
             return res;
+        }
+    }
+
+    public static void exportTasksToCSV(List<Task> tasks, String filePath) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            writer.write("ID,EstimatedTime,Difficulty,Deadline,RequiredSkill\n");
+            for (Task task : tasks) {
+                writer.write(String.format("%s,%d,%d,%d,%s\n",
+                        task.getId(),
+                        task.getEstimatedTime(),
+                        task.getDifficulty(),
+                        task.getDeadline(),
+                        task.getRequiredSkill()));
+            }
+            System.out.println("Tasks exported to " + filePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void exportEmployeesToCSV(List<Employee> employees, String filePath) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            writer.write("ID,AvailableHours,SkillLevel,Skills\n");
+            for (Employee emp : employees) {
+                writer.write(String.format("%s,%d,%d,\"%s\"\n",
+                        emp.getId(),
+                        emp.getAvailableHours(),
+                        emp.getSkillLevel(),
+                        String.join(";", emp.getSkills())));
+            }
+            System.out.println("Employees exported to " + filePath);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -67,9 +106,23 @@ public class RandomDataGen {
             Employee newEmployee = new Employee(id, hours, skillLevel, skills, i);
 
             dataSet.employees.add(newEmployee);
+
         }
+        System.out.println("Generated");
+        int dirNum = 0;
+        String directory = "resources";
+        File runDir;
+        do {
+            runDir = new File(directory, "RandomData(" + dirNum + ")");
+            dirNum++;
+        } while (runDir.exists());
+        runDir.mkdirs();
+
+        directory = runDir.getPath();
+
+        exportEmployeesToCSV(dataSet.employees, directory + "/Employees.csv");
+        exportTasksToCSV(dataSet.tasks, directory + "/Tasks.csv");
         return dataSet;
     }
-
 
 }
