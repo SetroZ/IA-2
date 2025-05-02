@@ -289,11 +289,6 @@ This parameter determines the influence of the swarm's best-found position on ea
 `W`
 This parameter controls how much a particle maintains its current velocity when updating its position.
 
-
-
-
-
-
 ## 2.3 Experimental Setup
 
 ### 2.3.1 Data Set Description
@@ -412,8 +407,6 @@ In the task-heavy scenario with a 5:1 ratio:
    - GA consistently shows the most improvement over iterations regardless of ratio
    - ACO's improvement pattern varies significantly based on problem structure
    - PSO tends to find reasonably good initial solutions but shows limited further improvement
-
-
 
 ## 3.2 Computational Efficiency
 
