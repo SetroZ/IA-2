@@ -538,7 +538,30 @@ The analysis of computational efficiency reveals several key insights about how 
 
 These findings demonstrate that while all three algorithms can effectively solve the Employee Task Assignment problem, ACO offers the best computational efficiency across all tested scenarios, making it particularly valuable for large-scale or real-time applications where processing time is a critical factor.
 
-<<<<<<< Updated upstream
+# 4.Results and Discussion
+### 4.1 Analysis Comparison: GA vs. PSO vs. ACO
+
+### Computational Efficiency
+- **ACO**: Fastest algorithm (6ms/iteration for small problems, 140ms for large)
+- **PSO**: Moderate efficiency (12ms/iteration for small problems, 270ms for large)
+- **GA**: Highest computational cost (20ms/iteration for small problems, 500ms for large)
+
+#### Solution Quality
+- **GA**: Best overall solutions, particularly in resource-constrained scenarios
+- **PSO**: Reliable performance with good initial solutions but limited improvement
+- **ACO**: Performance varies significantly by problem structure; excels with employee surplus
+
+#### Employee-Task Ratio Impact
+- **1:1 ratio**: GA dominates (cost ~1.4 vs PSO ~2.0, ACO ~3.6)
+- **1:10 ratio** (employee surplus): ACO performs best (~1.0), followed by GA (~1.05) and PSO (~1.1)
+- **5:1 ratio** (task surplus): GA maintains advantage (~825 vs PSO ~875, ACO ~950)
+
+#### Practical Selection Guidance
+- **Choose GA**: When solution quality is paramount and computational resources are ample
+- **Choose PSO**: For balanced performance between quality and efficiency
+- **Choose ACO**: For time-critical applications, especially with employee surplus
+
+All algorithms generally stabilize after 20-40 iterations, with memory usage patterns remaining similar across implementations.
 ## 4.2 Insights 
 
 ### 4.2.1 Genetic Algorithm 
