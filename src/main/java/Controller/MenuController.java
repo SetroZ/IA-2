@@ -349,6 +349,7 @@ public class MenuController {
         }
         notifyObservers("INFO", "RUNNING TRIALS",
                 "Running " + TRIAL_NUMBER_DEFAULT + " trials of " + algorithmType + "...");
+        ALL_RUN_ID
 
         for (int i = 0; i < TRIAL_NUMBER_DEFAULT; i++) {
             // Create and run algorithm with this run ID
@@ -359,6 +360,7 @@ public class MenuController {
                                     GA_MUTATION_DEFAULT, GA_ELITISM_DEFAULT,
                                     MAX_GEN_DEFAULT, REPORTING_FREQUENCY_DEFAULT,
                                     FILE_OUTPUT_DEFAULT, ALL_RUN_ID);
+                    notifyObservers("ISRUNALL", "false", String.valueof(ALL_RUN_ID));
                     runMenu(ga, "Genetic Algorithm (Trial " + ALL_RUN_ID + ")");
                 }
                 case "AntColonyAlg" -> {
@@ -367,6 +369,7 @@ public class MenuController {
                                     ACO_INITIAL_PHEROMONE_DEFAULT,
                                     MAX_GEN_DEFAULT, REPORTING_FREQUENCY_DEFAULT,
                                     FILE_OUTPUT_DEFAULT, ALL_RUN_ID);
+                    notifyObservers("ISRUNALL", "false", String.valueof(ALL_RUN_ID));
                     runMenu(ac, "Ant Colony Algorithm (Trial " + ALL_RUN_ID + ")");
                 }
                 case "ParticleSwarmAlg" -> {
@@ -374,6 +377,7 @@ public class MenuController {
                             .createParticleSwarm(POPULATION_SIZE_DEFAULT, MAX_GEN_DEFAULT, PSO_PBEST_W, PSO_GBEST_W,
                                     PSO_INERTIA_WEIGHT,
                                     REPORTING_FREQUENCY_DEFAULT, FILE_OUTPUT_DEFAULT, ALL_RUN_ID);
+                    notifyObservers("ISRUNALL", "false", String.valueof(ALL_RUN_ID));
                     runMenu(ps, "Particle Swarm Algorithm (Trial " + ALL_RUN_ID + ")");
                 }
                 case "All" -> {
@@ -387,9 +391,11 @@ public class MenuController {
                                     PSO_INERTIA_WEIGHT,
                                     ALL_RUN_ID);
 
+                    notifyObservers("ISRUNALL", "true",String.valueof(ALL_RUN_ID));
                     runMenu(algs.get("AntColonyAlg"), "Ant Colony Algorithm (Trial " + ALL_RUN_ID + ")");
                     runMenu(algs.get("GeneticAlg"), "Genetic Algorithm (Trial " + ALL_RUN_ID + ")");
                     runMenu(algs.get("ParticleSwarmAlg"), "Particle Swarm Algorithm (Trial " + ALL_RUN_ID + ")");
+                    notifyObservers("ISRUNALL", "false", String.valueof(ALL_RUN_ID));
                 }
                 default -> {
                     notifyObservers("ERROR", "Invalid Algorithm Type",

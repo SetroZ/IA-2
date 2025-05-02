@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 
 public class FileOutput implements Observer {
 
+    private int runID = 0;
     public boolean isRunAll = false;
 
     @Override
@@ -29,22 +30,33 @@ public class FileOutput implements Observer {
                 throw new ObserverException("Error writing to file: " + e.getMessage());
             }
         }
+        if(messageType.equalsIgnoreCase("ISRUNALL")) {
+            if(title.equalsIgnoreCase("false")) {
+                isRunAll = false;
+                runID = Integer.parseInt(content);
+            }
+            else {
+                isRunAll = true;
+                runID = Integer.parseInt(content);
+            }
+        }
     }
 
     public String getUniqueFile(String title) {
 
         String directory = "results";
         String extension = ".txt";
-        int runNumber = 1;
-        if (isRunAll) {
-            File runDir;
-            do {
-                runDir = new File(directory, "run(" + runNumber + ")");
-                runNumber++;
-            } while (runDir.exists() && Files.exists(Paths.get(runDir + "/" + title + extension)));
-
-            directory = runDir.getPath();
-        }
+        File runDir = new File(directory+"/run("+runID+")/");
+        directory = runDir.getPath();
+        //int runNumber = 1;
+//        if (isRunAll) {
+//
+////            do {
+////                runDir = new File(directory, "run(" + runNumber + ")");
+////                runNumber++;
+////            } while (runDir.exists() && Files.exists(Paths.get(runDir + "/" + title + extension)));
+//
+//        }
 
         // Ensure the directory exists
         File dir = new File(directory);
