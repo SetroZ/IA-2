@@ -11,7 +11,6 @@ import java.nio.file.Paths;
 
 public class FileOutput implements Observer {
 
-    private int runID = 0;
     public boolean isRunAll = false;
 
     @Override
@@ -31,40 +30,23 @@ public class FileOutput implements Observer {
             }
         }
         if(messageType.equalsIgnoreCase("ISRUNALL")) {
-            if(title.equalsIgnoreCase("false")) {
-                isRunAll = false;
-                runID = Integer.parseInt(content);
-            }
-            else {
-                isRunAll = true;
-                runID = Integer.parseInt(content);
-            }
+            isRunAll = !title.equalsIgnoreCase("false");
+            int currentRunId = Integer.parseInt(content);
+            PathUtility.setRunId(currentRunId);
         }
     }
 
     public String getUniqueFile(String title) {
 
-        String directory = "results";
+        String directory = PathUtility.getRunDir();
         String extension = ".txt";
-        File runDir = new File(directory+"/run("+runID+")/");
-        directory = runDir.getPath();
-        //int runNumber = 1;
-//        if (isRunAll) {
-//
-////            do {
-////                runDir = new File(directory, "run(" + runNumber + ")");
-////                runNumber++;
-////            } while (runDir.exists() && Files.exists(Paths.get(runDir + "/" + title + extension)));
-//
-//        }
-
         // Ensure the directory exists
         File dir = new File(directory);
         if (!dir.exists()) {
             dir.mkdirs();
         }
 
-        int counter = 0;
+        int counter = 1;
         Path path;
         String fileName;
 
@@ -76,6 +58,7 @@ public class FileOutput implements Observer {
 
         return fileName;
     }
+
 
     @Override
     public String getFinalSolution(int[] solution, double cost, int generation, boolean feasible)

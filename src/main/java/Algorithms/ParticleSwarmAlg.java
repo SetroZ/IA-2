@@ -84,12 +84,12 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
         gBestData = findGbest(gBestData, fitnessPBest, pBest);
         int n = 0;
 
-        // Log initial state
-        performanceLogger.logIteration(
-                n,
-                gBestData.gBestArr,
-                gBestData.gBest,
-                PerformanceLogger.getCurrentMemoryUsageMB());
+//        // Log initial state
+//        performanceLogger.logIteration(
+//                n,
+//                gBestData.gBestArr,
+//                gBestData.gBest,
+//                PerformanceLogger.getCurrentMemoryUsageMB());
 
         // Main loop.
         for (; n < maxIterations; n++) {

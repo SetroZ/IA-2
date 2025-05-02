@@ -8,6 +8,7 @@ import java.util.*;
 
 import Exceptions.LoadDataException;
 import Exceptions.ObserverException;
+import Utilities.PathUtility;
 import View.PerformanceVisualiser;
 
 /**
@@ -16,8 +17,10 @@ import View.PerformanceVisualiser;
  * generates comparative charts for analysis.
  */
 public class VisualisationController {
-    private static final String RESULTS_DIR = "results/performance";
-    private static final String CHARTS_DIR = "results/charts";
+
+    // Run ID
+    //Directories
+
 
     // File names for different metrics
     private static final String SOLUTION_QUALITY_SUFFIX = "_solution_quality.csv";
@@ -32,8 +35,7 @@ public class VisualisationController {
     private static final String COMPUTATIONAL_EFFICIENCY_CHART = "computational_efficiency_comparison.png";
     private static final String CONSTRAINT_SATISFACTION_CHART = "constraint_satisfaction_comparison.png";
 
-    // Run id
-    private int RUN_ID;
+
 
     private final PerformanceVisualiser visualiser;
 
@@ -42,20 +44,13 @@ public class VisualisationController {
      */
     public VisualisationController(int runID) {
         this.visualiser = new PerformanceVisualiser();
-        this.RUN_ID = runID;
-        createDirectories();
+        PathUtility.setRunId(runID);
+        PathUtility.createDirectories();
     }
 
     public void setRUN_ID(int runID)
     {
-        this.RUN_ID = runID;
-    }
-
-    /**
-     * Create necessary directories for output files
-     */
-    private void createDirectories() {
-        new File(CHARTS_DIR).mkdirs();
+        PathUtility.setRunId(runID);
     }
 
     /**
@@ -107,7 +102,7 @@ public class VisualisationController {
         }
 
         // Generate the comparison chart
-        String outputPath = CHARTS_DIR + "/run"+RUN_ID +"_"+ SOLUTION_QUALITY_CHART;
+        String outputPath = PathUtility.getChartsDir()+ "/"+ SOLUTION_QUALITY_CHART;
         visualiser.createComparisonChart(
                 "Algorithm Solution Quality Comparison",
                 "Iterations",
@@ -127,7 +122,7 @@ public class VisualisationController {
      * @throws LoadDataException If reading CSV or generating chart fails
      */
     public String generateComputationalEfficiencyChart(boolean perIteration) throws LoadDataException {
-        String filePath = RESULTS_DIR + "/" +"run"+RUN_ID+"_"+ COMPUTATIONAL_EFFICIENCY_FILE;
+        String filePath = PathUtility.getPerformanceDir() + "/"+ COMPUTATIONAL_EFFICIENCY_FILE;
         File file = new File(filePath);
 
         if (!file.exists()) {
@@ -166,7 +161,8 @@ public class VisualisationController {
         }
 
         // Generate the comparison chart
-        String outputPath = CHARTS_DIR + "/run"+RUN_ID+"_" + COMPUTATIONAL_EFFICIENCY_CHART;
+        String outputPath = PathUtility.getChartsDir() + "/run" +
+                PathUtility.getRunId() + "_" + COMPUTATIONAL_EFFICIENCY_CHART;
         visualiser.createEfficiencyBarChart(
                 "Computational Efficiency Comparison",
                 "Algorithm",
@@ -216,7 +212,7 @@ public class VisualisationController {
         }
 
         // Generate the comparison chart
-        String outputPath = CHARTS_DIR + "/run"+RUN_ID +"_"+ CONSTRAINT_SATISFACTION_CHART;
+        String outputPath = PathUtility.getChartsDir() + "/"+ CONSTRAINT_SATISFACTION_CHART;
         visualiser.createComparisonChart(
                 "Constraint Satisfaction Comparison",
                 "Iterations",
@@ -242,7 +238,7 @@ public class VisualisationController {
 
         // Debug: Print directory contents
         System.out.println("Looking for solution quality files for " + algorithmName);
-        File dir = new File(RESULTS_DIR);
+        File dir = new File(PathUtility.getPerformanceDir());
         System.out.println("Directory exists: " + dir.exists());
         if (dir.exists()) {
             System.out.println("Files in directory:");
@@ -253,18 +249,17 @@ public class VisualisationController {
                 }
             }
         }
-        System.out.println(RUN_ID);
+        System.out.println(PathUtility.getRunId());
 
         // Find all files for this algorithm using the correct pattern that includes the runID
         File[] files = dir.listFiles((d, name) ->
-                name.startsWith(algorithmName) && name.contains("_run"+RUN_ID) && name.contains(SOLUTION_QUALITY_SUFFIX));
+                name.startsWith(algorithmName) && name.contains(SOLUTION_QUALITY_SUFFIX));
 
         System.out.println("Found " + (files != null ? files.length : 0) + " solution quality files for " + algorithmName);
 
         if (files != null && files.length > 0) {
             for (File file : files) {
                 System.out.println("Processing file: " + file.getName());
-                Map<Integer, Double> map = new HashMap<Integer, Double>();
                 try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                     // Skip header
                     reader.readLine();
@@ -390,9 +385,9 @@ public class VisualisationController {
         int runCount = 0;
 
         // Find all files for this algorithm with constraint satisfaction data using the correct pattern
-        File dir = new File(RESULTS_DIR);
+        File dir = new File(PathUtility.getPerformanceDir());
         File[] files = dir.listFiles((d, name) ->
-                name.startsWith(algorithmName) && name.contains("_run"+RUN_ID) && name.contains(CONSTRAINT_SATISFACTION_SUFFIX));
+                name.startsWith(algorithmName) && name.contains(CONSTRAINT_SATISFACTION_SUFFIX));
 
         if (files != null) {
             for (File file : files) {

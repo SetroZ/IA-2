@@ -1,6 +1,5 @@
 package Utilities;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,8 +18,6 @@ import Model.Task;
  * and generating CSV files for visualisations
  */
 public class PerformanceLogger {
-    // Directory for storing CSV results
-    private static final String RESULTS_DIR = "results/performance";
 
     // File names for different metrics
     private static final String SOLUTION_QUALITY_FILE = "solution_quality.csv";
@@ -28,7 +25,6 @@ public class PerformanceLogger {
     private static final String CONSTRAINT_SATISFACTION_FILE = "constraint_satisfaction.csv";
 
     // Metrics tracking
-    private final int runId;
     private final List<IterationData> iterationDataList = new ArrayList<>();
     private final String algorithmName;
     private final List<Task> tasks;
@@ -51,8 +47,9 @@ public class PerformanceLogger {
         this.algorithmName = algorithmName;
         this.tasks = tasks;
         this.employees = employees;
-        this.runId = runId;
-        createResultsDirectory();
+
+        PathUtility.setRunId(runId);
+        PathUtility.createDirectories();
     }
 
     /**
@@ -220,13 +217,13 @@ public class PerformanceLogger {
      */
     private void saveSolutionQualityData() throws LoadDataException
     {
-        String filename = RESULTS_DIR + "/" + algorithmName + "_run" + runId + "_" + SOLUTION_QUALITY_FILE;
+        String filename = PathUtility.getPerformanceDir() + "/" + algorithmName + "_" + SOLUTION_QUALITY_FILE;
         boolean fileExists = Files.exists(Paths.get(filename));
         try (FileWriter writer = new FileWriter(filename, true)) {
             // Write header
             if(!fileExists)
             {
-                writer.write("Algorithm,Iteration,ElapsedTimeMs,costValue\n");
+                writer.write("Algorithm,Iteration,costValue\n");
             }
 
             for (IterationData data : iterationDataList) {
@@ -246,7 +243,7 @@ public class PerformanceLogger {
      */
     private void saveConstraintSatisfactionData() throws LoadDataException
     {
-        String filename = RESULTS_DIR + "/" + algorithmName + "_run" + runId + "_" + CONSTRAINT_SATISFACTION_FILE;
+        String filename = PathUtility.getPerformanceDir() + "/" + algorithmName + "_" + CONSTRAINT_SATISFACTION_FILE;
 
         try (FileWriter writer = new FileWriter(filename, false))
         {
@@ -274,7 +271,7 @@ public class PerformanceLogger {
      * This file contains one row per algorithm run.
      */
     private void saveComputationalEfficiencyData() throws IOException {
-        String filename = RESULTS_DIR + "/" +"run" + runId+"_"+ COMPUTATIONAL_EFFICIENCY_FILE;
+        String filename = PathUtility.getPerformanceDir() + "/"+ COMPUTATIONAL_EFFICIENCY_FILE;
         boolean fileExists = Files.exists(Paths.get(filename));
 
         try (FileWriter writer = new FileWriter(filename, true)) {
@@ -284,8 +281,6 @@ public class PerformanceLogger {
                 writer.write("Algorithm,Iterations,TotalTimeMs,AvgIterationTimeMs\n");
             }
 
-            // Get last iteration data for final metrics
-            IterationData lastData = iterationDataList.getLast();
 
             // Calculate average time per iteration
             double avgTimePerIteration = (double) totalExecutionTime / iterationDataList.size();
@@ -300,16 +295,6 @@ public class PerformanceLogger {
         }
         catch (IOException e) {
             throw new LoadDataException(e.getMessage());
-        }
-    }
-
-    /**
-     * Create the results directory if it doesn't exist.
-     */
-    private void createResultsDirectory() {
-        File dir = new File(RESULTS_DIR);
-        if (!dir.exists()) {
-            dir.mkdirs();
         }
     }
 
