@@ -35,26 +35,85 @@ Each term represents a different type of constraint violation or inefficiency:
 
 ## 1.2 Aim and Scope
 
-The purpose of this report is to analyse the performance and effectiveness of three widely used optimisation algorithms: Genetic Algorithm (GA), Particle Swarm Optimization (PSO) and Ant Colony Optimization (ACO) against randomly generated synthetic data.
+The purpose of this report is to analyse the performance and effectiveness of three widely used optimisation algorithms: Genetic Algorithm (GA), Particle Swarm Optimisation (PSO) and Ant Colony Optimisation (ACO) against randomly generated synthetic data.
 
 The scope of the report includes the implementation of each algorithm on synthetically generated datasets that model real-world task and employee attributes such as workloads, deadlines, skill requirements, and working hour limits. The evaluation focuses on three performance metrics:
-- **Solution Quality (Convergence):** How optimal and effective the task assignments are in minimizing the overall cost function.
+- **Solution Quality (Convergence):** How optimal and effective the task assignments are in minimising the overall cost function.
 - **Computational Efficiency:** The time and resources consumed by each algorithm during the runtime.
 - **Constraint Satisfaction:** The degree to which each solution adheres to assignment rules and avoids constraint violations.
 
-By analysing and comparing these algorithms, the report aims to offer valuable insights into the relative strengths, weaknesses for real-world task allocation problems.
+By analysing and comparing these algorithms, this report aims to offer valuable insights into the relative strengths, weaknesses for real-world task allocation problems.
 
 # 2. Methodology
 
 ## 2.1 Algorithm Overview
 
+All Algorithms extend an abstract class called `AbstractOptimationAlgorithm`
+- This serves as the superclass for all algorithm implementations to use standardised parameters, reporting functions and interactions with the observer classes.
+
+The abstract optimisation class
+
 ### 2.1.1 Genetic Algorithm (GA)
 
-<!-- Placeholder for user to complete -->
+**Overview**
+
+The Genetic Algorithm (GA) is a metaheuristic optimisation approach inspired by the processes of natural selection and evolution. In our implementation, GA iteratively improves a population of candidate solutions through selection, crossover, mutation, and elitism operations to find an optimal assignment of tasks to employees.
+
+#### Solution Representation
+
+- Each solution (chromosome) is represented as an integer array where the index corresponds to a task ID and the value represents the employee ID assigned to that task.
+- For example, `solution[3] = 2` means task 3 is assigned to employee 2.
+- A population consists of multiple such solutions, forming a 2D array where each row is a distinct solution.
+
+#### Evolutionary Operators
+
+**Selection**: Tournament selection is used to choose parent solutions for breeding:
+
+- For each parent selection, a tournament of size 3 is formed by randomly selecting solutions from the population.
+- The solution with the lowest cost (best fitness) within the tournament is chosen as a parent.
+- This process is repeated to select two parents for breeding.
+
+**Crossover**: Uniform crossover is implemented to combine genetic material from two parents:
+
+- For each task position, the offspring randomly inherits the employee assignment from either parent 1 or parent 2 with equal probability.
+- This creates diversity in solutions while preserving valuable task-employee pairings from both parents.
+
+**Mutation**: Task-specific mutation is applied to introduce further diversity:
+
+- Each task in a solution has a chance (defined by the mutation rate) of being reassigned.
+- When mutation occurs, the task is reassigned to a randomly selected employee from the pool of compatible employees (those with matching skills and adequate skill level).
+- This targeted mutation ensures that new assignments are likely to be feasible.
+
+**Elitism**: To preserve the best solutions across generations:
+
+- A specified number (elitism count) of the best solutions from the current population are directly copied to the next generation.
+- This ensures that high-quality solutions are not lost during the evolutionary process.
+
+#### Fitness Evaluation
+
+The fitness of each solution is evaluated using the project wide cost function that aggregates penalties for constraint violations:
+
+- Skill mismatch penalty: When employees lack required skills for assigned tasks.
+- Overload penalty: When employees are assigned more work hours than available.
+- Difficulty violation penalty: When tasks are assigned to employees with insufficient skill levels.
+- Deadline violation penalty: When task completions exceed specified deadlines.
+- Unique assignment violation penalty: When tasks are not assigned to exactly one employee.
+
+The algorithm aims to minimise this cost, with a perfect solution having a cost of zero (no constraint violations).
+
+#### Termination Criteria
+
+The algorithm terminates when either:
+
+- A predefined maximum number of generations is reached, or
+- A perfect solution (cost = 0) is found.
+
+Upon termination, the best solution found across all generations is reported as the final result.
+
 
 ### 2.1.2 Particle Swarm Optimization (PSO)
 
-**Introduction**
+**Overview**
 
 The Particle Swarm Optimization (PSO) algorithm is a metaheuristic that iteratively improves a candidate solution by reducing the cost function, without making assumptions about the underlying problem. It uses a population (swarm) of candidate solutions, known as particles. Each particle explores the defined search space while tracking two key metrics: its personal best ($pBest$), which is the best solution it has found so far, and the global best ($gBest$), which is the best solution found by any particle.
 
