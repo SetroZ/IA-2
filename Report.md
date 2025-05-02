@@ -251,7 +251,12 @@ Our synthetic data generator creates two primary entities:
 The generator ensures variability in the dataset by utilizing pseudorandom distribution of attributes while maintaining realistic constraints on parameters such as working hours and skill distributions.
 ### 2.3.2 Experiment Setup and Configuration
 
-To comprehensively evaluate our algorithm under different operational conditions, we generated eight distinct test scenarios varying in scale and resource balance:
+Our experiments evaluated two distinct segments of factors affecting performance: 
+- DataSet Ratio
+- Parameter Configuration
+
+**DataSet Ratio**
+To comprehensively evaluate our algorithm under different operational conditions, we generated eight distinct dataset scenarios varying in scale and resource balance:
 
 | Test ID | Tasks | Employees | Resource Ratio | Scenario Description                         |
 | ------- | ----- | --------- | -------------- | -------------------------------------------- |
@@ -263,15 +268,20 @@ To comprehensively evaluate our algorithm under different operational conditions
 | Test 6  | 500   | 10        | 50:1           | Extreme resource constraint scenario         |
 | Test 7  | 500   | 100       | 5:1            | Large-scale constrained resources            |
 | Test 8  | 500   | 500       | 1:1            | Large-scale balanced scenario                |
-|         |       |           |                |                                              |
-|         |       |           |                |                                              |
+All of these tests ran with the same default algorithm parameters that are stored in `root/testData/test1-DEFAULT.csv`
+```
+maxIterations,reportingFrequency,fileOutput,populationSize,mutationRate,crossoverRate,elitismCount,c1,c2,w,initPheromone,pherDecayRate
+100,10,1,100,0.1,0.1,2,1.5,1.5,0.5,0.1,0.1
+```
 
 This systematic variation in problem size and resource balance allows us to evaluate both the computational efficiency and solution quality of our proposed algorithm across a spectrum of operational conditions, from small teams with few tasks to enterprise-scale resource allocation problems. All generated datasets were exported to CSV format and stored in individually labelled directories.
 
+**Parameter Configuration**
+Keeping the dataset at a standard of
 
 ## 2.3.3 Hardware and Software Specifications
 
-The tests were run on a 2020 MacBook Pro with 8GB RAM featuring an Apple M1 processor. The software environment utilized JDK 23 for all experimental evaluations.
+The tests were run on a 2020 MacBook Pro with 8GB RAM featuring an Apple M1 processor. The software environment utilided JDK 23 for all experimental evaluations.
 
 
 
@@ -280,6 +290,8 @@ The tests were run on a 2020 MacBook Pro with 8GB RAM featuring an Apple M1 proc
 ## 3.1 Solution Quality and Optimality
 
 ### 3.1.1 Graphical Analysis
+
+The `PerformaceVisualiser`,  
 ### 3.1.2 Interpretation of Results
 
 ## 3.2 Computational Efficiency
