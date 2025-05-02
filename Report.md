@@ -223,6 +223,55 @@ Each term represents a different type of constraint violation or inefficiency:
 
 ### 2.2.3  Algorithm Parameters
 
+### Common Parameters
+
+**Population Size**
+`populationSize`
+This parameter defines the number of independent solutions generated in each iteration of an algorithm.
+
+**Number of Iterations** 
+`maxIterations`
+This parameter defines the maximum number of iterations that will be completed before an algorithm stops running and returns the best solution generated.
+
+#### GA Specific
+
+**Crossover Rate**
+`crossoverRate`
+This parameter defines the probability (0.0-1.0) that two parent solutions will undergo crossover to create offspring.
+
+**Mutation Rate**
+`mutationRate`
+This parameter determines the probability (0.0-1.0) that a task assignment in a solution will be randomly changed to a different employee.
+
+**Elitism Count**
+`elitismCount`
+This parameter specifies the number of best solutions that are preserved unchanged between generations.
+
+#### ACO Specific
+
+**Pheromone Decay Rate**
+`pherDecayRate` class field in `AntColAlg` class.
+This parameter defines the percentage decrease of all pheromone values after each iteration represented as a decimal value.
+
+**Initial Pheromone Value**
+`initPheromone` class field in `AntColAlg` class.
+This parameter defines the pheromone strength assigned to every employee task pairing before any ants have constructed a solution. 
+
+#### PSO Specific
+
+**Personal Best Weight**
+`C1`
+This parameter controls the influence of a particle's own best-found position on its movement.
+
+**Global Best Weight**
+`C2`
+This parameter determines the influence of the swarm's best-found position on each particle's movement.
+
+**Inertia Weight**
+`W`
+This parameter controls how much a particle maintains its current velocity when updating its position.
+
+
 
 
 
