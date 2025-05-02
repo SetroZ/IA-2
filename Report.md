@@ -527,6 +527,18 @@ The analysis of computational efficiency reveals several key insights about how 
 
 These findings demonstrate that while all three algorithms can effectively solve the Employee Task Assignment problem, ACO offers the best computational efficiency across all tested scenarios, making it particularly valuable for large-scale or real-time applications where processing time is a critical factor.
 
+## 4.2 Insights 
+
+### 4.2.1 Genetic Algorithm 
+GA demonstrates consistent and reliable performance across all employee-to-task ratio scenarios. Its effectiveness arises from its ability to balance exploitation through the elitism mechanism and exploration through controlled mutation. Solutions evolve over generations as parent assignments are recombined with a probability defined by the crossoverRate, and occasionally mutated to introduce diversity. The algorithm performs especially well in resource-constrained problems, such as when there are significantly more tasks than employees, where the elitismCount preserves high-quality solutions and the mutationRate enables escape from local minima. While the computational cost of managing a population is higher compared to swarm-based methods, the algorithm shows rapid convergence to low-cost solutions when its parameters are properly tuned.
+
+### 4.2.2 Particle Swarm Optimisation
+Particle Swarm Optimisation relies on swarm intelligence, where each particle represents a solution moving through the search space, influenced by both its own best position and the best-known position of the swarm. This dual attraction, governed by the parameters c1 and c2, allows the algorithm to converge quickly to reasonable solutions. However, its tendency to plateau after early iterations indicates a lack of deep exploration, particularly when the inertia weight w is not tuned to maintain exploration momentum. PSO is computationally efficient due to its simplicity and minimal memory requirements, making it suitable for large-scale problems with many employees, but its final solution quality often suffers in scenarios with tight constraints, where greater variability in search is required.
+
+### 4.2.3 Ant Colony Optimisation
+Ant Colony Optimisation applies a pheromone-based reinforcement mechanism where employee-task pairings that are part of low-cost solutions are incrementally strengthened over time. Its performance varies significantly with the structure of the problem. In balanced or employee-constrained configurations, such as 1:1 or 5:1 ratios, the algorithm struggles as early deposits of pheromone on suboptimal pairings can lead to premature convergence. However, in cases with employee surplus, such as the 1:10 ratio, ACO benefits from the wider selection space, allowing its adaptive learning process to reinforce efficient pairings over time. The initPheromone and pherDecayRate parameters are particularly influential, as they determine the relative importance of new versus historical information. When tuned correctly, ACO demonstrates strong improvement patterns in scenarios where flexibility and redundancy in assignments allow the pheromone-driven mechanism to shine.
+
+
 **Parameter tests
 
 Test1-Mutation-C1-initPherm UP
