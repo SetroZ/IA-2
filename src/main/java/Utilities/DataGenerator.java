@@ -141,6 +141,15 @@ public class DataGenerator {
                     System.out.println("Adding: " + file.getPath());
                     fileNames.add(file.getPath());
                 }
+                if(file.isDirectory())
+                {
+                    File[] subDir = file.listFiles();
+                    if (subDir != null) {
+                        for (File subFile : subDir) {
+                            fileNames.add(subFile.getPath());
+                        }
+                    }
+                }
             }
         }
 

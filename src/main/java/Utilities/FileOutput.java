@@ -29,30 +29,24 @@ public class FileOutput implements Observer {
                 throw new ObserverException("Error writing to file: " + e.getMessage());
             }
         }
+        if(messageType.equalsIgnoreCase("ISRUNALL")) {
+            isRunAll = !title.equalsIgnoreCase("false");
+            int currentRunId = Integer.parseInt(content);
+            PathUtility.setRunId(currentRunId);
+        }
     }
 
     public String getUniqueFile(String title) {
 
-        String directory = "results";
+        String directory = PathUtility.getRunDir();
         String extension = ".txt";
-        int runNumber = 1;
-        if (isRunAll) {
-            File runDir;
-            do {
-                runDir = new File(directory, "run(" + runNumber + ")");
-                runNumber++;
-            } while (runDir.exists() && Files.exists(Paths.get(runDir + "/" + title + extension)));
-
-            directory = runDir.getPath();
-        }
-
         // Ensure the directory exists
         File dir = new File(directory);
         if (!dir.exists()) {
             dir.mkdirs();
         }
 
-        int counter = 0;
+        int counter = 1;
         Path path;
         String fileName;
 
@@ -64,6 +58,7 @@ public class FileOutput implements Observer {
 
         return fileName;
     }
+
 
     @Override
     public String getFinalSolution(int[] solution, double cost, int generation, boolean feasible)
