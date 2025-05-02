@@ -431,6 +431,20 @@ Dataset-Run7
 ![[SavedRunData/DataSetTests/run(7)/charts/computational_efficiency_avg_runtime.png]]
 Dataset-Run8
 
+![[SavedRunData/DataSetTests/run(6)/charts/computational_efficiency_avg_runtime.png]]
+Dataset-Run-6
+
+![[SavedRunData/ParameterTests/run(1)/charts/computational_efficiency_avg_memory_run1.png]]
+Dataset-Run1
+
+![[computational_efficiency_avg_memory_run8.png]]
+Dataset-Run8
+
+![[computational_efficiency_total_memory_run7.png]]
+Dataset-Run7
+
+![[]]
+
 **Small-Scale Problems (Test 1 - 10 tasks, 10 employees):**
 
 - Dataset-Run1 shows that for small instances, ACO achieves the best performance with approximately 16ms average runtime per iteration
@@ -462,28 +476,26 @@ Dataset-Run8
 
 Memory consumption patterns show different characteristics compared to runtime:
 
-
-
 **Per-Iteration Memory Usage:**
 
 - All three algorithms exhibit remarkably similar memory efficiency on a per-iteration basis
-- For small problems (Image 12), all algorithms use approximately 34MB per iteration
-- For medium problems (Image 8), memory usage increases to around 55MB per iteration
+- For small problems (Dataset-Run1), all algorithms use approximately 34MB per iteration
+- For medium problems (Dataset-Run8), memory usage increases to around 55MB per iteration
 - The differences between algorithms remain minimal across all problem sizes
 
-**Total Memory Usage (Images 2, 5, 10):**
+**Total Memory Usage (Images Dataset-Run7, Dataset-Run8, Dataset-Run1):**
 
-- Images 2, 5, and 10 show the total memory consumption across all iterations
+- Images mentioned before show the total memory consumption across all iterations
 - All algorithms demonstrate similar total memory usage patterns
 - ACO typically uses slightly less total memory than PSO and GA
-- For medium problems (Image 5), ACO consumes about 5,400MB total, compared to PSO's 5,600MB
+- For medium problems (Dataset-Run8) , ACO consumes about 5,400MB total, compared to PSO's 5,600MB
 - The differences are not as substantial as those observed in runtime metrics
 
 ## 3.2.2 Analysis of Resource Usage
 
-The analysis of computational efficiency reveals several key insights about how these algorithms utilize computational resources:
+The analysis of computational efficiency reveals several key insights about how these algorithms utilise computational resources:
 
-### Runtime Scaling Behavior
+### Runtime Scaling Behaviour
 
 1. **ACO's Superior Efficiency:**
     - ACO consistently demonstrates the lowest runtime across all problem sizes
@@ -527,6 +539,7 @@ The analysis of computational efficiency reveals several key insights about how 
 
 These findings demonstrate that while all three algorithms can effectively solve the Employee Task Assignment problem, ACO offers the best computational efficiency across all tested scenarios, making it particularly valuable for large-scale or real-time applications where processing time is a critical factor.
 
+<<<<<<< Updated upstream
 ## 4.2 Insights 
 
 ### 4.2.1 Genetic Algorithm 
@@ -547,3 +560,5 @@ Test2- CrossOver-c2- pher decay UP
 
 
 test3-elitismRate- w UP by 0.3 
+=======
+>>>>>>> Stashed changes
