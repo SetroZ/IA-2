@@ -148,7 +148,7 @@ public class MenuController {
 
             while (!exit) {
                 int choice = consoleObserver.requestInput("GENERATE VISUALIZATIONS",
-                        "Select which charts to generate from run " + ALL_RUN_ID,
+                        "Select which charts to generate from run 1 <->" + ALL_RUN_ID,
                         new String[] { "Exit",
                                 "Run ID: " + ALL_RUN_ID,
                                 "Solution Quality Comparison",
@@ -218,7 +218,7 @@ public class MenuController {
 
     private boolean selectGraphType() {
         int anotherChoice = consoleObserver.requestInput("DEFINE PARAMETER", "What efficiency graph to use",
-                new String[] { "Total Average Runtime", "Average Runtime/Iteration" });
+                new String[] { "Average Runtime/Iteration" ,"Total Average Runtime" });
         return switch (anotherChoice) {
             case 0 -> false;
             case 1 -> true;
@@ -349,7 +349,7 @@ public class MenuController {
         }
         notifyObservers("INFO", "RUNNING TRIALS",
                 "Running " + TRIAL_NUMBER_DEFAULT + " trials of " + algorithmType + "...");
-        ALL_RUN_ID
+        
 
         for (int i = 0; i < TRIAL_NUMBER_DEFAULT; i++) {
             // Create and run algorithm with this run ID
@@ -360,7 +360,7 @@ public class MenuController {
                                     GA_MUTATION_DEFAULT, GA_ELITISM_DEFAULT,
                                     MAX_GEN_DEFAULT, REPORTING_FREQUENCY_DEFAULT,
                                     FILE_OUTPUT_DEFAULT, ALL_RUN_ID);
-                    notifyObservers("ISRUNALL", "false", String.valueof(ALL_RUN_ID));
+                    notifyObservers("ISRUNALL", "false", String.valueOf(ALL_RUN_ID));
                     runMenu(ga, "Genetic Algorithm (Trial " + ALL_RUN_ID + ")");
                 }
                 case "AntColonyAlg" -> {
@@ -369,7 +369,7 @@ public class MenuController {
                                     ACO_INITIAL_PHEROMONE_DEFAULT,
                                     MAX_GEN_DEFAULT, REPORTING_FREQUENCY_DEFAULT,
                                     FILE_OUTPUT_DEFAULT, ALL_RUN_ID);
-                    notifyObservers("ISRUNALL", "false", String.valueof(ALL_RUN_ID));
+                    notifyObservers("ISRUNALL", "false", String.valueOf(ALL_RUN_ID));
                     runMenu(ac, "Ant Colony Algorithm (Trial " + ALL_RUN_ID + ")");
                 }
                 case "ParticleSwarmAlg" -> {
@@ -377,7 +377,7 @@ public class MenuController {
                             .createParticleSwarm(POPULATION_SIZE_DEFAULT, MAX_GEN_DEFAULT, PSO_PBEST_W, PSO_GBEST_W,
                                     PSO_INERTIA_WEIGHT,
                                     REPORTING_FREQUENCY_DEFAULT, FILE_OUTPUT_DEFAULT, ALL_RUN_ID);
-                    notifyObservers("ISRUNALL", "false", String.valueof(ALL_RUN_ID));
+                    notifyObservers("ISRUNALL", "false", String.valueOf(ALL_RUN_ID));
                     runMenu(ps, "Particle Swarm Algorithm (Trial " + ALL_RUN_ID + ")");
                 }
                 case "All" -> {
@@ -391,11 +391,11 @@ public class MenuController {
                                     PSO_INERTIA_WEIGHT,
                                     ALL_RUN_ID);
 
-                    notifyObservers("ISRUNALL", "true",String.valueof(ALL_RUN_ID));
+                    notifyObservers("ISRUNALL", "true", String.valueOf(ALL_RUN_ID));
                     runMenu(algs.get("AntColonyAlg"), "Ant Colony Algorithm (Trial " + ALL_RUN_ID + ")");
                     runMenu(algs.get("GeneticAlg"), "Genetic Algorithm (Trial " + ALL_RUN_ID + ")");
                     runMenu(algs.get("ParticleSwarmAlg"), "Particle Swarm Algorithm (Trial " + ALL_RUN_ID + ")");
-                    notifyObservers("ISRUNALL", "false", String.valueof(ALL_RUN_ID));
+                    notifyObservers("ISRUNALL", "false", String.valueOf(ALL_RUN_ID));
                 }
                 default -> {
                     notifyObservers("ERROR", "Invalid Algorithm Type",
