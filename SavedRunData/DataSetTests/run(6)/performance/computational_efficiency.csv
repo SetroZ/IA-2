@@ -1,0 +1,16 @@
+Algorithm,Iterations,TotalTimeMs,AvgIterationTimeMs,UsedMemoryMb,AvgUsedMemoryPerIteration
+AntColonyAlg,841,8.41,6251.71,62.52
+GeneticAlg,2980,29.80,4842.29,48.42
+ParticleSwarmAlg,1243,12.43,4875.93,48.76
+AntColonyAlg,781,7.81,5105.18,51.05
+GeneticAlg,2964,29.64,4642.67,46.43
+ParticleSwarmAlg,1248,12.48,4726.64,47.27
+AntColonyAlg,778,7.78,5158.14,51.58
+GeneticAlg,2745,27.45,4682.79,46.83
+ParticleSwarmAlg,1266,12.66,4749.74,47.50
+AntColonyAlg,785,7.85,5192.87,51.93
+GeneticAlg,2863,28.63,4647.23,46.47
+ParticleSwarmAlg,1264,12.64,4727.48,47.27
+AntColonyAlg,776,7.76,5144.87,51.45
+GeneticAlg,2885,28.85,4621.90,46.22
+ParticleSwarmAlg,1245,12.45,4828.58,48.29

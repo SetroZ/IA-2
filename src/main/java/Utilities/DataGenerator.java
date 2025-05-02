@@ -190,6 +190,7 @@ public class DataGenerator {
             while ((line = reader.readLine()) != null) {
                 String[] data = line.split(",");
                 if (data.length == 12) {
+                    //100,10,1,100,0.1,0.1,2,1.5,1.5,0.5,0.1,0.1
                     int maxIterations = Integer.parseInt(data[0].trim());
                     int reportingFrequency = Integer.parseInt(data[1].trim());
                     boolean fileOutput = Boolean.parseBoolean(data[2].trim());
