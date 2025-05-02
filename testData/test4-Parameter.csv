@@ -1,0 +1,2 @@
+maxIterations,reportingFrequency,fileOutput,populationSize,mutationRate,crossoverRate,elitismCount,c1,c2,w,initPheromone,pherDecayRate
+100,10,1,100,0.1,0.1,4,1.5,1.5,0.7,0.1,0.1
