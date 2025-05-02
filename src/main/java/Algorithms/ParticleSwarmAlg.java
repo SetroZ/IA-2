@@ -62,7 +62,7 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
         // Start timing performance
         performanceLogger.startTimer();
 
-        int[][] swarms = Initialise.getInitialPopulation(employees, tasks, populationSize);
+        int[][] swarm = Initialise.getInitialPopulation(employees, tasks, populationSize);
         double[][] v = new double[populationSize][tasks.size()]; // contains velocities for each position.
         int[][] pBest = new int[populationSize][tasks.size()]; // contains pbest for each particle. which is an array of
         // the best positions for each position.
@@ -77,9 +77,9 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
         for (int i = 0; i < populationSize; i++) {
             for (int j = 0; j < tasks.size(); j++) {
                 v[i][j] = rd.nextDouble(0.5, 2) * (rd.nextBoolean() ? 1 : -1);
-                pBest[i][j] = swarms[i][j];
-                fitnessPBest[i] = CostCalculator.calculateTotalCost(pBest[i], tasks, employees);
+                pBest[i][j] = swarm[i][j];
             }
+            fitnessPBest[i] = CostCalculator.calculateTotalCost(pBest[i], tasks, employees);
         }
         gBestData = findGbest(gBestData, fitnessPBest, pBest);
         int n = 0;
@@ -98,16 +98,14 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
             }
             for (int i = 0; i < populationSize; i++) {
                 for (int j = 0; j < tasks.size(); j++) {
-                    v[i][j] = calculateVelocity(gBestData.gBestArr[j], pBest[i][j], v[i][j], swarms[i][j]);
-                    swarms[i][j] = calculatePosition(v[i][j], swarms[i][j], j);
-
+                    v[i][j] = calculateVelocity(gBestData.gBestArr[j], pBest[i][j], v[i][j], swarm[i][j]);
+                    swarm[i][j] = calculatePosition(v[i][j], swarm[i][j], j);
                 }
                 // Find pBest
-                double newCost = CostCalculator.calculateTotalCost(swarms[i], tasks, employees);
+                double newCost = CostCalculator.calculateTotalCost(swarm[i], tasks, employees);
                 if (newCost <= fitnessPBest[i]) {
-
                     fitnessPBest[i] = newCost;
-                    pBest[i] = swarms[i];
+                    pBest[i] = swarm[i].clone();
                 }
             }
 
@@ -144,10 +142,10 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
         double social = c2 * r2 * (gBest - currP);
 
         double stag = (STAG_LIMIT < lastgBestUpdate)
-                ? Math.copySign(rd.nextDouble(0.5, 1.0), v)
-                : 0.0;
+                ? rd.nextDouble(1.0, 1.5)
+                : 1;
 
-        double newV = w * v + cognitive + social + stag;
+        double newV = w * v + cognitive + social * stag;
 
         return Math.max(-maxV, Math.min(maxV, newV));
     }
