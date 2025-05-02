@@ -34,11 +34,10 @@ public class DataGenerator {
         // Strip any leading slash for consistency
         String sanitizedFilename = filename.startsWith("/") ? filename.substring(1) : filename;
 
-
         // Just use the filename part if a full path was given
         String actualFilename = new File(sanitizedFilename).getName();
 
-        File file = new File(RESOURCES_DIR + actualFilename);
+        File file = new File(filename);
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             // Skip header
@@ -88,7 +87,7 @@ public class DataGenerator {
         // Just use the filename part if a full path was given
         String actualFilename = new File(sanitizedFilename).getName();
 
-        File file = new File(RESOURCES_DIR + actualFilename);
+        File file = new File(filename);
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             // Skip header line
@@ -134,11 +133,9 @@ public class DataGenerator {
         List<String> fileNames = new ArrayList<>();
 
         String dir;
-        if(isTest) {
+        if (isTest) {
             dir = TEST_DIR;
-        }
-        else
-        {
+        } else {
             dir = RESOURCES_DIR;
         }
         File resourceDir = new File(dir);
@@ -153,8 +150,7 @@ public class DataGenerator {
                     System.out.println("Adding: " + file.getPath());
                     fileNames.add(file.getPath());
                 }
-                if(file.isDirectory())
-                {
+                if (file.isDirectory()) {
                     File[] subDir = file.listFiles();
                     if (subDir != null) {
                         for (File subFile : subDir) {
@@ -172,8 +168,7 @@ public class DataGenerator {
         return fileNames;
     }
 
-    public static AlgParameters loadTestFile(String filename) throws LoadDataException
-    {
+    public static AlgParameters loadTestFile(String filename) throws LoadDataException {
         AlgParameters parameters;
         // Strip any leading slash for consistency
         String sanitizedFilename = filename.startsWith("/") ? filename.substring(1) : filename;
@@ -181,10 +176,10 @@ public class DataGenerator {
         // Just use the filename part if a full path was given
         String actualFilename = new File(sanitizedFilename).getName();
 
-        File file = new File(TEST_DIR +"/"+ actualFilename);
+        File file = new File(filename);
 
-        //"maxIterations,reportingFrequency,fileOutput,populationSize,mutationRate,crossoverRate,
-        //elitismCount,c1,c2,w,initpheromone,Pherdecayrate\n")
+        // "maxIterations,reportingFrequency,fileOutput,populationSize,mutationRate,crossoverRate,
+        // elitismCount,c1,c2,w,initpheromone,Pherdecayrate\n")
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             // Skip header line
