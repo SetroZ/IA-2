@@ -354,8 +354,7 @@ In the task-heavy scenario with a 5:1 ratio:
 2. **Impact of Resource Constraints**:
    - Employee surplus (1:10) leads to better solutions across all algorithms
    - Task surplus (5:1) creates a much more challenging optimisation problem with higher costs
-3. **Convergence Patterns**:
-
+1. **Convergence Patterns**:
    - GA consistently shows the most improvement over iterations regardless of ratio
    - ACO's improvement pattern varies significantly based on problem structure
    - PSO tends to find reasonably good initial solutions but shows limited further improvement
