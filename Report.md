@@ -1,31 +1,35 @@
 # 1. Introduction
+
 ## 1.1 Employee Task Assignment Optimisation Problem
 
 **Problem summary:**
 The Employee Task Assignment Optimisation problem addresses the challenge of optimally allocating a set of tasks to a group of employees while respecting a variety of real-world constraints. Specifically, the company in question must assign a number of distinct tasks of size $i$ ($T = \{T_1, T_2, ..., T_i\}$), each with a
+
 - defined workload (in hours)
 - a difficulty level
 - a deadline
 - a required skill type
 
 to a pool of $j$ available employees ($E = \{E_1, E_2, ..., E_j\}$), each characterised by
+
 - limited working hours
 - an individual skill level
 - a set of specific skill types they possess.
 
 The problem therefore is to assign these tasks to the company’s employees satisfying 5 constraints:
+
 - **Unique Assignment:** Each task is to be assigned to one and only one employee.
 - **Capacity Constraint:** The total amount of task hours assigned to an employee shouldn’t exceed an employee’s available hours.
 - **Skill Level Constraint:** A task should only be assigned to an employee if and only if the employee’s skill level is at least equal to or more than the task’s difficulty.
 - **Specialised Skill Matching:** A task can only be assigned to an employee if and only if the employee has that specific skill that the task requires.
 - **Deadline Consideration:** if an employee finishes the task before its deadline, a penalty is added.
 
-
 ## 1.2 Aim and Scope
 
 The purpose of this report is to analyse the performance and effectiveness of three widely used optimisation algorithms: Genetic Algorithm (GA), Particle Swarm Optimisation (PSO) and Ant Colony Optimisation (ACO) against randomly generated synthetic data.
 
 The scope of the report includes the implementation of each algorithm on synthetically generated datasets that model real-world task and employee attributes such as workloads, deadlines, skill requirements, and working hour limits. The evaluation focuses on three performance metrics:
+
 - **Solution Quality (Convergence):** How optimal and effective the task assignments are in minimising the overall cost function.
 - **Computational Efficiency:** The time and resources consumed by each algorithm during the runtime.
 - **Constraint Satisfaction:** The degree to which each solution adheres to assignment rules and avoids constraint violations.
@@ -37,6 +41,7 @@ By analysing and comparing these algorithms, this report aims to offer valuable 
 ## 2.1 Algorithm Overview
 
 All Algorithms extend an abstract class called `AbstractOptimationAlgorithm`
+
 - This serves as the superclass for all algorithm implementations to use standardised parameters, reporting functions and interactions with the observer classes.
 
 The abstract optimisation class
@@ -98,7 +103,6 @@ The algorithm terminates when either:
 
 Upon termination, the best solution found across all generations is reported as the final result.
 
-
 ### 2.1.2 Particle Swarm Optimisation (PSO)
 
 **Overview**
@@ -108,8 +112,11 @@ The Particle Swarm Optimisation (PSO) algorithm is a meta heuristic that iterati
 The particle's position and velocity are updated using mathematical formulas influenced by both $pBest$ (cognitive), $gBest$ (social). These updates guide the particle toward better solutions over time. While PSO does not guarantee finding a globally optimal solution, it aims to minimise the cost function and converge toward optimal or near-optimal solutions through collective swarm intelligence with introduced randomness.
 
 #### Terminology
+
 In our PSO implementation for the Employee-Task Assignment problem, we have chosen to represent our data using 2D and 1D arrays.
+
 #### Swarm Representation
+
 - A swarm is represented using a two-dimensional array, where `swarm[i]` refers to the $i$-th particle in the population.
 - `swarm[i][j] = employeeID` means task $j$ is assigned to a specific employee.
 - `v = new double[populationSize][tasks.size()]` stores the velocity associated with each position.
@@ -117,6 +124,7 @@ In our PSO implementation for the Employee-Task Assignment problem, we have chos
 - A 1D `gBest` contains the global best solution out of all particles.
 
 #### Particle Updating Mechanism
+
 Each particle updates its task-to-employee mapping based on velocities computed using the function:
 
 ```java
@@ -134,6 +142,7 @@ private double calculateVelocity(double gBest, int pBest, double v, int currP) {
 ```
 
 The velocity is calculated for each task using the function above which is based on:
+
 - **Cognitive Component:** Pull toward the particle’s personal best.
 - **Social Component:** Pull toward the global best solution.
 - **Stagnation limit:** Accelerates randomness if the global best hasn't improved recently.
@@ -142,6 +151,7 @@ The velocity is calculated for each task using the function above which is based
 #### Position Update and Feasibility Handling
 
 Each particle's position _(task assignment)_ is updated by applying the newly computed velocity to `swarm[i][j]`. The updated position is passed to a validation function that ensures the following constraints:
+
 - Checks skill matching and skill level compatibility.
 - Generates a list of eligible employees and verifies if the new assignment lies within this list.
 
@@ -149,45 +159,51 @@ The **fitness evaluation** for each particle uses the defined cost function, whi
 
 ### 2.1.3 Ant Colony Optimisation (ACO)
 
-**Overview** 
+**Overview**
 
-The Ant Colony Optimisation Algorithm is a metaheuristic algorithm inspired by the real life behaviour of ant colonies optimising the path between the colony and a food source through pheromone communication. As an ant returns to its colony from the food source it deposits pheromone along its path, this serves as a signal to other ants who are more likely to follow paths to the food source with a higher pheromone concentration. Pheromone evaporates over time, this results in paths that are longer (less optimized) having a weaker pheromone signal by the time the ant returns to the colony compared to more optimal paths. Over time, these optimal paths generate higher concentrations of pheromone due to repeated deposition, encouraging more ants to take the same path who each deposit pheromone, further reinforcing the efficiency of the route. This positive feedback mechanic results in the convergence of all ants to a near optimal route. 
+The Ant Colony Optimisation Algorithm is a metaheuristic algorithm inspired by the real life behaviour of ant colonies optimising the path between the colony and a food source through pheromone communication. As an ant returns to its colony from the food source it deposits pheromone along its path, this serves as a signal to other ants who are more likely to follow paths to the food source with a higher pheromone concentration. Pheromone evaporates over time, this results in paths that are longer (less optimized) having a weaker pheromone signal by the time the ant returns to the colony compared to more optimal paths. Over time, these optimal paths generate higher concentrations of pheromone due to repeated deposition, encouraging more ants to take the same path who each deposit pheromone, further reinforcing the efficiency of the route. This positive feedback mechanic results in the convergence of all ants to a near optimal route.
 
 **Application to Employee Task Assignment Problem**
 The concept of ACO can be applied to combinatorial problems such as the Employee Task assignment optimisation problem by considering a whole solution as the path with a length equal to a cost function that describes how far away the solution is from meeting the given constraints. Each individual decision, employee-task assignment, that composes the solution is then deposited with pheromone influencing the probability of that employee-task pairing being chosen in subsequent solutions. Over time the pairings that compose solutions with lower cost are favoured as pheromone is continuosly deposited, and those composing higher cost solutions are disfavoured as pheromone evaporation outweighs the minimal pheromone deposited.
 
 #### Ant Colony Represenation
+
 - The ant colony is represented by a 2D-array where `antMatrix[i]` represents the solution or path taken by the i'th ant.
 - `antMatrix[i][t] = e` means that in the i'th ant's solution, task t has been assigned to employee e.
 - Every iteration the 2D-array is updated with new solutions that are generated probabilistically based on the values stored in the pheromone matrix.
 - A 1D-array stores the global best solution; the solution with the lowest cost found over all iterations run so far.
 
 #### Pheromone Matrix Representation
+
 - The pheromone matrix is represented by a 2D-array where `pherMatrix[t][e] = p` means that the assignment of employee e to task t has a pheromone value of p.
 
-**Initialisation Mechanism** 
+**Initialisation Mechanism**
 The pheromone matrix is initialised with a constrained solution space. All employee task pairings `[t][e]` are evaluated according to if the pairing violates the skill level constraint and the specialized skill matching constraint. If the pairing of employee e with task t violates either constraint then `[t][e] = 0`, otherwise `[t][e] = initial pheromone value parameter`. This process effectively reduces the solution space, as pairings with a pheromone value of 0 can never be chosen by the ant, and so can never have a pheromone deposited upon it. In the edge case that their exists a task t where no employee can satisfy both the skill level and specialized skill matching constraints, all `[t][e]` are assigned a value equal to the initial pheromone parameter for that specific task t.
 
 **Updating Mechanism**
-- After each iteration all elements in the pheromone matrix are multiplied by `1 - (pherDecayRate)`, where pherDecayRate is the decimal representation of the percentage decrease in pheromone strength; this process implements the concept of pheromone evaporation. 
+
+- After each iteration all elements in the pheromone matrix are multiplied by `1 - (pherDecayRate)`, where pherDecayRate is the decimal representation of the percentage decrease in pheromone strength; this process implements the concept of pheromone evaporation.
 - The cost for each ant's solution is then evaluated for the current iteration.
 - The pheromone value for that solution is then evaluated according to the equation: `pheromone = 1/(5 * cost + 1) `.
 - This pheromone value is then incremented into the elements for all employee task pairs that compose the solution using the for loop:
-``` java 
-for(int j = 0; j < numTasks; j++) 
+
+```java
+for(int j = 0; j < numTasks; j++)
 {
     int empIdx = ant[j];
     this.pherMatrix[j][empIdx] += pheromone;
-    
+
 }
 ```
+
 where ant is a 1D array for a specific solution from the antMatrix.
 
 #### Solution Generation Mechanism
+
 - In each iteration the number of independent solutions generated is equal to the `numAnts` parameter.
-- Each solution is generated sequentially from Task 1 to Task n, and assigning an employee at each different task. 
+- Each solution is generated sequentially from Task 1 to Task n, and assigning an employee at each different task.
 - For each task in a solution, the pheromone value of assigning that task to each employee is summed and stored as `totalPheromone`.
-- A random number is then generated between 0 and `total pheromone` and assigned to `choice`. 
+- A random number is then generated between 0 and `total pheromone` and assigned to `choice`.
 - We then iterate through each element representing the pheromone value for assigning each employee to that task, and on each iteration the respective pheromone value is incremented to the variable `cumulative` and `choice < cumulative` is checked. When this condition is true the respective employee is the one that is chosen for the solution. This ensures probabilistic assignment of employees for each task based on their relative pheromone strengths.
 - This process is repeated for all ants in the antMatrix.
 
@@ -195,25 +211,27 @@ where ant is a 1D array for a specific solution from the antMatrix.
 
 ### 2.2.1 Solution Encoding Strategy
 
-Our solutions are encoded in a 1D array `Solution`, which represents the most optimal solution—*the one with the lowest cost*. The array has a size of $n$, where $n$ is the number of tasks in the original problem.
+Our solutions are encoded in a 1D array `Solution`, which represents the most optimal solution—_the one with the lowest cost_. The array has a size of $n$, where $n$ is the number of tasks in the original problem.
 
-Each element in the array corresponds to a task whose value represents the employee to whom the task is assigned. For example, if `Solution[1] = 3`, it means that $task_1$  is assigned to $employee_3$. i.e a task with an id of 1 is assigned to an employee with an id of 3.
+Each element in the array corresponds to a task whose value represents the employee to whom the task is assigned. For example, if `Solution[1] = 3`, it means that $task_1$ is assigned to $employee_3$. i.e a task with an id of 1 is assigned to an employee with an id of 3.
 
 This array representation is simple yet efficient and ensures the most optimal use of memory and allows for fast access and manipulation in $O(1)$ constant time.
 
 ### 2.2.2 Constraint Handling Mechanisms
 
-Constraints are managed in a multitude of ways. 
+Constraints are managed in a multitude of ways.
 The most prominent contributor is the `Alogirithms.CostCalulator.java` class which implements the cost function.
 Additionally, employee task pairs that do not meet both the skill level and specialized skill matching constraint are not considered except for the edge case where no employee meets both constraints for a given task.
 
 ### Cost Function
+
 The cost function quantifies how "bad" or inefficient a particular task assignment solution is by summing penalties for violating key constraints. The objective is to minimise this cost, ensuring a more optimal and feasible task-to-employee allocation.
 
 It is defined as per the assignment spec:
 $$\text{Cost} = \beta \cdot \text{Skill Mismatch Penalty} + \alpha \cdot \text{Overload Penalty} + \delta \cdot \text{Difficulty Violation Penalty} + \gamma \cdot \text{Deadline Violation Penalty} + \sigma \cdot \text{Unique Assignment Violation Penalty}$$
 
 Each term represents a different type of constraint violation or inefficiency:
+
 - **Overload Penalty ($\alpha$):** Penalises solutions where an employee is assigned more task hours than their available working hours.
 - **Skill Mismatch Penalty ($\beta$):** Applies when a task is assigned to an employee who lacks the specific skill required for the task.
 - **Difficulty Violation Penalty ($\delta$):** Incurred when a task is assigned to an employee whose skill level is below the task’s difficulty.
@@ -285,19 +303,21 @@ For our experimental evaluation, we generated synthetic datasets to test the sca
 ### Data Generation Methodology
 
 Our synthetic data generator creates two primary entities:
+
 1. **Tasks**: Each task is characterized by:
-    - A unique identifier
-    - A skill requirement (randomly selected from a predefined set)
-    - Estimated completion time (1-9 hours)
-    - Difficulty level (1-9)
-    - Deadline (1-29 days)
+   - A unique identifier
+   - A skill requirement (randomly selected from a predefined set)
+   - Estimated completion time (1-9 hours)
+   - Difficulty level (1-9)
+   - Deadline (1-29 days)
 2. **Employees**: Each employee is defined by:
-    - A unique identifier
-    - Available working hours (7-19 hours)
-    - Skill proficiency level (1-9)
-    - A random subset of skills from the predefined skill set
+   - A unique identifier
+   - Available working hours (7-19 hours)
+   - Skill proficiency level (1-9)
+   - A random subset of skills from the predefined skill set
 
 The generator ensures variability in the dataset by utilizing pseudorandom distribution of attributes while maintaining realistic constraints on parameters such as working hours and skill distributions.
+
 ### 2.3.2 Experiment Setup and Configuration
 
 To comprehensively evaluate our algorithm under different operational conditions, we generated eight distinct test scenarios varying in scale and resource balance:
@@ -317,30 +337,89 @@ To comprehensively evaluate our algorithm under different operational conditions
 
 This systematic variation in problem size and resource balance allows us to evaluate both the computational efficiency and solution quality of our proposed algorithm across a spectrum of operational conditions, from small teams with few tasks to enterprise-scale resource allocation problems. All generated datasets were exported to CSV format and stored in individually labelled directories.
 
+**Parameter Configuration**
+Keeping the dataset at a standard of
 
 ## 2.3.3 Hardware and Software Specifications
 
-The tests were run on a 2020 MacBook Pro with 8GB RAM featuring an Apple M1 processor. The software environment utilized JDK 23 for all experimental evaluations.
-
-
+The tests were run on a 2020 MacBook Pro with 8GB RAM featuring an Apple M1 processor. The software environment utilided JDK 23 for all experimental evaluations.
 
 # 3. Performance Evaluation
 
 ## 3.1 Solution Quality and Optimality
 
-### 3.1.1 Graphical Analysis
+#### 1:1 Ratio (Task 1) - Equal Tasks and Employees
+
+![[Pasted image 20250502225910.png]]
+
+In the 1:1 ratio scenario, all three algorithms show distinctly different performance levels:
+
+- **Genetic Algorithm (GA)**: Shows the best performance, starting at cost ~1.8 and rapidly improving to converge at ~1.4
+- **Particle Swarm Optimization (PSO)**: Maintains a consistent cost of 2.0 throughout all iterations
+- **Ant Colony Optimization (ACO)**: Performs significantly worse with a stable cost around 3.6
+
+**Key insights**:
+
+- GA demonstrates its adaptive capability even in simple problem spaces
+- PSO shows no improvement over iterations, suggesting it quickly reaches its local optimum
+- ACO performs poorly relative to other approaches in this balanced configuration
+- The performance gap between algorithms is very pronounced in this simple case
+
+#### 1:10 Ratio (Task 2) - More Employees than Tasks
+
+![[Pasted image 20250502230100.png]]
+
+When there are significantly more employees than tasks (1:10 ratio):
+
+- **Genetic Algorithm (GA)**: Starts with a poor solution (~1.6) but quickly improves and reaches ~1.05
+- **Particle Swarm Optimization (PSO)**: Performs better than in the 1:1 case, with cost around 1.1-1.2
+- **Ant Colony Optimization (ACO)**: Shows dramatic improvement compared to the 1:1 case, achieving the best final cost of ~1.0
+
+**Key insights**:
+
+- ACO performs exceptionally well with employee surplus, suggesting it excels at employee selection when options are plentiful
+- The performance gap between algorithms narrows significantly
+- All algorithms achieve good solutions, indicating this is an easier configuration to optimize
+- GA shows the most improvement over iterations despite not achieving the best final solution
+
+#### 5:1 Ratio (Task 7) - More Tasks than Employees
+
+![[Pasted image 20250502230318.png]]
+
+In the task-heavy scenario with a 5:1 ratio:
+
+- **Genetic Algorithm (GA)**: Achieves the best performance (~825), showing consistent improvement
+- **Particle Swarm Optimization (PSO)**: Performs slightly worse (~875) with minimal improvement over iterations
+- **Ant Colony Optimization (ACO)**: Shows the poorest performance (~950) but still improves gradually
+
+**Key insights**:
+
+- GA maintains its advantage in complex scenarios with constrained resources
+- The cost values are much higher for all algorithms, indicating this is a more challenging optimization problem
+- ACO struggles the most when employees are the constraining factor
+- All algorithms show some improvement, suggesting none reach their true optimal solution within 100 iterations
+
 ### 3.1.2 Interpretation of Results
+
+1. **Algorithm Sensitivity to Problem Structure**:
+   - GA shows consistent strong performance across all ratios, particularly excelling in resource-constrained scenarios
+   - PSO performs reliably but with limited improvement capacity
+   - ACO shows dramatic performance variation based on ratio - performing poorly with balanced or constrained employees but excelling when many employees are available
+2. **Impact of Resource Constraints**:
+   - Employee surplus (1:10) leads to better solutions across all algorithms
+   - Task surplus (5:1) creates a much more challenging optimisation problem with higher costs
+3. **Convergence Patterns**:
+   - GA consistently shows the most improvement over iterations regardless of ratio
+   - ACO's improvement pattern varies significantly based on problem structure
+   - PSO tends to find reasonably good initial solutions but shows limited further improvement
+
+
 
 ## 3.2 Computational Efficiency
 
 ### 3.2.1 Graphical Representation of Efficiency
+
 ### 3.2.2 Analysis of Resource Usage
-
-
-
-
-
-
 
 Datasets:
 10 trials
@@ -350,23 +429,17 @@ test3: 100 tasks -> 10 employees
 
 test4 : 100 tasks -> 100 employees
 
-
 test5: 100 tasks->500 employees
 
-
-test6:  500 tasks -> 10 employees
-
+test6: 500 tasks -> 10 employees
 
 tsest7: 500 tasks-> 100 employees
 
-
 test 8 : 500 tasks ->500 employees
 
-**Parameter tests
+\*\*Parameter tests
 
 Test1-Mutation-C1-initPherm UP
-
 Test2- CrossOver-c2- pher decay UP
 
-
-test3-elitismRate- w UP by 0.3 
+test3-elitismRate- w UP by 0.3
