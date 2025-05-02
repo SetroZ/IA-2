@@ -190,12 +190,6 @@ where ant is a 1D array for a specific solution from the antMatrix.
 - A random number is then generated between 0 and `total pheromone` and assigned to `choice`. 
 - We then iterate through each element representing the pheromone value for assigning each employee to that task, and on each iteration the respective pheromone value is incremented to the variable `cumulative` and `choice < cumulative` is checked. When this condition is true the respective employee is the one that is chosen for the solution. This ensures probabilistic assignment of employees for each task based on their relative pheromone strengths.
 - This process is repeated for all ants in the antMatrix.
-    
-
-
-
-
-
 
 ## 2.2 Implementation Details
 
