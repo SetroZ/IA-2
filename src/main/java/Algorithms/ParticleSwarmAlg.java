@@ -129,9 +129,7 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
     }
 
     private double calculateVelocity(double gBest, int pBest, double v, int currP) {
-        final double c1 = 1.5;
-        final double c2 = 1.5;
-        final double w = 0.5;
+
         final int maxV = employees.size();
 
         Random rd = new Random();
