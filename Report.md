@@ -195,8 +195,16 @@ Each term represents a different type of constraint violation or inefficiency:
 
 ## 2.3 Experimental Design
 
-
 ### 2.3.1 Data Set Description
+
+Randomly
+
+
+
+The hardware: 2020 mackbook pro 8GB M1 , sofware jdk 23
+
+
+
 
 
 ### 2.3.2 Experiment Setup and Configuration
@@ -223,3 +231,31 @@ Each term represents a different type of constraint violation or inefficiency:
 
 
 
+Datasets:
+10 trials
+Test1: 10 tasks -> 10 employees
+test2: 10 tasks -> 100 employees
+test3: 100 tasks -> 10 employees
+
+test4 : 100 tasks -> 100 employees
+
+
+test5: 100 tasks->500 employees
+
+
+test6:  500 tasks -> 10 employees
+
+
+tsest7: 500 tasks-> 100 employees
+
+
+test 8 : 500 tasks ->500 employees
+
+**Parameter tests
+
+Test1-Mutation-C1-initPherm UP
+
+Test2- CrossOver-c2- pher decay UP
+
+
+test3-elitismRate- w UP by 0.3 
