@@ -117,7 +117,7 @@ public class AlgParameters
                 sb.append("type,maxIterations,reportingFrequency," +
                         "fileOutput,populationSize,initPheromone,pherDecayRate\n");
 
-                sb.append(type).append(",").append(",")
+                sb.append(type).append(",")
                         .append(maxIterations).append(",").append(reportingFrequency)
                         .append(",").append(initPheromone).append(",").append(pherDecayRate).append("\n");
                 return sb.toString();
@@ -128,7 +128,7 @@ public class AlgParameters
                 sb.append("type,maxIterations,reportingFrequency," +
                         "fileOutput,populationSize,c1,c2,w\n");
 
-                sb.append(type).append(",").append(",")
+                sb.append(type).append(",")
                         .append(maxIterations).append(",").append(reportingFrequency)
                         .append(",").append(fileOutput).append(",").append(populationSize)
                         .append(",").append(c1).append(",").append(c2).append(",").append(w).append("\n");
@@ -141,8 +141,7 @@ public class AlgParameters
                         "fileOutput,populationSize,mutationRate,crossoverRate," +
                         "elitismCount\n");
 
-                sb.append(type).append(",").append(",")
-                        .append(maxIterations).append(",").append(reportingFrequency)
+                sb.append(type).append(",").append(maxIterations).append(",").append(reportingFrequency)
                         .append(",").append(fileOutput).append(",").append(populationSize)
                         .append(",").append(mutationRate).append(",").append(crossoverRate)
                         .append(",").append(elitismCount).append("\n");
