@@ -443,7 +443,6 @@ Dataset-Run8
 ![[computational_efficiency_total_memory_run7.png]]
 Dataset-Run7
 
-![[]]
 
 **Small-Scale Problems (Test 1 - 10 tasks, 10 employees):**
 
@@ -551,14 +550,3 @@ Particle Swarm Optimisation relies on swarm intelligence, where each particle re
 ### 4.2.3 Ant Colony Optimisation
 Ant Colony Optimisation applies a pheromone-based reinforcement mechanism where employee-task pairings that are part of low-cost solutions are incrementally strengthened over time. Its performance varies significantly with the structure of the problem. In balanced or employee-constrained configurations, such as 1:1 or 5:1 ratios, the algorithm struggles as early deposits of pheromone on suboptimal pairings can lead to premature convergence. However, in cases with employee surplus, such as the 1:10 ratio, ACO benefits from the wider selection space, allowing its adaptive learning process to reinforce efficient pairings over time. The initPheromone and pherDecayRate parameters are particularly influential, as they determine the relative importance of new versus historical information. When tuned correctly, ACO demonstrates strong improvement patterns in scenarios where flexibility and redundancy in assignments allow the pheromone-driven mechanism to shine.
 
-
-**Parameter tests
-
-Test1-Mutation-C1-initPherm UP
-
-Test2- CrossOver-c2- pher decay UP
-
-
-test3-elitismRate- w UP by 0.3 
-=======
->>>>>>> Stashed changes
