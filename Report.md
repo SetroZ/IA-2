@@ -20,18 +20,6 @@ The problem therefore is to assign these tasks to the company’s employees sati
 - **Specialised Skill Matching:** A task can only be assigned to an employee if and only if the employee has that specific skill that the task requires.
 - **Deadline Consideration:** if an employee finishes the task before its deadline, a penalty is added.
 
-### Cost Function
-The cost function quantifies how "bad" or inefficient a particular task assignment solution is by summing penalties for violating key constraints. The objective is to minimise this cost, ensuring a more optimal and feasible task-to-employee allocation.
-
-It is defined as:
-
-$$\text{Cost} = \beta \cdot \text{Skill Mismatch Penalty} + \alpha \cdot \text{Overload Penalty} + \delta \cdot \text{Difficulty Violation Penalty} + \gamma \cdot \text{Deadline Violation Penalty} + \sigma \cdot \text{Unique Assignment Violation Penalty}$$
-Each term represents a different type of constraint violation or inefficiency:
-- **Overload Penalty ($\alpha$):** Penalises solutions where an employee is assigned more task hours than their available working hours.
-- **Skill Mismatch Penalty ($\beta$):** Applies when a task is assigned to an employee who lacks the specific skill required for the task.
-- **Difficulty Violation Penalty ($\delta$):** Incurred when a task is assigned to an employee whose skill level is below the task’s difficulty.
-- **Deadline Violation Penalty ($\gamma$):** Applies if a task is completed too early (before its deadline).
-- **Unique Assignment Violation Penalty ($\sigma$):** Penalises cases where tasks are either not assigned at all or assigned to more than one employee.
 
 ## 1.2 Aim and Scope
 
@@ -170,3 +158,26 @@ Our solutions are encoded in a 1D array `Solution`, which represents the most op
 Each element in the array corresponds to a task whose value represents the employee to whom the task is assigned. For example, if `Solution[1] = 3`, it means that $task_1$  is assigned to $employee_3$. i.e a task with an id of 1 is assigned to an employee with an id of 3.
 
 This array representation is simple yet efficient and ensures the most optimal use of memory and allows for fast access and manipulation in $O(1)$ constant time.
+
+### 2.2.2 Constraint Handling Mechanisms
+
+Constraints are managed in a multitude of ways. 
+The most prominent contributor is the `Alogirithms.CostCalulator.java` class which implements the cost function.
+
+### Cost Function
+The cost function quantifies how "bad" or inefficient a particular task assignment solution is by summing penalties for violating key constraints. The objective is to minimise this cost, ensuring a more optimal and feasible task-to-employee allocation.
+
+It is defined as per the assignment spec:
+$$\text{Cost} = \beta \cdot \text{Skill Mismatch Penalty} + \alpha \cdot \text{Overload Penalty} + \delta \cdot \text{Difficulty Violation Penalty} + \gamma \cdot \text{Deadline Violation Penalty} + \sigma \cdot \text{Unique Assignment Violation Penalty}$$
+
+Each term represents a different type of constraint violation or inefficiency:
+- **Overload Penalty ($\alpha$):** Penalises solutions where an employee is assigned more task hours than their available working hours.
+- **Skill Mismatch Penalty ($\beta$):** Applies when a task is assigned to an employee who lacks the specific skill required for the task.
+- **Difficulty Violation Penalty ($\delta$):** Incurred when a task is assigned to an employee whose skill level is below the task’s difficulty.
+- **Deadline Violation Penalty ($\gamma$):** Applies if a task is completed too early (before its deadline).
+- **Unique Assignment Violation Penalty ($\sigma$):** Penalises cases where tasks are either not assigned at all or assigned to more than one employee.
+
+
+
+
+
