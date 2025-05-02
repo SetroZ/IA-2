@@ -118,7 +118,7 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm {
             }
 
             // Print progress
-            if (generation % reportinFrequency == 0 || generation == maxIterations - 1) {
+            if (generation % reportingFrequency == 0 || generation == maxIterations - 1) {
                 reportProgress(globalBestSolution, generation);
             }
 
@@ -271,6 +271,21 @@ public class GeneticAlg extends AbstractOptimisationAlgorithm {
         for (Observer observer : observers) {
             observer.update(messageType, title, content);
         }
+    }
+
+    public double getCrossoverRate()
+    {
+        return crossoverRate;
+    }
+
+    public double getMutationRate()
+    {
+        return mutationRate;
+    }
+
+    public int getElitismCount()
+    {
+        return elitismCount;
     }
 
     @Override
