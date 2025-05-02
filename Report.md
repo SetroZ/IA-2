@@ -173,8 +173,9 @@ The pheromone matrix is initialised with a constrained solution space. All emplo
 - The cost for each ant's solution is then evaluated for the current iteration.
 - The pheromone value for that solution is then evaluated according to the equation: `pheromone = 1/(5 * cost + 1) `.
 - This pheromone value is then incremented into the elements for all employee task pairs that compose the solution using the for loop:
-``` java 
-for(int j = 0; j < numTasks; j++) 
+
+```java
+for(int j = 0; j < numTasks; j++)
 {
     int empIdx = ant[j];
     this.pherMatrix[j][empIdx] += pheromone;
@@ -223,9 +224,61 @@ Each term represents a different type of constraint violation or inefficiency:
 
 ### 2.2.3  Algorithm Parameters
 
-___
+### Common Parameters
+
+**Population Size**
+`populationSize`
+This parameter defines the number of independent solutions generated in each iteration of an algorithm.
+
+**Number of Iterations** 
+`maxIterations`
+This parameter defines the maximum number of iterations that will be completed before an algorithm stops running and returns the best solution generated.
+
+#### GA Specific
+
+**Crossover Rate**
+`crossoverRate`
+This parameter defines the probability (0.0-1.0) that two parent solutions will undergo crossover to create offspring.
+
+**Mutation Rate**
+`mutationRate`
+This parameter determines the probability (0.0-1.0) that a task assignment in a solution will be randomly changed to a different employee.
+
+**Elitism Count**
+`elitismCount`
+This parameter specifies the number of best solutions that are preserved unchanged between generations.
+
+#### ACO Specific
+
+**Pheromone Decay Rate**
+`pherDecayRate` class field in `AntColAlg` class.
+This parameter defines the percentage decrease of all pheromone values after each iteration represented as a decimal value.
+
+**Initial Pheromone Value**
+`initPheromone` class field in `AntColAlg` class.
+This parameter defines the pheromone strength assigned to every employee task pairing before any ants have constructed a solution. 
+
+#### PSO Specific
+
+**Personal Best Weight**
+`C1`
+This parameter controls the influence of a particle's own best-found position on its movement.
+
+**Global Best Weight**
+`C2`
+This parameter determines the influence of the swarm's best-found position on each particle's movement.
+
+**Inertia Weight**
+`W`
+This parameter controls how much a particle maintains its current velocity when updating its position.
+
+
+
+
+
+
 ## 2.3 Experimental Setup
-___
+
 ### 2.3.1 Data Set Description
 
 For our experimental evaluation, we generated synthetic datasets to test the scalability and effectiveness of our task allocation algorithms across various scenarios. The data generation process was designed to create realistic task-employee matching scenarios with controlled parameters.
@@ -233,19 +286,21 @@ For our experimental evaluation, we generated synthetic datasets to test the sca
 ### Data Generation Methodology
 
 Our synthetic data generator creates two primary entities:
-1. **Tasks**: Each task is characterised by:
-    - A unique identifier
-    - A skill requirement (randomly selected from a predefined set)
-    - Estimated completion time (1-9 hours)
-    - Difficulty level (1-9)
-    - Deadline (1-29 days)
-2. **Employees**: Each employee is defined by:
-    - A unique identifier
-    - Available working hours (7-19 hours)
-    - Skill proficiency level (1-9)
-    - A random subset of skills from the predefined skill set
 
-The generator ensures variability in the dataset by utilising pseudorandom distribution of attributes while maintaining realistic constraints on parameters such as working hours and skill distributions.
+1. **Tasks**: Each task is characterized by:
+   - A unique identifier
+   - A skill requirement (randomly selected from a predefined set)
+   - Estimated completion time (1-9 hours)
+   - Difficulty level (1-9)
+   - Deadline (1-29 days)
+2. **Employees**: Each employee is defined by:
+   - A unique identifier
+   - Available working hours (7-19 hours)
+   - Skill proficiency level (1-9)
+   - A random subset of skills from the predefined skill set
+
+The generator ensures variability in the dataset by utilizing pseudorandom distribution of attributes while maintaining realistic constraints on parameters such as working hours and skill distributions.
+
 ### 2.3.2 Experiment Setup and Configuration
 
 Our experiments evaluated two distinct segments of factors affecting performance: 
@@ -297,10 +352,72 @@ The tests were run on a 2020 MacBook Pro with 8GB RAM featuring an Apple M1 proc
 
 ## 3.1 Solution Quality and Optimality
 
-### 3.1.1 Graphical Analysis
+#### 1:1 Ratio (Task 1) - Equal Tasks and Employees
 
-The `PerformaceVisualiser`,  
+![[Pasted image 20250502225910.png]]
+
+In the 1:1 ratio scenario, all three algorithms show distinctly different performance levels:
+
+- **Genetic Algorithm (GA)**: Shows the best performance, starting at cost ~1.8 and rapidly improving to converge at ~1.4
+- **Particle Swarm Optimization (PSO)**: Maintains a consistent cost of 2.0 throughout all iterations
+- **Ant Colony Optimization (ACO)**: Performs significantly worse with a stable cost around 3.6
+
+**Key insights**:
+
+- GA demonstrates its adaptive capability even in simple problem spaces
+- PSO shows no improvement over iterations, suggesting it quickly reaches its local optimum
+- ACO performs poorly relative to other approaches in this balanced configuration
+- The performance gap between algorithms is very pronounced in this simple case
+
+#### 1:10 Ratio (Task 2) - More Employees than Tasks
+
+![[Pasted image 20250502230100.png]]
+
+When there are significantly more employees than tasks (1:10 ratio):
+
+- **Genetic Algorithm (GA)**: Starts with a poor solution (~1.6) but quickly improves and reaches ~1.05
+- **Particle Swarm Optimization (PSO)**: Performs better than in the 1:1 case, with cost around 1.1-1.2
+- **Ant Colony Optimization (ACO)**: Shows dramatic improvement compared to the 1:1 case, achieving the best final cost of ~1.0
+
+**Key insights**:
+
+- ACO performs exceptionally well with employee surplus, suggesting it excels at employee selection when options are plentiful
+- The performance gap between algorithms narrows significantly
+- All algorithms achieve good solutions, indicating this is an easier configuration to optimize
+- GA shows the most improvement over iterations despite not achieving the best final solution
+
+#### 5:1 Ratio (Task 7) - More Tasks than Employees
+
+![[Pasted image 20250502230318.png]]
+
+In the task-heavy scenario with a 5:1 ratio:
+
+- **Genetic Algorithm (GA)**: Achieves the best performance (~825), showing consistent improvement
+- **Particle Swarm Optimization (PSO)**: Performs slightly worse (~875) with minimal improvement over iterations
+- **Ant Colony Optimization (ACO)**: Shows the poorest performance (~950) but still improves gradually
+
+**Key insights**:
+
+- GA maintains its advantage in complex scenarios with constrained resources
+- The cost values are much higher for all algorithms, indicating this is a more challenging optimization problem
+- ACO struggles the most when employees are the constraining factor
+- All algorithms show some improvement, suggesting none reach their true optimal solution within 100 iterations
+
 ### 3.1.2 Interpretation of Results
+
+1. **Algorithm Sensitivity to Problem Structure**:
+   - GA shows consistent strong performance across all ratios, particularly excelling in resource-constrained scenarios
+   - PSO performs reliably but with limited improvement capacity
+   - ACO shows dramatic performance variation based on ratio - performing poorly with balanced or constrained employees but excelling when many employees are available
+2. **Impact of Resource Constraints**:
+   - Employee surplus (1:10) leads to better solutions across all algorithms
+   - Task surplus (5:1) creates a much more challenging optimisation problem with higher costs
+3. **Convergence Patterns**:
+   - GA consistently shows the most improvement over iterations regardless of ratio
+   - ACO's improvement pattern varies significantly based on problem structure
+   - PSO tends to find reasonably good initial solutions but shows limited further improvement
+
+
 
 ## 3.2 Computational Efficiency
 
@@ -417,7 +534,11 @@ The analysis of computational efficiency reveals several key insights about how 
 
 These findings demonstrate that while all three algorithms can effectively solve the Employee Task Assignment problem, ACO offers the best computational efficiency across all tested scenarios, making it particularly valuable for large-scale or real-time applications where processing time is a critical factor.
 
+**Parameter tests
+
+Test1-Mutation-C1-initPherm UP
+
+Test2- CrossOver-c2- pher decay UP
 
 
-
-
+test3-elitismRate- w UP by 0.3 
