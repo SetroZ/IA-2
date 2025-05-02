@@ -34,7 +34,7 @@ public class DataGenerator {
         // Just use the filename part if a full path was given
         String actualFilename = new File(sanitizedFilename).getName();
 
-        File file = new File(RESOURCES_DIR + actualFilename);
+        File file = new File(filename);
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             // Skip header
@@ -84,7 +84,7 @@ public class DataGenerator {
         // Just use the filename part if a full path was given
         String actualFilename = new File(sanitizedFilename).getName();
 
-        File file = new File(RESOURCES_DIR + actualFilename);
+        File file = new File(filename);
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             // Skip header line
@@ -141,8 +141,7 @@ public class DataGenerator {
                     System.out.println("Adding: " + file.getPath());
                     fileNames.add(file.getPath());
                 }
-                if(file.isDirectory())
-                {
+                if (file.isDirectory()) {
                     File[] subDir = file.listFiles();
                     if (subDir != null) {
                         for (File subFile : subDir) {

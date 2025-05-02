@@ -84,12 +84,12 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
         gBestData = findGbest(gBestData, fitnessPBest, pBest);
         int n = 0;
 
-//        // Log initial state
-//        performanceLogger.logIteration(
-//                n,
-//                gBestData.gBestArr,
-//                gBestData.gBest,
-//                PerformanceLogger.getCurrentMemoryUsageMB());
+        // Log initial state
+        performanceLogger.logIteration(
+                n,
+                gBestData.gBestArr,
+                gBestData.gBest,
+                PerformanceLogger.getCurrentMemoryUsageMB());
 
         // Main loop.
         for (; n < maxIterations; n++) {
@@ -129,7 +129,6 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
     }
 
     private double calculateVelocity(double gBest, int pBest, double v, int currP) {
-
         final int maxV = employees.size();
 
         Random rd = new Random();
