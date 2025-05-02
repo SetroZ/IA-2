@@ -111,11 +111,11 @@ The algorithm terminates when either:
 Upon termination, the best solution found across all generations is reported as the final result.
 
 
-### 2.1.2 Particle Swarm Optimization (PSO)
+### 2.1.2 Particle Swarm Optimisation (PSO)
 
 **Overview**
 
-The Particle Swarm Optimization (PSO) algorithm is a metaheuristic that iteratively improves a candidate solution by reducing the cost function, without making assumptions about the underlying problem. It uses a population (swarm) of candidate solutions, known as particles. Each particle explores the defined search space while tracking two key metrics: its personal best ($pBest$), which is the best solution it has found so far, and the global best ($gBest$), which is the best solution found by any particle.
+The Particle Swarm Optimisation (PSO) algorithm is a meta heuristic that iteratively improves a candidate solution by reducing the cost function, without making assumptions about the underlying problem. It uses a population (swarm) of candidate solutions, known as particles. Each particle explores the defined search space while tracking two key metrics: its personal best ($pBest$), which is the best solution it has found so far, and the global best ($gBest$), which is the best solution found by any particle.
 
 The particle's position and velocity are updated using mathematical formulas influenced by both $pBest$ (cognitive), $gBest$ (social). These updates guide the particle toward better solutions over time. While PSO does not guarantee finding a globally optimal solution, it aims to minimise the cost function and converge toward optimal or near-optimal solutions through collective swarm intelligence with introduced randomness.
 
@@ -164,3 +164,9 @@ The **fitness evaluation** for each particle uses the defined cost function, whi
 ## 2.2 Implementation Details
 
 ### 2.2.1 Solution Encoding Strategy
+
+Our solutions are encoded in a 1D array `Solution`, which represents the most optimal solution—*the one with the lowest cost*. The array has a size of $n$, where $n$ is the number of tasks in the original problem.
+
+Each element in the array corresponds to a task whose value represents the employee to whom the task is assigned. For example, if `Solution[1] = 3`, it means that $task_1$  is assigned to $employee_3$. i.e a task with an id of 1 is assigned to an employee with an id of 3.
+
+This array representation is simple yet efficient and ensures the most optimal use of memory and allows for fast access and manipulation in $O(1)$ constant time.
