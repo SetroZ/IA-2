@@ -1,15 +1,14 @@
 # 1. Introduction
-
-## 1.1 Employee Task Assignment Optimization Problem
+## 1.1 Employee Task Assignment Optimisation Problem
 
 **Problem summary:**
-The Employee Task Assignment Optimization problem addresses the challenge of optimally allocating a set of tasks to a group of employees while respecting a variety of real-world constraints. Specifically, the company in question must assign a number of distinct tasks of size $i$ ($T = \{T_1, T_2, ..., T_i\}$), each with a
+The Employee Task Assignment Optimisation problem addresses the challenge of optimally allocating a set of tasks to a group of employees while respecting a variety of real-world constraints. Specifically, the company in question must assign a number of distinct tasks of size $i$ ($T = \{T_1, T_2, ..., T_i\}$), each with a
 - defined workload (in hours)
 - a difficulty level
 - a deadline
 - a required skill type
 
-to a pool of $j$ available employees ($E = \{E_1, E_2, ..., E_j\}$), each characterized by
+to a pool of $j$ available employees ($E = \{E_1, E_2, ..., E_j\}$), each characterised by
 - limited working hours
 - an individual skill level
 - a set of specific skill types they possess.
@@ -18,21 +17,21 @@ The problem therefore is to assign these tasks to the company’s employees sati
 - **Unique Assignment:** Each task is to be assigned to one and only one employee.
 - **Capacity Constraint:** The total amount of task hours assigned to an employee shouldn’t exceed an employee’s available hours.
 - **Skill Level Constraint:** A task should only be assigned to an employee if and only if the employee’s skill level is at least equal to or more than the task’s difficulty.
-- **Specialized Skill Matching:** A task can only be assigned to an employee if and only if the employee has that specific skill that the task requires.
+- **Specialised Skill Matching:** A task can only be assigned to an employee if and only if the employee has that specific skill that the task requires.
 - **Deadline Consideration:** if an employee finishes the task before its deadline, a penalty is added.
 
 ### Cost Function
-The cost function quantifies how "bad" or inefficient a particular task assignment solution is by summing penalties for violating key constraints. The objective is to minimize this cost, ensuring a more optimal and feasible task-to-employee allocation.
+The cost function quantifies how "bad" or inefficient a particular task assignment solution is by summing penalties for violating key constraints. The objective is to minimise this cost, ensuring a more optimal and feasible task-to-employee allocation.
 
 It is defined as:
 
 $$\text{Cost} = \beta \cdot \text{Skill Mismatch Penalty} + \alpha \cdot \text{Overload Penalty} + \delta \cdot \text{Difficulty Violation Penalty} + \gamma \cdot \text{Deadline Violation Penalty} + \sigma \cdot \text{Unique Assignment Violation Penalty}$$
 Each term represents a different type of constraint violation or inefficiency:
-- **Overload Penalty ($\alpha$):** Penalizes solutions where an employee is assigned more task hours than their available working hours.
+- **Overload Penalty ($\alpha$):** Penalises solutions where an employee is assigned more task hours than their available working hours.
 - **Skill Mismatch Penalty ($\beta$):** Applies when a task is assigned to an employee who lacks the specific skill required for the task.
 - **Difficulty Violation Penalty ($\delta$):** Incurred when a task is assigned to an employee whose skill level is below the task’s difficulty.
 - **Deadline Violation Penalty ($\gamma$):** Applies if a task is completed too early (before its deadline).
-- **Unique Assignment Violation Penalty ($\sigma$):** Penalizes cases where tasks are either not assigned at all or assigned to more than one employee.
+- **Unique Assignment Violation Penalty ($\sigma$):** Penalises cases where tasks are either not assigned at all or assigned to more than one employee.
 
 ## 1.2 Aim and Scope
 
@@ -59,7 +58,7 @@ By analysing and comparing these algorithms, the report aims to offer valuable i
 
 The Particle Swarm Optimization (PSO) algorithm is a metaheuristic that iteratively improves a candidate solution by reducing the cost function, without making assumptions about the underlying problem. It uses a population (swarm) of candidate solutions, known as particles. Each particle explores the defined search space while tracking two key metrics: its personal best ($pBest$), which is the best solution it has found so far, and the global best ($gBest$), which is the best solution found by any particle.
 
-The particle's position and velocity are updated using mathematical formulas influenced by both $pBest$ (cognitive), $gBest$ (social). These updates guide the particle toward better solutions over time. While PSO does not guarantee finding a globally optimal solution, it aims to minimize the cost function and converge toward optimal or near-optimal solutions through collective swarm intelligence with introduced randomness.
+The particle's position and velocity are updated using mathematical formulas influenced by both $pBest$ (cognitive), $gBest$ (social). These updates guide the particle toward better solutions over time. While PSO does not guarantee finding a globally optimal solution, it aims to minimise the cost function and converge toward optimal or near-optimal solutions through collective swarm intelligence with introduced randomness.
 
 #### Terminology
 In our PSO implementation for the Employee-Task Assignment problem, we have chosen to represent our data using 2D and 1D arrays.
@@ -101,7 +100,7 @@ Each particle's position _(task assignment)_ is updated by applying the newly co
 
 The **fitness evaluation** for each particle uses the defined cost function, which aggregates penalties for violating task assignment constraints.
 
-### 2.1.3 Ant Colony Optimization (ACO)
+### 2.1.3 Ant Colony Optimisation (ACO)
 
 ## 2.2 Implementation Details
 
