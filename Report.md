@@ -166,7 +166,7 @@ The concept of ACO can be applied to combinatorial problems such as the Employee
 - The pheromone matrix is represented by a 2D-array where `pherMatrix[t][e] = p` means that the assignment of employee e to task t has a pheromone value of p.
 
 **Initialisation Mechanism** 
-The pheromone matrix is initialised with a constrained solution space. All employee task pairings `[t][e]` are evaluated according to if the pairing violates the skill level constraint and the specialized skill matching constraint. If the pairing of employee e with task t violates either constraint then `[t][e] = 0`, otherwise `[t][e] = initial pheromone value parameter`. This process effectively reduces the solution space, as pairings with a pheromone value of 0 can never be chosen by the ant, and so can never have a pheromone deposited upon it. In the edge case that their exists a task  t where no employee can satisfy both the skill level and specialized skill matching constraints, all `[t][e]` are assigned a value equal to the initial pheromone parameter for that specific task t.
+The pheromone matrix is initialised with a constrained solution space. All employee task pairings `[t][e]` are evaluated according to if the pairing violates the skill level constraint and the specialized skill matching constraint. If the pairing of employee e with task t violates either constraint then `[t][e] = 0`, otherwise `[t][e] = initial pheromone value parameter`. This process effectively reduces the solution space, as pairings with a pheromone value of 0 can never be chosen by the ant, and so can never have a pheromone deposited upon it. In the edge case that their exists a task t where no employee can satisfy both the skill level and specialized skill matching constraints, all `[t][e]` are assigned a value equal to the initial pheromone parameter for that specific task t.
 
 **Updating Mechanism**
 - After each iteration all elements in the pheromone matrix are multiplied by `1 - (pherDecayRate)`, where pherDecayRate is the decimal representation of the percentage decrease in pheromone strength; this process implements the concept of pheromone evaporation. 
@@ -211,6 +211,7 @@ This array representation is simple yet efficient and ensures the most optimal u
 
 Constraints are managed in a multitude of ways. 
 The most prominent contributor is the `Alogirithms.CostCalulator.java` class which implements the cost function.
+Additionally, employee task pairs that do not meet both the skill level and specialized skill matching constraint are not considered except for the edge case where no employee meets both constraints for a given task.
 
 ### Cost Function
 The cost function quantifies how "bad" or inefficient a particular task assignment solution is by summing penalties for violating key constraints. The objective is to minimise this cost, ensuring a more optimal and feasible task-to-employee allocation.
