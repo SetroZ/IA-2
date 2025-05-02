@@ -223,12 +223,9 @@ Each term represents a different type of constraint violation or inefficiency:
 
 ### 2.2.3  Algorithm Parameters
 
-
-
-
-
+___
 ## 2.3 Experimental Setup
-
+___
 ### 2.3.1 Data Set Description
 
 For our experimental evaluation, we generated synthetic datasets to test the scalability and effectiveness of our task allocation algorithms across various scenarios. The data generation process was designed to create realistic task-employee matching scenarios with controlled parameters.
@@ -236,7 +233,7 @@ For our experimental evaluation, we generated synthetic datasets to test the sca
 ### Data Generation Methodology
 
 Our synthetic data generator creates two primary entities:
-1. **Tasks**: Each task is characterized by:
+1. **Tasks**: Each task is characterised by:
     - A unique identifier
     - A skill requirement (randomly selected from a predefined set)
     - Estimated completion time (1-9 hours)
@@ -248,7 +245,7 @@ Our synthetic data generator creates two primary entities:
     - Skill proficiency level (1-9)
     - A random subset of skills from the predefined skill set
 
-The generator ensures variability in the dataset by utilizing pseudorandom distribution of attributes while maintaining realistic constraints on parameters such as working hours and skill distributions.
+The generator ensures variability in the dataset by utilising pseudorandom distribution of attributes while maintaining realistic constraints on parameters such as working hours and skill distributions.
 ### 2.3.2 Experiment Setup and Configuration
 
 Our experiments evaluated two distinct segments of factors affecting performance: 
@@ -277,13 +274,24 @@ maxIterations,reportingFrequency,fileOutput,populationSize,mutationRate,crossove
 This systematic variation in problem size and resource balance allows us to evaluate both the computational efficiency and solution quality of our proposed algorithm across a spectrum of operational conditions, from small teams with few tasks to enterprise-scale resource allocation problems. All generated datasets were exported to CSV format and stored in individually labelled directories.
 
 **Parameter Configuration**
-Keeping the dataset at a standard of
+Keeping the dataset at a standard of 200 employees and 50 tasks, the parameters were tweaked as such for 4 distinct sets.
+
+
+| Test ID | Increase/Decrease | Parameters                       | Scenario description                         |
+| ------- | ----------------- | -------------------------------- | -------------------------------------------- |
+| Test 1  | Baseline          | All as seen above                | The lowest, baseline                         |
+| Test 2  | Increase          | mutation rate, c1, initPheromone | Individual parameter increases per algorithm |
+| Test 3  | Increase          | crossoverRate, c2, pherDecayRate | Individual parameter increases per algorithm |
+| Test 4  | increase          | elitismCount, w                  | Individual parameter increases per algorithm |
+
+By only changing one parameter per algorithm per run, we were able to observe the affect each parameter had on the overall outcome. Every other possible factor was kept consistent for each algorithm.
+
+All these tests were run multiple times and their results were averaged to produce the graphs attached.
+
 
 ## 2.3.3 Hardware and Software Specifications
 
-The tests were run on a 2020 MacBook Pro with 8GB RAM featuring an Apple M1 processor. The software environment utilided JDK 23 for all experimental evaluations.
-
-
+The tests were run on a 2020 MacBook Pro with 8GB RAM featuring an Apple M1 processor. The software environment utilised JDK 23 for all experimental evaluations.
 
 # 3. Performance Evaluation
 
@@ -297,39 +305,119 @@ The `PerformaceVisualiser`,
 ## 3.2 Computational Efficiency
 
 ### 3.2.1 Graphical Representation of Efficiency
-### 3.2.2 Analysis of Resource Usage
+
+The computational efficiency of each algorithm was evaluated across different problem scales using both runtime (in milliseconds) and memory usage (in MB) metrics. The graphs presented in Images 1-12 illustrate these performance characteristics.
+
+### Runtime Performance Analysis
+
+Runtime measurements reveal significant differences in computational efficiency among the three algorithms:
+
+![[SavedRunData/DataSetTests/run(1)/charts/computational_efficiency_avg_runtime_run1.png]]
+Dataset-Run1-AvgRuntime/Iteration
+
+![[computational_efficiency_avg_runtime_run7.png]]
+Dataset-Run7
+
+![[SavedRunData/DataSetTests/run(7)/charts/computational_efficiency_avg_runtime.png]]
+Dataset-Run8
+
+**Small-Scale Problems (Test 1 - 10 tasks, 10 employees):**
+
+- Dataset-Run1 shows that for small instances, ACO achieves the best performance with approximately 16ms average runtime per iteration
+- PSO follows with around 27ms per iteration
+- GA requires considerably more processing time at roughly 55ms per iteration
+
+**Medium-Scale Problems (Test 3 - 100 tasks, 10 employees):**
+
+- Dataset-Run7 demonstrates that as the problem size increases, the runtime differences become more pronounced
+- ACO maintains the best performance at around 32ms per iteration
+- PSO requires approximately 52ms per iteration
+- GA's runtime increases significantly to about 115ms per iteration
+
+**Large-Scale Problems (Test 7 - 500 tasks, 100 employees):**
+
+- Dataset-Run8 shows the most dramatic differences in computational requirements
+- ACO remains the most efficient at approximately 140ms per iteration
+- PSO requires about 270ms per iteration
+- GA's computational cost increases dramatically to around 500ms per iteration
+
+**Extreme-Scale Problems (Test 6 - 500 tasks, 10 employees):**
+
+- Dataset-Run6 reveals that in extreme task-to-employee ratio scenarios, all algorithms require substantially more processing time
+- ACO still performs best at around 14,000ms per iteration
+- PSO follows at approximately 27,000ms per iteration
+- GA requires nearly 50,000ms per iteration
+
+### Memory Usage Patterns
+
+Memory consumption patterns show different characteristics compared to runtime:
+
+
+
+**Per-Iteration Memory Usage:**
+
+- All three algorithms exhibit remarkably similar memory efficiency on a per-iteration basis
+- For small problems (Image 12), all algorithms use approximately 34MB per iteration
+- For medium problems (Image 8), memory usage increases to around 55MB per iteration
+- The differences between algorithms remain minimal across all problem sizes
+
+**Total Memory Usage (Images 2, 5, 10):**
+
+- Images 2, 5, and 10 show the total memory consumption across all iterations
+- All algorithms demonstrate similar total memory usage patterns
+- ACO typically uses slightly less total memory than PSO and GA
+- For medium problems (Image 5), ACO consumes about 5,400MB total, compared to PSO's 5,600MB
+- The differences are not as substantial as those observed in runtime metrics
+
+## 3.2.2 Analysis of Resource Usage
+
+The analysis of computational efficiency reveals several key insights about how these algorithms utilize computational resources:
+
+### Runtime Scaling Behavior
+
+1. **ACO's Superior Efficiency:**
+    - ACO consistently demonstrates the lowest runtime across all problem sizes
+    - This efficiency stems from its simplified decision-making process, where each ant makes probabilistic choices based on a pheromone matrix without complex calculations
+    - The runtime advantage increases with problem size, making ACO particularly valuable for large-scale task assignment scenarios
+2. **PSO's Moderate Performance:**
+    - PSO maintains an intermediate position in terms of runtime efficiency
+    - Its performance degradation as problem size increases is more pronounced than ACO but less severe than GA
+    - The algorithm's need to calculate both cognitive and social components in velocity updates contributes to its higher computational requirements compared to ACO
+3. **GA's High Computational Cost:**
+    - GA consistently exhibits the highest runtime requirements across all problem scales
+    - This performance characteristic is attributable to its more complex evolutionary operations, particularly the selection, crossover, and mutation processes
+    - The algorithm's computational cost grows dramatically with problem size, making it less suitable for time-sensitive applications with large datasets
+
+### Problem Size Impact
+
+1. **Task-to-Employee Ratio Effect:**
+    - The computational efficiency of all algorithms is significantly affected by the task-to-employee ratio
+    - Test 6 (500 tasks, 10 employees) shows dramatically higher runtimes than Test 7 (500 tasks, 100 employees), despite having fewer total assignments to manage
+    - This suggests that highly constrained resource scenarios require more extensive exploration of the solution space, increasing computational demands
+2. **Scaling Patterns:**
+    - Runtime increases non-linearly with problem size for all algorithms
+    - When comparing Test 1 (10 tasks, 10 employees) to Test 7 (500 tasks, 100 employees), we observe runtime increases of:
+        - ACO: ~9× increase (16ms to 140ms)
+        - PSO: ~10× increase (27ms to 270ms)
+        - GA: ~9× increase (55ms to 500ms)
+    - This suggests similar scaling characteristics across algorithms, despite their different absolute performance levels
+
+### Memory Usage Insights
+
+1. **Algorithm Implementation Efficiency:**
+    - The similar memory consumption patterns across all three algorithms suggest that their memory usage is primarily determined by the problem representation rather than algorithm-specific data structures
+    - The core data structure (task-employee assignment array) is shared across all implementations, contributing to this uniformity
+2. **Memory-Runtime Tradeoffs:**
+    - While ACO achieves superior runtime performance, it does not come at the cost of increased memory consumption
+    - This indicates that ACO's efficiency stems from algorithmic simplicity rather than memory-intensive optimisations
+3. **Practical Implications:**
+    - For applications where memory is constrained but processing power is available, all three algorithms remain viable options
+    - In scenarios with limited processing power but sufficient memory, ACO would be the preferred choice
+    - For time-critical applications dealing with large datasets, the substantially lower runtime of ACO provides a clear advantage
+
+These findings demonstrate that while all three algorithms can effectively solve the Employee Task Assignment problem, ACO offers the best computational efficiency across all tested scenarios, making it particularly valuable for large-scale or real-time applications where processing time is a critical factor.
 
 
 
 
 
-
-
-Datasets:
-10 trials
-Test1: 10 tasks -> 10 employees
-test2: 10 tasks -> 100 employees
-test3: 100 tasks -> 10 employees
-
-test4 : 100 tasks -> 100 employees
-
-
-test5: 100 tasks->500 employees
-
-
-test6:  500 tasks -> 10 employees
-
-
-tsest7: 500 tasks-> 100 employees
-
-
-test 8 : 500 tasks ->500 employees
-
-**Parameter tests
-
-Test1-Mutation-C1-initPherm UP
-
-Test2- CrossOver-c2- pher decay UP
-
-
-test3-elitismRate- w UP by 0.3 
