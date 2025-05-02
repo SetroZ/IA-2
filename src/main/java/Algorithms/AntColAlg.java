@@ -128,7 +128,7 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
                 {
                     this.pherMatrix[i][j] = 0.0;
                 }
-                System.out.print(this.pherMatrix[i][j] + " ");
+                
             }
             //If a task has no feasible employee then all employees considered
             if(!capableEmployeeExists)
@@ -138,7 +138,7 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
                     this.pherMatrix[i][j] = this.initPheromone;
                 }
             }
-            System.out.println();
+            
         }
     }
 
