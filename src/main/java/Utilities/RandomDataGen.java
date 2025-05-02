@@ -91,7 +91,7 @@ public class RandomDataGen {
             String skill = requiredSkills[rd.nextInt(0, requiredSkills.length)];
             int estimatedTime = rd.nextInt(1, 10);
             int difficulty = rd.nextInt(1, 10);
-            int deadline = rd.nextInt(1, 30);
+            int deadline = rd.nextInt(9, 30);
             String id = Integer.toString(i);
 
             Task newTask = new Task(id, estimatedTime, difficulty, deadline, skill,

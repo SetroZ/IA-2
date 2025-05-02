@@ -232,15 +232,49 @@ Each term represents a different type of constraint violation or inefficiency:
 
 
 
-## 2.3 Experimental Design
-
+## 2.3 Experimental Setup
 
 ### 2.3.1 Data Set Description
 
+For our experimental evaluation, we generated synthetic datasets to test the scalability and effectiveness of our task allocation algorithms across various scenarios. The data generation process was designed to create realistic task-employee matching scenarios with controlled parameters.
 
+### Data Generation Methodology
+
+Our synthetic data generator creates two primary entities:
+1. **Tasks**: Each task is characterized by:
+    - A unique identifier
+    - A skill requirement (randomly selected from a predefined set)
+    - Estimated completion time (1-9 hours)
+    - Difficulty level (1-9)
+    - Deadline (1-29 days)
+2. **Employees**: Each employee is defined by:
+    - A unique identifier
+    - Available working hours (7-19 hours)
+    - Skill proficiency level (1-9)
+    - A random subset of skills from the predefined skill set
+
+The generator ensures variability in the dataset by utilizing pseudorandom distribution of attributes while maintaining realistic constraints on parameters such as working hours and skill distributions.
 ### 2.3.2 Experiment Setup and Configuration
 
-### 2.3.3 Hardware and Software Specifications
+To comprehensively evaluate our algorithm under different operational conditions, we generated eight distinct test scenarios varying in scale and resource balance:
+
+| Test ID | Tasks | Employees | Resource Ratio | Scenario Description                         |
+| ------- | ----- | --------- | -------------- | -------------------------------------------- |
+| Test 1  | 10    | 10        | 1:1            | Baseline balanced scenario                   |
+| Test 2  | 10    | 100       | 1:10           | Resource abundance scenario                  |
+| Test 3  | 100   | 10        | 10:1           | Resource scarcity scenario                   |
+| Test 4  | 100   | 100       | 1:1            | Medium-scale balanced scenario               |
+| Test 5  | 100   | 500       | 1:5            | Medium tasks with high resource availability |
+| Test 6  | 500   | 10        | 50:1           | Extreme resource constraint scenario         |
+| Test 7  | 500   | 100       | 5:1            | Large-scale constrained resources            |
+| Test 8  | 500   | 500       | 1:1            | Large-scale balanced scenario                |
+
+This systematic variation in problem size and resource balance allows us to evaluate both the computational efficiency and solution quality of our proposed algorithm across a spectrum of operational conditions, from small teams with few tasks to enterprise-scale resource allocation problems. All generated datasets were exported to CSV format and stored in individually labelled directories.
+
+
+## 2.3.3 Hardware and Software Specifications
+
+The tests were run on a 2020 MacBook Pro with 8GB RAM featuring an Apple M1 processor. The software environment utilized JDK 23 for all experimental evaluations.
 
 
 
@@ -262,3 +296,31 @@ Each term represents a different type of constraint violation or inefficiency:
 
 
 
+Datasets:
+10 trials
+Test1: 10 tasks -> 10 employees
+test2: 10 tasks -> 100 employees
+test3: 100 tasks -> 10 employees
+
+test4 : 100 tasks -> 100 employees
+
+
+test5: 100 tasks->500 employees
+
+
+test6:  500 tasks -> 10 employees
+
+
+tsest7: 500 tasks-> 100 employees
+
+
+test 8 : 500 tasks ->500 employees
+
+**Parameter tests
+
+Test1-Mutation-C1-initPherm UP
+
+Test2- CrossOver-c2- pher decay UP
+
+
+test3-elitismRate- w UP by 0.3 
