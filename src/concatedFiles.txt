@@ -1,0 +1,4352 @@
+File: Algorithm.java
+**************************************************
+package Algorithms;
+
+import Utilities.Observer;
+/*
+ * Core algorithm interface focusing solely on algorithm execution
+ */
+public interface Algorithm {
+    /**
+     * Execute the optimization algorithm
+     */
+    void run();
+
+    /**
+     * Register observers to receive algorithm updates
+     */
+    void registerObserver(Observer observer);
+
+    /**
+     * Remove an observer
+     */
+    void removeObserver(Observer observer);
+}
+**************************************************
+
+File: AntColAlg.java
+**************************************************
+package Algorithms;
+
+import Model.Employee;
+import Model.Task;
+import Utilities.Observer;
+import Utilities.PerformanceLogger;
+
+import java.util.*;
+
+
+public class AntColAlg extends AbstractOptimisationAlgorithm
+{
+    //ACO Parameters - (algorithm-specific settings)
+   // private final int populationSize; //How many different entire solutions will be generated within each iteration
+    private final double initPheromone; 
+    private final double pherDecayRate; //decimal representation of the % decrease of all pheromone values after each decay
+
+    // Internal State Variables
+    private double[][] pherMatrix; //2D array storing the pheromone value for each Employee Task pairing; where [i][j] represents pheromone for assigning task i to employee j
+    
+    // Tracking and reporting
+    private boolean foundPerfectSolution = false; //If solution with cost = 0 has been found.
+    // private double[] globalBestPheromone;
+    private int iterationCount = 0; 
+
+
+    /**
+     * Constructor for Ant Colony Optimisation Algorithm
+     * @param populationSize number of solutions per iteration (same as class field)
+     * @param pherDecayRate (see class field)
+     * @param initPheromone initial pheromone value for all possible employee task pairings
+     * @param maxIterations number of iterations before algorithm stops
+     * @param REPORTING_FREQUENCY After how many generations the solutions are reported
+     * @param fileOutput If it will be reported to file
+     * @param tasks The list of tasks to be assigned
+     * @param employees The list of employees available for solution
+     */
+
+    public AntColAlg(List<Task> tasks, List<Employee> employees, int populationSize, double pherDecayRate, double initPheromone, int maxIterations, int REPORTING_FREQUENCY,
+                     boolean fileOutput, int runId)
+    {
+        super(tasks, employees, REPORTING_FREQUENCY, fileOutput, maxIterations, populationSize, runId);
+        this.pherDecayRate = pherDecayRate;
+        this.initPheromone = initPheromone;
+
+        this.pherMatrix = new double[tasks.size()][employees.size()];
+    }
+    
+    @Override
+    public void run()
+    {
+        //Start timing performance
+        performanceLogger.startTimer();
+        //Initialising values stored in pheromone matrix
+        initPherMatrix(); 
+        //Creating Matrix to store each ant's solution; [i][j] = z means that ant i has assigned task j to employee z.
+        int[][] antMatrix = new int[this.populationSize][this.tasks.size()];
+        generateNextAntPaths(antMatrix, tasks.size(), employees.size(), this.populationSize);
+
+
+        while(this.iterationCount < this.maxIterations && !foundPerfectSolution)
+        {
+
+
+
+            updatePheromones(antMatrix, this.populationSize, employees.size(), tasks.size());
+            generateNextAntPaths(antMatrix, tasks.size(), employees.size(), this.populationSize);
+            if(this.bestCost == 0.0)
+            {
+                this.foundPerfectSolution = true; //Flag to stop algorithm if a perfect solution has been found
+            }
+
+
+            // Log metrics for this generation
+            performanceLogger.logIteration(
+                    iterationCount,
+                    bestSolution,
+                    bestCost,
+                    PerformanceLogger.getCurrentMemoryUsageMB()
+            );
+
+
+            if(iterationCount % reportinFrequency == 0)
+            {
+                reportProgress(bestSolution, iterationCount);
+            }
+            this.iterationCount++;
+
+        }
+
+        // Stop timer and save all metrics to CSV files
+        performanceLogger.stopTimer();
+        performanceLogger.saveMetricsToCSV();
+
+        reportFinalResult(bestSolution, iterationCount);
+    }
+
+    /**
+     * This is called once at the beginning of the run() method
+     * The elements for all possible Employee Task pairs that do not violate the skill mismatch constraint
+     * and the difficulty constraint are set to the initial pheromone value; the pairs that do violate these constraints
+     * are assigned a value of 0 so that they are not considered.
+     * If a task exists where no employee satisfies the skill and difficulty constraints, all employees will be given the initial
+     * pheromone value for this task, to avoid a task not being assigned.
+     * 
+     * 
+     */
+    private void initPherMatrix()
+    {
+        //For every task
+        for(int i = 0; i < this.tasks.size(); i++)
+        {
+            boolean capableEmployeeExists = false;
+            Task currTask = this.tasks.get(i);
+            //For every employee
+            for(int j = 0; j < this.employees.size(); j++)
+            {
+                Employee currEmployee = this.employees.get(j);
+                
+                //Assign initial pheromone value if skill and difficulty constraints are met
+                if(currEmployee.hasSkill(currTask.getRequiredSkill()) && currEmployee.getSkillLevel() >= currTask.getDifficulty())
+                {
+                    this.pherMatrix[i][j] = this.initPheromone;
+                    capableEmployeeExists = true;
+                }
+                //If constraints violated assign pair a pheromone of 0 (removing it from solution space)
+                else 
+                {
+                    this.pherMatrix[i][j] = 0.0;
+                }
+                System.out.print(this.pherMatrix[i][j] + " ");
+            }
+            //If a task has no feasible employee then all employees considered
+            if(!capableEmployeeExists)
+            {
+                for(int j = 0; j < this.employees.size(); j++)
+                {
+                    this.pherMatrix[i][j] = this.initPheromone;
+                }
+            }
+            System.out.println();
+        }
+    }
+
+    private void updatePheromones(int[][] antMatrix, int populationSize, int numEmployees, int numTasks)
+    {
+        int[] ant;
+        decayPheromones();
+        for(int i = 0; i < populationSize; i++)
+        {
+            ant = antMatrix[i];
+            double antCost = CostCalculator.calculateTotalCost(ant, this.tasks, this.employees);
+            //System.out.println(antCost);
+            if(antCost < bestCost)
+            {
+                bestCost = antCost;
+                bestSolution = ant.clone();
+            }
+            /* 
+            * CREATE A BEST SOLUTION SO FAR TRACKER
+            if(antCost == 0.0)
+            {
+                this.foundPerfectSolution = true;
+            }
+            */
+            double pheromone = 1.0/(5.0 * antCost) + 1.0; // Multiplying by 5 ensures no dividing by a decimal, Adding 1 ensures no division by zero
+            
+            for(int j = 0; j < numTasks; j++) //for each task in ant's solution
+            {
+                int empIdx = ant[j];
+                this.pherMatrix[j][empIdx] += pheromone;
+                
+            }
+        }
+    }
+
+    private void generateNextAntPaths(int[][] antMatrix, int numTasks, int numEmployees, int populationSize)
+    {
+        double cumulative;
+        double totalPheromone;
+        double choice;
+        
+        for(int i = 0; i < populationSize; i++)
+        {
+            for(int j = 0; j < numTasks; j++)
+            {
+                cumulative = 0;
+                totalPheromone = sumTaskPheromone(this.pherMatrix[j], numEmployees);
+                choice = Math.random() * totalPheromone;
+                
+                for(int e = 0; e < numEmployees; e++)
+                {
+                    cumulative += this.pherMatrix[j][e];
+                    if(choice < cumulative)
+                    {
+                        antMatrix[i][j] = e;
+                        e = numEmployees;
+                    }
+                }
+            }
+        }
+    }
+
+    //This method returns the sum of the pheromones associated with assigning the task to each employee
+    private double sumTaskPheromone(double[] task, int numEmployees)
+    {
+        double totalPheromone = 0;
+        for(int i = 0; i < numEmployees; i++)
+        {
+            totalPheromone += task[i];
+        }
+
+        return totalPheromone;
+    }
+
+
+
+    private void decayPheromones()
+    {
+        for(int i = 0; i < this.tasks.size(); i++)
+        {
+            for(int j = 0; j < this.employees.size(); j++)
+            {
+                this.pherMatrix[i][j] *= (1 - this.pherDecayRate);
+            }
+        }
+    }
+
+    @Override
+    public void notifyObservers(String messageType, String title, String content)
+    {
+        for(Observer observer : observers)
+        {
+            observer.update(messageType, title, content);
+        }
+    }
+
+    @Override
+    public String getAlgorithmName()
+    {
+        return "AntColonyAlg";
+    }
+
+    @Override
+    public int getMaxIterations()
+    {
+        return maxIterations;
+    }
+
+}
+**************************************************
+
+File: GeneticAlg.java
+**************************************************
+package Algorithms;
+
+import Model.Employee;
+import Model.Task;
+import Utilities.Initialise;
+import Utilities.Observer;
+import Utilities.PerformanceLogger;
+
+import java.util.*;
+
+/**
+ * Genetic Algorithm implementation
+ */
+public class GeneticAlg extends AbstractOptimisationAlgorithm {
+
+    // Algorithm parameters
+    private final double crossoverRate;
+    private final double mutationRate;
+    private final int elitismCount;
+
+    /**
+     * Constructor for the Genetic Algorithm.
+     *
+     * @param tasks              The list of tasks to be assigned
+     * @param employees          The list of employees available for solution
+     * @param populationSize     Size of the population (number of solutions)
+     * @param crossoverRate      Probability of crossover (0.0-1.0)
+     * @param mutationRate       Probability of mutation (0.0-1.0)
+     * @param maxIterations      Maximum number of generations to run
+     * @param reportingFrequency The frequency of progress reports printed to the
+     *                           console.
+     * @param fileOutput         Whether to output results to a file
+     */
+
+    public GeneticAlg(List<Task> tasks, List<Employee> employees,
+            int populationSize, double crossoverRate, double mutationRate,
+            int elitismCount, int maxIterations, int reportingFrequency,
+            boolean fileOutput, int runID) {
+        super(tasks, employees, reportingFrequency, fileOutput, maxIterations, populationSize, runID);
+        this.crossoverRate = crossoverRate;
+        this.mutationRate = mutationRate;
+        this.elitismCount = elitismCount;
+
+    }
+
+    /**
+     * Runs the genetic algorithm to find an optimal solution.
+     */
+
+    @Override
+    public void run() {
+        // Start timing performance
+        performanceLogger.startTimer();
+
+        // Initialize population
+        int[][] population = Initialise.getInitialPopulation(employees, tasks, populationSize);
+
+        int generation = 0;
+
+        int[] globalBestSolution = findBestSolution(population);
+        double globalBestCost = CostCalculator.calculateTotalCost(globalBestSolution, tasks, employees);
+
+        // Main loop
+        while (generation < maxIterations && !(globalBestCost == 0)) {
+            int[][] newPopulation = new int[populationSize][tasks.size()];
+
+            // Initialise counter for populated solutions
+            int counter;
+
+            // Add elite solutions to new population
+            int[][] eliteSolutions = findBestSolution(population, elitismCount);
+
+            for (counter = 0; counter < elitismCount && counter < population.length; counter++) {
+                newPopulation[counter] = eliteSolutions[counter].clone();
+            }
+
+            // Fill the rest of the population with offspring
+            while (counter < populationSize) {
+                // Selection
+                int[][] parents = selectParents(population);
+
+                // Crossover
+                int[] offspring1;
+                int[] offspring2;
+
+                if (Math.random() < crossoverRate) {
+                    offspring1 = crossover(parents[0], parents[1]);
+                    offspring2 = crossover(parents[1], parents[0]);
+                } else {
+                    offspring1 = parents[0].clone();
+                    offspring2 = parents[1].clone();
+                }
+
+                // Mutation
+                mutate(offspring1);
+                mutate(offspring2);
+
+                // Add to new population
+                newPopulation[counter] = offspring1.clone();
+                counter++;
+
+                if (counter < populationSize) {
+                    newPopulation[counter] = offspring2.clone();
+                    counter++;
+                }
+            }
+
+            // Replace old population with new population
+            population = newPopulation;
+
+            // Update global best
+            int[] currentBest = findBestSolution(population);
+            double currentBestCost = CostCalculator.calculateTotalCost(currentBest, tasks, employees);
+
+            if (currentBestCost < globalBestCost) {
+                globalBestSolution = currentBest;
+                globalBestCost = currentBestCost;
+            }
+
+            // Print progress
+            if (generation % reportinFrequency == 0 || generation == maxIterations - 1) {
+                reportProgress(globalBestSolution, generation);
+            }
+
+            // Log metrics for this generation
+            performanceLogger.logIteration(
+                    generation,
+                    globalBestSolution,
+                    globalBestCost,
+                    PerformanceLogger.getCurrentMemoryUsageMB());
+
+            generation++;
+
+        }
+
+        // Stop timer and save all metrics to CSV files
+        performanceLogger.stopTimer();
+        performanceLogger.saveMetricsToCSV();
+
+        // Print final result
+        reportFinalResult(globalBestSolution, generation);
+    }
+
+    /**
+     * Finds the best solution in the population.
+     *
+     * @param population The population to search
+     * @return The best Solution
+     */
+    private int[][] findBestSolution(int[][] population, int numSolutions) {
+        // Create an array to store individuals and their costs
+        List<int[]> individuals = new ArrayList<>();
+        List<Double> costs = new ArrayList<>();
+
+        // Calculate the cost of each individual in the population
+        for (int[] individual : population) {
+            double cost = CostCalculator.calculateTotalCost(individual, tasks, employees);
+            individuals.add(individual);
+            costs.add(cost);
+        }
+
+        // Sort individuals by cost (ascending)
+        List<Integer> indices = new ArrayList<>();
+        for (int i = 0; i < costs.size(); i++) {
+            indices.add(i);
+        }
+        indices.sort(Comparator.comparingDouble(costs::get));
+
+        // Select the top numSolutions individuals
+        int[][] best = new int[numSolutions][tasks.size()];
+        for (int i = 0; i < numSolutions; i++) {
+            best[i] = individuals.get(indices.get(i));
+        }
+
+        return best;
+    }
+
+    private int[] findBestSolution(int[][] population) {
+        // Create an array to store individuals and their costs
+        int[] best = population[0];
+        double bestCost = CostCalculator.calculateTotalCost(population[0], tasks, employees);
+
+        for (int i = 1; i < population.length; i++) {
+            double cost = CostCalculator.calculateTotalCost(population[i], tasks, employees);
+            if (cost < bestCost) {
+                best = population[i];
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Selects two parent solutions using tournament selection.
+     *
+     * @param population The population to select from
+     * @return Array of two selected parent Solutions
+     */
+    private int[][] selectParents(int[][] population) {
+        int[][] parents = new int[2][tasks.size()];
+
+        // Tournament selection
+        for (int i = 0; i < 2; i++) {
+            int tournamentSize = 3;
+            int[][] tournament = new int[tournamentSize][tasks.size()];
+
+            for (int j = 0; j < tournamentSize; j++) {
+                int randomIndex = new Random().nextInt(populationSize);
+                tournament[j] = population[randomIndex];
+            }
+
+            parents[i] = findBestSolution(tournament);
+        }
+
+        return parents;
+    }
+
+    /**
+     * Performs crossover between two parent solutions.
+     *
+     * @param parent1 The first parent Solution
+     * @param parent2 The second parent Solution
+     * @return A new Solution created by crossover
+     */
+    private int[] crossover(int[] parent1, int[] parent2) {
+        int[] offspring = new int[tasks.size()];
+
+        // Uniform crossover - for each task, choose solution from either parent1 or
+        // parent2
+        for (Task task : tasks) {
+            int taskIdx = task.getIdx();
+
+            if (Math.random() < 0.5) {
+                offspring[taskIdx] = parent1[taskIdx];
+            } else {
+                offspring[taskIdx] = parent2[taskIdx];
+            }
+        }
+
+        return offspring;
+    }
+
+    /**
+     * Applies mutation to a solution.
+     *
+     * @param solution The Solution to mutate
+     */
+    private void mutate(int[] solution) {
+        for (Task task : tasks) {
+            if (Math.random() < mutationRate) {
+
+                // Create a list of employees who can perform this task
+                List<Employee> compatibleEmployees = new ArrayList<>();
+                for (Employee employee : employees) {
+                    if (employee.hasSkill(task.getRequiredSkill()) &&
+                            employee.getSkillLevel() >= task.getDifficulty()) {
+                        compatibleEmployees.add(employee);
+                    }
+                }
+
+                // If we have compatible employees, choose one randomly
+                if (!compatibleEmployees.isEmpty()) {
+                    int randomIndex = new Random().nextInt(compatibleEmployees.size());
+                    int newEmployeeIdx = compatibleEmployees.get(randomIndex).getIdx();
+                    solution[task.getIdx()] = newEmployeeIdx;
+                }
+            }
+        }
+    }
+
+    public void notifyObservers(String messageType, String title, String content) {
+        for (Observer observer : observers) {
+            observer.update(messageType, title, content);
+        }
+    }
+
+    @Override
+    public String getAlgorithmName() {
+        return "GeneticAlg";
+    }
+
+    @Override
+    public int getMaxIterations() {
+        return maxIterations;
+    }
+}
+**************************************************
+
+File: CostCalculator.java
+**************************************************
+package Algorithms;
+
+import Model.Employee;
+import Model.Task;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.PriorityQueue;
+import java.util.Comparator;
+
+/**
+ * Utility class for calculating costs and penalties in the task solution problem.
+ */
+
+public class CostCalculator
+{
+
+    // Penalty weighting factors as defined in the problem specification
+    private static final double OVERLOAD_WEIGHT = 0.2;
+    private static final double SKILL_MISMATCH_WEIGHT = 0.2;
+    private static final double DEADLINE_VIOLATION_WEIGHT = 0.2;
+    private static final double DIFFICULTY_VIOLATION_WEIGHT = 0.2;
+    private static final double UNIQUE_ASSIGNMENT_WEIGHT = 0.2;
+
+
+
+    /**
+     * Calculates the total cost of aS solution.
+     * Cost = α × (Overload Penalty) + β × (Skill Mismatch Penalty) + γ × (Deadline Violation Penalty)
+     *
+     * @param solution  The Solution to evaluate
+     * @param tasks     The list of all tasks
+     * @param employees The list of all employees
+     * @return The total cost of the solution
+     */
+    public static double calculateTotalCost(int[] solution, List<Task> tasks, List<Employee> employees)
+    {
+        double overloadPenalty = calculateOverloadPenalty(solution, tasks, employees);
+        double skillMismatchPenalty = calculateSkillMismatchPenalty(solution, tasks, employees);
+        double deadlineViolationPenalty = calculateDeadlineViolationPenalty(solution, tasks, employees);
+        double skillLvlViolationPenalty = calculateSkillLevelPenalty(solution, tasks, employees);
+        double uniqueAssignmentViolationPenalty = calculateUniqueAssignmentViolationPenalty(solution, tasks, employees);
+
+        return (
+                OVERLOAD_WEIGHT * overloadPenalty +
+                        SKILL_MISMATCH_WEIGHT * skillMismatchPenalty +
+                        DIFFICULTY_VIOLATION_WEIGHT * skillLvlViolationPenalty +
+                        UNIQUE_ASSIGNMENT_WEIGHT * uniqueAssignmentViolationPenalty +
+                        DEADLINE_VIOLATION_WEIGHT * deadlineViolationPenalty);
+    }
+
+    /**
+     * Calculate the unique assignment penalty
+     * If a task is assigned to more than one employee, increments count
+     *
+     * @param solution  The Solution to evaluate
+     * @param tasks     The list of all tasks
+     * @param employees The list of all employees
+     * @return The number of violations
+     */
+
+    public static double calculateUniqueAssignmentViolationPenalty(int[] solution, List<Task> tasks, List<Employee> employees)
+    {
+        int violationCount = 0;
+        for (Task task : tasks)
+        {
+            if (employees.get(solution[task.getIdx()]) == null)
+            {
+                violationCount++;
+            }
+        }
+        return violationCount;
+    }
+
+    /**
+     * Calculates the overload penalty.
+     * This penalty occurs when an employee is assigned more work than their available hours.
+     *
+     * @param solution  The Solution to evaluate
+     * @param tasks     The list of all tasks
+     * @param employees The list of all employees
+     * @return The number of hours in total that an employees are overworked.
+     */
+
+    public static double calculateOverloadPenalty(int[] solution, List<Task> tasks, List<Employee> employees)
+    {
+        double totalPenalty = 0;
+
+        for (Employee employee : employees)
+        {
+            int totalWorkload = calculateEmployeeWorkload(solution, tasks, employees, employee.getId());
+            int overload = Math.max(0, totalWorkload - employee.getAvailableHours());
+            totalPenalty += overload;
+        }
+
+        return totalPenalty;
+    }
+
+    /**
+     * Calculates the skill mismatch penalty.
+     * This penalty occurs when tasks are assigned to employees who:
+     * 1. Have a skill level lower than the task's difficulty
+     * 2. Don't possess the specific skill required by the task
+     *
+     * @param solution  The Solution to evaluate
+     * @param tasks     The list of all tasks
+     * @param employees The list of all employees
+     * @return The skill mismatch penalty
+     */
+
+
+    public static double calculateSkillMismatchPenalty(int[] solution, List<Task> tasks, List<Employee> employees)
+    {
+        int mismatchCount = 0;
+
+        for (Task task : tasks)
+        {
+            int employeeIdx = solution[task.getIdx()];
+            if (employeeIdx != -1)
+            {
+                Employee employee = employees.get(employeeIdx);
+                if (employee != null)
+                {
+                    // Check specialized skill constraint
+                    if (!employee.hasSkill(task.getRequiredSkill()))
+                    {
+                        mismatchCount++;
+                    }
+                }
+            }
+        }
+        return mismatchCount;
+    }
+
+    /**
+     * Calculates difficulty level violation penalty
+     * The number of assignments with correct skill matches that don't have the adequate skill level
+     *
+     * @param solution  The Solution to evaluate
+     * @param tasks     The list of all tasks
+     * @param employees The list of all employees
+     * @return The difficulty violation penalty
+     */
+
+    public static double calculateSkillLevelPenalty(int[] solution, List<Task> tasks, List<Employee> employees)
+    {
+        int skillLvlViolationCount = 0;
+
+        for (Task task : tasks)
+        {
+            int employeeIdx = solution[task.getIdx()];
+            if (employeeIdx != -1)
+            {
+                Employee employee = employees.get(employeeIdx);
+                if (employee != null)
+                {
+                    if (task.getDifficulty() > employee.getSkillLevel())
+                    {
+                        skillLvlViolationCount++;
+                    }
+                }
+            }
+        }
+        return skillLvlViolationCount;
+    }
+
+
+    /**
+     * Calculates the deadline violation penalty.
+     * The number of total hours tasks overshoot their deadline in a solution
+     *
+     * @param solution  The Solution to evaluate
+     * @param tasks     The list of all tasks
+     * @param employees The list of all employees
+     * @return The deadline violation penalty
+     */
+
+    public static double calculateDeadlineViolationPenalty(int[] solution, List<Task> tasks, List<Employee> employees)
+    {
+        int violationHrs = 0;
+        //Tasks are considered to be completed in ascending order of estimated completion time
+        Queue<Task> queue = new PriorityQueue<>(Comparator.comparingInt(task -> task.getEstimatedTime()));
+
+        // For each employee, track their current workload time
+        Map<String, Integer> employeeWorkloadTimes = new HashMap<>();
+
+        for (Task task : tasks)
+        {
+            queue.add(task);
+        }
+
+        while(queue.peek() != null)
+        {
+            Task task = queue.poll();
+            String employeeId = employees.get(solution[task.getIdx()]).getId();
+                if (employeeId != null)
+                {
+                    // Initialize workload time if not already present
+                    employeeWorkloadTimes.putIfAbsent(employeeId, 0);
+
+                    // Get current workload time for the employee
+                    int currentWorkloadTime = employeeWorkloadTimes.get(employeeId);
+
+                    // Add the task's estimated time to the workload
+                    currentWorkloadTime += task.getEstimatedTime();
+
+                    // Check if the deadline is violated
+                    if (currentWorkloadTime > task.getDeadline())
+                    {
+                        violationHrs += (currentWorkloadTime - task.getDeadline());
+                    }
+
+                    // Update the workload time
+                    employeeWorkloadTimes.put(employeeId, currentWorkloadTime);
+                }
+        }
+        return violationHrs;
+    }
+
+    /**
+     * Calculates the total workload assigned to an employee.
+     *
+     * @param solution   The Solution to evaluate
+     * @param tasks      The list of all tasks
+     * @param employeeId The ID of the employee
+     * @return The total workload in hours
+     */
+
+    public static int calculateEmployeeWorkload(int[] solution, List<Task> tasks, List<Employee> employees, String employeeId)
+    {
+        int totalWorkload = 0;
+
+        for (Task task : tasks)
+        {
+            String assignedEmployeeId = employees.get(solution[task.getIdx()]).getId();
+            if (employeeId.equals(assignedEmployeeId))
+            {
+                totalWorkload += task.getEstimatedTime();
+            }
+        }
+
+        return totalWorkload;
+    }
+
+    /**
+     * Checks if all hard constraints are satisfied
+     * @param solution   The Solution to evaluate
+     * @param tasks      The list of all tasks
+     * @param employees  The list of all employees
+     * @return True if feasible, false if else.
+     */
+
+    public static boolean isFeasible(int[] solution, List<Task> tasks, List<Employee> employees)
+    {
+        return  (calculateTotalCost(solution, tasks, employees) -
+                calculateDeadlineViolationPenalty(solution, tasks, employees) == 0);
+    }
+}
+**************************************************
+
+File: ParticleSwarmAlg.java
+**************************************************
+package Algorithms;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import Model.Employee;
+import Model.Task;
+import Utilities.Initialise;
+import Utilities.Observer;
+import Utilities.PerformanceLogger;
+
+public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
+
+    static class GBestData {
+        double gBest;
+        int[] gBestArr;
+    }
+
+    int populationSize;
+    int maxIterations;
+    int STAG_LIMIT = 20;
+    int lastgBestUpdate = 0;
+    double c1;
+    double c2;
+    double w;
+
+    public ParticleSwarmAlg(List<Task> tasks, List<Employee> employees,
+            int populationSize, int maxIterations, double c1,
+            double c2,
+            double w, int reportingFrequency, boolean fileOutput, int runId) {
+        super(tasks, employees, reportingFrequency, fileOutput, maxIterations, populationSize, runId);
+        this.populationSize = populationSize;
+        this.employees = employees;
+        this.tasks = tasks;
+        this.maxIterations = maxIterations;
+
+    }
+
+    public void notifyObservers(String messageType, String title, String content) {
+        for (Observer observer : observers) {
+            observer.update(messageType, title, content);
+        }
+    }
+
+    @Override
+
+    public String getAlgorithmName() {
+        return "ParticleSwarmAlg";
+    }
+
+    @Override
+
+    public int getMaxIterations() {
+        return maxIterations;
+    }
+
+    @Override
+
+    public void run() {
+
+        // Start timing performance
+        performanceLogger.startTimer();
+
+        int[][] swarm = Initialise.getInitialPopulation(employees, tasks, populationSize);
+        double[][] v = new double[populationSize][tasks.size()]; // contains velocities for each position.
+        int[][] pBest = new int[populationSize][tasks.size()]; // contains pbest for each particle. which is an array of
+        // the best positions for each position.
+        GBestData gBestData = new GBestData();// contains the best pBest found i.e. gBest. which is an array of
+        // the best positions found.
+        gBestData.gBest = Double.MAX_VALUE;
+        gBestData.gBestArr = new int[tasks.size()];
+        double[] fitnessPBest = new double[populationSize]; // contains the fitness value for each pBest.
+
+        Random rd = new Random();
+        // Intialize Velocities, positions, pBest and gBest
+        for (int i = 0; i < populationSize; i++) {
+            for (int j = 0; j < tasks.size(); j++) {
+                v[i][j] = rd.nextDouble(0.5, 2) * (rd.nextBoolean() ? 1 : -1);
+                pBest[i][j] = swarm[i][j];
+            }
+            fitnessPBest[i] = CostCalculator.calculateTotalCost(pBest[i], tasks, employees);
+        }
+        gBestData = findGbest(gBestData, fitnessPBest, pBest);
+        int n = 0;
+
+//        // Log initial state
+//        performanceLogger.logIteration(
+//                n,
+//                gBestData.gBestArr,
+//                gBestData.gBest,
+//                PerformanceLogger.getCurrentMemoryUsageMB());
+
+        // Main loop.
+        for (; n < maxIterations; n++) {
+            if (gBestData.gBest == 0) {
+                break;
+            }
+            for (int i = 0; i < populationSize; i++) {
+                for (int j = 0; j < tasks.size(); j++) {
+                    v[i][j] = calculateVelocity(gBestData.gBestArr[j], pBest[i][j], v[i][j], swarm[i][j]);
+                    swarm[i][j] = calculatePosition(v[i][j], swarm[i][j], j);
+                }
+                // Find pBest
+                double newCost = CostCalculator.calculateTotalCost(swarm[i], tasks, employees);
+                if (newCost <= fitnessPBest[i]) {
+                    fitnessPBest[i] = newCost;
+                    pBest[i] = swarm[i].clone();
+                }
+            }
+
+            gBestData = findGbest(gBestData, fitnessPBest, pBest);
+            reportProgress(gBestData.gBestArr, n);
+
+            // Log metrics for this generation
+            performanceLogger.logIteration(
+                    n,
+                    gBestData.gBestArr,
+                    gBestData.gBest,
+                    PerformanceLogger.getCurrentMemoryUsageMB());
+        }
+
+        // Stop timer and save all metrics to CSV files
+        performanceLogger.stopTimer();
+        performanceLogger.saveMetricsToCSV();
+
+        reportFinalResult(gBestData.gBestArr, n);
+        // System.out.println("Gen:" + n + " Gbest:" + gBestData.gBest);
+    }
+
+    private double calculateVelocity(double gBest, int pBest, double v, int currP) {
+
+        final int maxV = employees.size();
+
+        Random rd = new Random();
+        double r1 = rd.nextDouble(0.1, 1.0);
+        double r2 = rd.nextDouble(0.1, 1.0);
+
+        double cognitive = c1 * r1 * (pBest - currP);
+        double social = c2 * r2 * (gBest - currP);
+
+        double stag = (STAG_LIMIT < lastgBestUpdate)
+                ? rd.nextDouble(1.0, 1.5)
+                : 1;
+
+        double newV = w * v + cognitive + social * stag;
+
+        return Math.max(-maxV, Math.min(maxV, newV));
+    }
+
+    private int calculatePosition(double velocity, int currentPos, int taskId) {
+        int size = employees.size();
+        Task task = tasks.get(taskId);
+
+        List<Integer> compatibleEmployees = new ArrayList<>();
+        int i = 0;
+        for (Employee employee : employees) {
+            if (currentPos == i) {
+                i++;
+                continue;
+            }
+            if (employee.hasSkill(task.getRequiredSkill()) &&
+                    employee.getSkillLevel() >= task.getDifficulty()) {
+                compatibleEmployees.add(i);
+            }
+            i++;
+        }
+
+        int move = (int) Math.round(velocity); // Step direction
+
+        if (compatibleEmployees.isEmpty()) {
+            return currentPos;
+        }
+
+        return findClosest(compatibleEmployees, Math.floorMod(move + currentPos, size));
+    }
+
+    private int findClosest(List<Integer> arr, int target) {
+        int res = arr.getFirst();
+        int lo = 0, hi = arr.size() - 1;
+
+        while (lo <= hi) {
+            int mid = lo + (hi - lo) / 2;
+
+            if (Math.abs(arr.get(mid) - target) < Math.abs(res - target)) {
+                res = arr.get(mid);
+
+            } else if (Math.abs(arr.get(mid) - target) == Math.abs(res - target)) {
+                res = Math.max(res, arr.get(mid));
+            }
+
+            if (arr.get(mid) == target) {
+                return arr.get(mid);
+            } else if (arr.get(mid) < target) {
+                lo = mid + 1;
+            } else {
+                hi = mid - 1;
+            }
+        }
+
+        return res;
+    }
+
+    private GBestData findGbest(GBestData currGBest, double[] fitnesspBest, int[][] pBest) {
+        lastgBestUpdate += 1;
+
+        for (int i = 0; i < populationSize; i++) {
+            if (currGBest.gBest > fitnesspBest[i]) {
+                currGBest.gBest = fitnesspBest[i];
+                currGBest.gBestArr = pBest[i];
+                lastgBestUpdate = 0;
+            }
+        }
+
+        return currGBest;
+    }
+}
+**************************************************
+
+File: AbstractOptimisationAlgorithm.java
+**************************************************
+package Algorithms;
+
+import Model.Employee;
+import Model.Task;
+import Utilities.Observer;
+import Utilities.PerformanceLogger;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Abstract base class for optimization algorithms that handles observer
+ * management
+ */
+public abstract class AbstractOptimisationAlgorithm implements Algorithm {
+    protected List<Observer> observers = new ArrayList<>();
+    protected List<Task> tasks;
+    protected List<Employee> employees;
+
+    protected int[] bestSolution;
+    protected double bestCost = Double.MAX_VALUE;
+    protected final int maxIterations;
+    protected final int reportinFrequency;
+    protected final boolean fileOutput;
+    protected final int populationSize;
+    protected String output = "";
+
+    protected final PerformanceLogger performanceLogger;
+
+    public AbstractOptimisationAlgorithm(List<Task> tasks, List<Employee> employees,
+            int reportingFrequency, boolean fileOutput, int maxIterations, int populationSize, int runId) {
+        this.tasks = tasks;
+        this.employees = employees;
+        this.reportinFrequency = reportingFrequency;
+        this.fileOutput = fileOutput;
+        this.maxIterations = maxIterations;
+        this.populationSize = populationSize;
+
+        this.performanceLogger = new PerformanceLogger(getAlgorithmName(), tasks, employees, runId);
+    }
+
+    @Override
+    public void registerObserver(Observer observer) {
+        observers.add(observer);
+    }
+
+    @Override
+    public void removeObserver(Observer observer) {
+        observers.remove(observer);
+    }
+
+    protected void notifyObservers(String messageType, String title, String content) {
+        for (Observer observer : observers) {
+            observer.update(messageType, title, content);
+        }
+    }
+
+    /**
+     * Reports progress at the current iteration
+     */
+    protected void reportProgress(int[] currentBest, int iteration) {
+        double cost = CostCalculator.calculateTotalCost(currentBest, tasks, employees);
+        boolean isFeasible = CostCalculator.isFeasible(currentBest, tasks, employees);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Iteration ").append(iteration)
+                .append(": Best Cost = ").append(String.format("%.2f", cost))
+                .append(", Feasible: ").append(isFeasible)
+                .append("\n");
+
+        output += sb.toString();
+
+        if (iteration % reportinFrequency == 0 || iteration == getMaxIterations() - 1) {
+            notifyObservers("INFO", getAlgorithmName() + " PROGRESS", sb.toString());
+        }
+    }
+
+    /**
+     * Reports the final result
+     */
+    protected void reportFinalResult(int[] bestSolution, int iteration) {
+        double cost = CostCalculator.calculateTotalCost(bestSolution, tasks, employees);
+        boolean isFeasible = CostCalculator.isFeasible(bestSolution, tasks, employees);
+
+        String finalResult = !observers.isEmpty()
+                ? observers.getFirst().getFinalSolution(bestSolution, cost, iteration, isFeasible)
+                : "No observer to format final solution";
+
+        output += finalResult;
+
+        if (fileOutput) {
+            notifyObservers("FILE", getAlgorithmName(), output);
+        } else {
+            notifyObservers("INFO", getAlgorithmName() + " RESULT", output);
+        }
+    }
+
+    /**
+     * Get the name of this algorithm
+     */
+    public abstract String getAlgorithmName();
+
+    /**
+     * Get the maximum number of iterations
+     */
+    public abstract int getMaxIterations();
+}
+**************************************************
+
+File: ObserverException.java
+**************************************************
+package Exceptions;
+
+public class ObserverException extends RuntimeException
+{
+    public ObserverException(String message)
+    {
+        super(message);
+    }
+}
+**************************************************
+
+File: LoadDataException.java
+**************************************************
+package Exceptions;
+
+public class LoadDataException extends RuntimeException {
+  public LoadDataException(String message) {
+    super(message);
+  }
+}
+**************************************************
+
+File: InputException.java
+**************************************************
+package Exceptions;
+
+public class InputException extends ObserverException
+{
+    public InputException(String message)
+    {
+        super(message);
+    }
+}
+**************************************************
+
+File: VisualisationController.java
+**************************************************
+package Controller;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.*;
+
+import Exceptions.LoadDataException;
+import Exceptions.ObserverException;
+import Utilities.PathUtility;
+import View.PerformanceVisualiser;
+
+/**
+ * Controller for generating performance visualizations from CSV data.
+ * This class reads performance data collected during algorithm runs and
+ * generates comparative charts for analysis.
+ */
+public class VisualisationController {
+
+    // Run ID
+    //Directories
+
+
+    // File names for different metrics
+    private static final String SOLUTION_QUALITY_SUFFIX = "_solution_quality.csv";
+    private static final String COMPUTATIONAL_EFFICIENCY_FILE = "computational_efficiency.csv";
+    private static final String CONSTRAINT_SATISFACTION_SUFFIX = "_constraint_satisfaction.csv";
+
+    // Algorithm names
+    private static final String[] ALGORITHM_NAMES = {"GeneticAlg", "ParticleSwarmAlg", "AntColonyAlg"};
+
+    // Chart output filenames
+    private static final String SOLUTION_QUALITY_CHART = "solution_quality_comparison.png";
+    private static final String COMPUTATIONAL_EFFICIENCY_CHART = "computational_efficiency_comparison.png";
+    private static final String CONSTRAINT_SATISFACTION_CHART = "constraint_satisfaction_comparison.png";
+
+
+
+    private final PerformanceVisualiser visualiser;
+
+    /**
+     * Constructor for VisualizationController
+     */
+    public VisualisationController(int runID) {
+        this.visualiser = new PerformanceVisualiser();
+        PathUtility.setRunId(runID);
+        PathUtility.createDirectories();
+    }
+
+    public void setRUN_ID(int runID)
+    {
+        PathUtility.setRunId(runID);
+    }
+
+    /**
+     * Generate all performance comparison charts
+     *
+     * @return String with results of the operation
+     */
+    public String generateAllCharts(boolean perIteration) throws ObserverException {
+        StringBuilder result = new StringBuilder();
+
+        try {
+            result.append(generateSolutionQualityChart()).append("\n");
+            result.append(generateComputationalEfficiencyChart(perIteration)).append("\n");
+            result.append(generateConstraintSatisfactionChart()).append("\n");
+        } catch (LoadDataException e) {
+            throw new ObserverException("Error generating charts: " + e.getMessage());
+        }
+
+        return result.toString();
+    }
+
+    /**
+     * Generate a chart comparing solution quality across algorithms
+     *
+     * @return Result message
+     * @throws LoadDataException If reading CSV or generating chart fails
+     */
+    public String generateSolutionQualityChart() throws ObserverException
+    {
+        List<String> algorithmNames = new ArrayList<>();
+        List<List<double[]>> dataPoints = new ArrayList<>();
+
+        for (String algorithm : ALGORITHM_NAMES)
+        {
+            try
+            {
+                List<double[]> averagedData = readSolutionQualityData(algorithm);
+
+                if (!averagedData.isEmpty())
+                {
+                    algorithmNames.add(algorithm);
+                    dataPoints.add(averagedData);
+                }
+            }
+            catch (LoadDataException e)
+            {
+                throw new ObserverException(e.getMessage());
+            }
+        }
+
+        // Generate the comparison chart
+        String outputPath = PathUtility.getChartsDir()+ "/"+ SOLUTION_QUALITY_CHART;
+        visualiser.createComparisonChart(
+                "Algorithm Solution Quality Comparison",
+                "Iterations",
+                "Average Cost Value (Lower is Better)",
+                algorithmNames,
+                dataPoints,
+                outputPath
+        );
+
+        return "Solution quality comparison chart saved to " + outputPath;
+    }
+
+    /**
+     * Generate a chart comparing computational efficiency across algorithms
+     *
+     * @return Result message
+     * @throws LoadDataException If reading CSV or generating chart fails
+     */
+    public String generateComputationalEfficiencyChart(boolean perIteration) throws LoadDataException {
+        String filePath = PathUtility.getPerformanceDir() + "/"+ COMPUTATIONAL_EFFICIENCY_FILE;
+        File file = new File(filePath);
+
+        if (!file.exists()) {
+            return "No computational efficiency data found. Run algorithms first.";
+        }
+
+        // Read the computational efficiency data
+        Map<String, Double[]> efficiencyData = readComputationalEfficiencyData(filePath);
+
+        if (efficiencyData.isEmpty()) {
+            return "Computational efficiency data is empty.";
+        }
+
+        String runtimeTitle;
+        // Lists for bar chart data
+        List<String> algorithmNames = new ArrayList<>(efficiencyData.keySet());
+        List<Double> runtimeValues = new ArrayList<>();
+
+        // Extract runtime values for each algorithm
+        if(perIteration)
+        {
+
+            for (String algorithm : algorithmNames)
+            {
+                runtimeValues.add(efficiencyData.get(algorithm)[0]); // TotalRuntime is at index 0
+            }
+            runtimeTitle = " Average TotalRuntime (ms)";
+        }
+        else
+        {
+            for (String algorithm : algorithmNames)
+            {
+                runtimeValues.add(efficiencyData.get(algorithm)[1]); // runtime/iteration is at index 0
+            }
+            runtimeTitle = "Average Runtime/Iteration (ms)";
+        }
+
+        // Generate the comparison chart
+        String outputPath = PathUtility.getChartsDir() + "/run" +
+                PathUtility.getRunId() + "_" + COMPUTATIONAL_EFFICIENCY_CHART;
+        visualiser.createEfficiencyBarChart(
+                "Computational Efficiency Comparison",
+                "Algorithm",
+                runtimeTitle,
+                algorithmNames,
+                runtimeValues,
+                outputPath
+        );
+
+        return "Computational efficiency comparison chart saved to " + outputPath;
+    }
+
+    /**
+     * Generate a chart comparing constraint satisfaction across algorithms
+     *
+     * @return Result message
+     * @throws LoadDataException If reading CSV or generating chart fails
+     */
+    public String generateConstraintSatisfactionChart() throws LoadDataException
+    {
+        // Lists to hold data for each algorithm
+        List<String> algorithmNames = new ArrayList<>();
+        List<List<double[]>> avgDataPoints = new ArrayList<>();
+
+        // Read data for each algorithm
+        for (String algorithm : ALGORITHM_NAMES)
+        {
+            try
+            {
+                List<double[]> avgData = readConstraintSatisfactionData(algorithm);
+
+                if (!avgData.isEmpty())
+                {
+                    algorithmNames.add(algorithm);
+                    avgDataPoints.add(avgData);
+                }
+            }
+            catch (LoadDataException e)
+            {
+                throw new LoadDataException(e.getMessage());
+            }
+        }
+
+        if (algorithmNames.isEmpty())
+        {
+            return "No constraint satisfaction data found. Run algorithms first.";
+        }
+
+        // Generate the comparison chart
+        String outputPath = PathUtility.getChartsDir() + "/"+ CONSTRAINT_SATISFACTION_CHART;
+        visualiser.createComparisonChart(
+                "Constraint Satisfaction Comparison",
+                "Iterations",
+                "Average Constraint Violations (Lower is Better)",
+                algorithmNames,
+                avgDataPoints,
+                outputPath
+        );
+
+        return "Constraint satisfaction comparison chart saved to " + outputPath;
+    }
+
+    /**
+     * Read and average the cost of the solution quality data from CSV file
+     *
+     * @param algorithmName Name of the algorithm
+     * @return List of data points [iteration, cost]
+     * @throws LoadDataException If reading fails
+     */
+    private List<double[]> readSolutionQualityData(String algorithmName) throws LoadDataException {
+        Map<Integer, List<Double>> iterationToCostMap = new HashMap<>();
+        int runCount = 0;
+
+        // Debug: Print directory contents
+        System.out.println("Looking for solution quality files for " + algorithmName);
+        File dir = new File(PathUtility.getPerformanceDir());
+        System.out.println("Directory exists: " + dir.exists());
+        if (dir.exists()) {
+            System.out.println("Files in directory:");
+            File[] allFiles = dir.listFiles();
+            if (allFiles != null) {
+                for (File f : allFiles) {
+                    System.out.println(" - " + f.getName());
+                }
+            }
+        }
+        System.out.println(PathUtility.getRunId());
+
+        // Find all files for this algorithm using the correct pattern that includes the runID
+        File[] files = dir.listFiles((d, name) ->
+                name.startsWith(algorithmName) && name.contains(SOLUTION_QUALITY_SUFFIX));
+
+        System.out.println("Found " + (files != null ? files.length : 0) + " solution quality files for " + algorithmName);
+
+        if (files != null && files.length > 0) {
+            for (File file : files) {
+                System.out.println("Processing file: " + file.getName());
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                    // Skip header
+                    reader.readLine();
+
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        String[] parts = line.split(",");
+                        if (parts.length >= 3) {
+                            int iteration = Integer.parseInt(parts[1]);
+                            double costValue = Double.parseDouble(parts[2]);
+                            //map.put(iteration, costValue);
+
+                            System.out.println("  Found data point: iteration=" + iteration + ", cost=" + costValue);
+
+                            // Store cost for this iteration
+                            iterationToCostMap.computeIfAbsent(iteration, k -> new ArrayList<>())
+                                    .add(costValue);
+                        }
+                    }
+                } catch (IOException e) {
+                    throw new LoadDataException("Could not read solution quality data for " + file.getName()
+                            + ": " + e.getMessage());
+                }
+                runCount++;
+            }
+        }
+
+        // If no data was found, return empty list
+        if (runCount == 0) {
+            System.out.println("No solution quality data found for " + algorithmName);
+            return new ArrayList<>();
+        }
+
+        // Calculate averages and print them for debugging
+        List<double[]> averagedData = new ArrayList<>();
+        for (Map.Entry<Integer, List<Double>> entry : iterationToCostMap.entrySet()) {
+            int iteration = entry.getKey();
+            List<Double> costs = entry.getValue();
+
+            // Calculate average cost for this iteration
+            double avgCost = costs.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+
+            System.out.println("Average for iteration " + iteration + ": " + avgCost +
+                    " (from " + costs.size() + " runs: " + costs + ")");
+
+            // Add data point [iteration, avgCost]
+            averagedData.add(new double[]{iteration, avgCost});
+        }
+
+        // Sort by iteration
+        averagedData.sort(Comparator.comparingDouble(point -> point[0]));
+
+        return averagedData;
+    }
+
+    /**
+     * Read computational efficiency data from CSV file
+     *
+     * @param filePath Path to the CSV file
+     * @return Map of algorithm name to metrics array [runtime, memory, iterations]
+     * @throws LoadDataException If reading fails
+     */
+    private Map<String, Double[]> readComputationalEfficiencyData(String filePath) throws LoadDataException {
+        Map<String, List<Double[]>> dataMap = new HashMap<>();
+        Map<String, Double[]> averagedData = new HashMap<>();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            // Skip header
+            reader.readLine();
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length >= 3) {
+                    String algorithm = parts[0];
+                    Double[] metrics = new Double[2];
+
+                    metrics[0] = (Double.parseDouble(parts[1])); // Total Time
+                    metrics[1] = (Double.parseDouble(parts[2])); // time/iteration
+                    dataMap.computeIfAbsent(algorithm, k -> new ArrayList<>()).add(metrics);
+                }
+            }
+
+
+            for (Map.Entry<String, List<Double[]>> entry : dataMap.entrySet()) {
+                String algorithm = entry.getKey();
+                List<Double[]> metricList = entry.getValue();
+                // Calculate average runtime/iteration/algorithm for this iteration
+                double avgTotalRunTime = 0;
+                double avgRunTimePerIteration = 0;
+                for(Double[] metrics : metricList) {
+                    avgTotalRunTime += metrics[0];
+                    avgRunTimePerIteration += metrics[1];
+                }
+                avgRunTimePerIteration = avgRunTimePerIteration/metricList.size();
+                avgTotalRunTime = avgTotalRunTime / avgRunTimePerIteration;
+
+                System.out.println("Average runtime/itereration for algorithm " + algorithm + ": " + avgRunTimePerIteration +
+                        " (from " + metricList.size() + " runs: " + metricList + ")");
+                System.out.println("Average total runtime for algorithm " + algorithm + ": " + avgTotalRunTime +
+                        " (from " + metricList.size() + " runs: " + metricList + ")");
+
+
+                averagedData.put(algorithm, new Double[]{avgTotalRunTime, avgRunTimePerIteration});
+            }
+        }
+        catch (IOException e) {
+            throw new LoadDataException("Could not read computational efficiency data for " + filePath);
+        }
+
+        return averagedData;
+    }
+
+    /**
+     * Read constraint satisfaction data from CSV file
+     *
+     * @param algorithmName name of the CSV file
+     * @return List of data points [iteration, violation count]
+     * @throws LoadDataException If reading fails
+     */
+    private List<double[]> readConstraintSatisfactionData(String algorithmName) throws LoadDataException {
+        Map<Integer, List<Double>> iterationToViolationsMap = new HashMap<>();
+        int runCount = 0;
+
+        // Find all files for this algorithm with constraint satisfaction data using the correct pattern
+        File dir = new File(PathUtility.getPerformanceDir());
+        File[] files = dir.listFiles((d, name) ->
+                name.startsWith(algorithmName) && name.contains(CONSTRAINT_SATISFACTION_SUFFIX));
+
+        if (files != null) {
+            for (File file : files) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                    // Skip header
+                    reader.readLine();
+
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        String[] parts = line.split(",");
+                        if (parts.length >= 3) {
+                            int iteration = Integer.parseInt(parts[1]);
+                            double violations = Double.parseDouble(parts[2]); // TotalConstraintViolations column
+
+                            // Store constraint violations for this iteration
+                            iterationToViolationsMap.computeIfAbsent(iteration, k -> new ArrayList<>())
+                                    .add(violations);
+                        }
+                    }
+                } catch (IOException e) {
+                    throw new LoadDataException("Could not read constraint satisfaction data for " + file.getName());
+                }
+                runCount++;
+            }
+        }
+
+        // If no data was found, return empty list
+        if (runCount == 0) {
+            return new ArrayList<>();
+        }
+
+        // Calculate averages for each iteration
+        List<double[]> averagedData = new ArrayList<>();
+        for (Map.Entry<Integer, List<Double>> entry : iterationToViolationsMap.entrySet()) {
+            int iteration = entry.getKey();
+            List<Double> violations = entry.getValue();
+
+            // Calculate average violations for this iteration
+            double avgViolations = violations.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+
+            System.out.println("Constraint violations average for iteration " + iteration + ": " + avgViolations +
+                    " (from " + violations.size() + " runs)");
+
+            // Add data point [iteration, avgViolations]
+            averagedData.add(new double[]{iteration, avgViolations});
+        }
+
+        // Sort by iteration
+        averagedData.sort(Comparator.comparingDouble(point -> point[0]));
+
+        return averagedData;
+    }
+
+}
+**************************************************
+
+File: MenuController.java
+**************************************************
+package Controller;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import Algorithms.*;
+import Factories.AlgorithmFactory;
+import Model.Employee;
+import Model.Task;
+import Utilities.*;
+import Exceptions.InputException;
+import Exceptions.LoadDataException;
+import Exceptions.ObserverException;
+import Utilities.RandomDataGen.DataSet;
+import View.ConsoleObserver;
+
+public class MenuController {
+
+    private final List<Observer> observers;
+    private List<Employee> employees;
+    private List<Task> tasks;
+    private final ConsoleObserver consoleObserver;
+    FileOutput fileOutput;
+
+    // Default params for algorithms
+    // GA
+    private double GA_CROSSOVER_DEFAULT = 0.2;
+    private double GA_MUTATION_DEFAULT = 0.1;
+    private int GA_ELITISM_DEFAULT = 2;
+    // private int GA_RUN_ID = 0;
+
+    // PS (None)
+    private double PSO_INERTIA_WEIGHT = 0.5;
+    private double PSO_PBEST_W = 1.5;
+    private double PSO_GBEST_W = 1.5;
+
+    // private int PS_RUN_ID = 0;
+
+    // AC
+    private double ACO_DECAY_RATE_DEFAULT = 0.1;
+    private double ACO_INITIAL_PHEROMONE_DEFAULT = 0.1;
+    // private int AC_RUN_ID = 0;
+
+    // ALL
+    private int POPULATION_SIZE_DEFAULT = 100;
+    private int MAX_GEN_DEFAULT = 200;
+    private int REPORTING_FREQUENCY_DEFAULT = 5;
+    private boolean FILE_OUTPUT_DEFAULT = true;
+    private int TRIAL_NUMBER_DEFAULT = 1;
+    //private int ALL_RUN_ID = 1;
+
+    /**
+     * Constructor for menu controller
+     * 
+     * @param consoleObserver the ConsoleObserver instance to use for user
+     *                        interaction
+     */
+
+    public MenuController(ConsoleObserver consoleObserver, FileOutput fileOutput) {
+        observers = new ArrayList<>();
+        this.consoleObserver = consoleObserver;
+        this.fileOutput = fileOutput;
+        registerObserver(consoleObserver);
+        registerObserver(fileOutput);
+    }
+
+    /**
+     *
+     * @param observer The observer to register
+     */
+
+    public void registerObserver(Observer observer) {
+        observers.add(observer);
+    }
+
+    /**
+     * Notify all observers of change
+     *
+     * @param messageType The type of message being sent
+     * @param title       The title of the message
+     * @param content     The content or body of the message
+     */
+
+    public void notifyObservers(String messageType, String title, String content) {
+        for (Observer observer : observers) {
+            observer.update(messageType, title, content);
+        }
+    }
+
+    /**
+     * Run the menu application loop
+     */
+
+    public void start() throws ObserverException {
+        boolean exit = false;
+        while (!exit) {
+            try {
+                int choice = consoleObserver.requestInput("WELCOME", consoleObserver.getLoadedDataStatus(),
+                        new String[] { "Exit", "Load stored data from csv", "Run an algorithm",
+                                "Load Random Data", "Generate Visualisations" });
+                switch (choice) {
+                    case 1:
+                        loadDataMenu();
+                        break;
+                    case 2:
+                        runAlgorithmMenu();
+                        break;
+                    case 3:
+                        randomDataMenu();
+                        break;
+                    case 4:
+                        generateVisualisationsMenu();
+                        break;
+                    case 0:
+                        exit = true;
+                        notifyObservers("INFO", "Goodbye", "Exiting application...");
+                        break;
+                }
+            } catch (InputException e) {
+                notifyObservers("ERROR", "Error occurred while getting input", e.getMessage());
+                throw new InputException(e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Menu for generating performance visualizations
+     */
+    private void generateVisualisationsMenu() {
+        boolean exit = false;
+
+        try {
+            determineNextRunId();
+            int currentRunId= PathUtility.getRunId()-1;
+            VisualisationController visualController = new VisualisationController(currentRunId);
+
+            boolean perIteration;
+            System.out.println("Current Run ID");
+            if (currentRunId <= 0) {
+                notifyObservers("ERROR", "No existing runs found in results",
+                        "No previous run data exists in results/performance");
+                return;
+            }
+
+            while (!exit) {
+                int choice = consoleObserver.requestInput("GENERATE VISUALIZATIONS",
+                        "Select which charts to generate from run 1 to " + (currentRunId),
+                        new String[] { "Exit",
+                                "Run ID: " +(currentRunId),
+                                "Solution Quality Comparison",
+                                "Computational Efficiency Comparison",
+                                "Constraint Satisfaction Comparison",
+                                "Generate All Charts" });
+
+                switch (choice) {
+                    case 0:
+                        exit = true;
+                        break;
+                    case 1:
+                        int selectedRunId = getParameter("run id", currentRunId , 1, currentRunId );
+                        visualController.setRUN_ID(selectedRunId);
+                        break;
+                    case 2:
+                        try {
+                            String result = visualController.generateSolutionQualityChart();
+                            notifyObservers("SUCCESS", "Solution Quality Chart", result);
+                        } catch (LoadDataException e) {
+                            notifyObservers("ERROR", "Chart Generation Failed",
+                                    "Failed to generate solution quality chart: " + e.getMessage());
+                        }
+                        break;
+                    case 3:
+                        try {
+                            perIteration = selectGraphType();
+                            String result = visualController.generateComputationalEfficiencyChart(perIteration);
+                            notifyObservers("SUCCESS", "Computational Efficiency Chart", result);
+                        } catch (LoadDataException e) {
+                            notifyObservers("ERROR", "Chart Generation Failed",
+                                    "Failed to generate computational efficiency chart: " + e.getMessage());
+                        }
+                        break;
+                    case 4:
+                        try {
+                            String result = visualController.generateConstraintSatisfactionChart();
+                            notifyObservers("SUCCESS", "Constraint Satisfaction Chart", result);
+                        } catch (LoadDataException e) {
+                            notifyObservers("ERROR", "Chart Generation Failed",
+                                    "Failed to generate constraint satisfaction chart: " + e.getMessage());
+                        }
+                        break;
+                    case 5:
+                        perIteration = selectGraphType();
+                        try {
+                            String result = visualController.generateAllCharts(perIteration);
+                            notifyObservers("SUCCESS", "All Charts Generated", result);
+                        } catch (ObserverException e) {
+                            notifyObservers("ERROR", "Chart Generation Failed",
+                                    "Failed to generate charts: " + e.getMessage());
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        } catch (Exception e) {
+            notifyObservers("ERROR", "Visualisation Error",
+                    "An error occurred while trying to generate visualisations: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Gets the users graph choice
+     */
+
+    private boolean selectGraphType() {
+        int anotherChoice = consoleObserver.requestInput("DEFINE PARAMETER", "What efficiency graph to use",
+                new String[] { "Average Runtime/Iteration" ,"Total Average Runtime" });
+        return switch (anotherChoice) {
+            case 0 -> false;
+            case 1 -> true;
+            default -> false;
+        };
+    }
+
+    /**
+     * Show the loading meny
+     */
+
+    private void loadDataMenu() {
+        // Get a list of all files in /resources
+
+        while (true) {
+            try {
+                List<String> files = DataGenerator.getResourceFiles();
+                if (files.isEmpty()) {
+                    notifyObservers("ERROR", "No Data Files", "No CSV files found in resources folder.");
+                    return;
+                }
+
+                // Add exit option
+                files.addFirst("Exit");
+                int choice = consoleObserver.requestInput("LOAD DATA",
+                        "Select the CSV file to use from the resources folder\n"
+                                + consoleObserver.getLoadedDataStatus(),
+                        files.toArray(new String[0]));
+
+                if (choice == 0) {
+                    return;
+                }
+
+                try {
+                    loadSelectedData("employees", files.get(choice));
+                } catch (LoadDataException e) {
+                    try {
+                        loadSelectedData("tasks", files.get(choice));
+                    } catch (LoadDataException e1) {
+                        notifyObservers("ERROR", "Data Loading Error",
+                                e.getMessage());
+                    }
+                }
+            } catch (LoadDataException e) {
+                notifyObservers("ERROR", "Critical Error Loading Data", e.getMessage());
+                return;
+            }
+        }
+    }
+
+    private void loadSelectedData(String fileType, String filePath) throws LoadDataException {
+
+        String[] fileName = filePath.split("/");
+        if (fileType.equalsIgnoreCase("employees")) {
+            String employeesFileName = fileName[fileName.length - 1];
+            employees = DataGenerator.loadEmployees("/" + employeesFileName);
+            consoleObserver.updateLoadedData("Employees", employeesFileName);
+            // Display loaded employees
+            consoleObserver.displayData("EMPLOYEES", employees);
+            notifyObservers("SUCCESS", "Data Loaded",
+                    "Successfully loaded employees from " + employeesFileName);
+        } else if (fileType.equalsIgnoreCase("tasks")) {
+            String tasksFileName = fileName[fileName.length - 1];
+            tasks = DataGenerator.loadTasks("/" + tasksFileName);
+            consoleObserver.updateLoadedData("Tasks", tasksFileName);
+            // Display Loaded Tasks
+            consoleObserver.displayData("TASKS", tasks);
+
+            notifyObservers("SUCCESS", "Data Loaded",
+                    "Successfully loaded tasks from " + tasksFileName);
+        } else {
+            throw new LoadDataException("Unrecognised file type: " + fileType);
+        }
+
+    }
+
+    /**
+     * Algorithm run menu
+     */
+    private void randomDataMenu() {
+        boolean exit = false;
+        int employeeCount = 10;
+        int taskCount = 10;
+
+        try {
+            while (!exit) {
+                int choice = consoleObserver.requestInput("CHOOSE PARAMETERS TO GENERATE",
+                        "Select a choice: ",
+                        new String[] { "Exit", "Employee Size: " + employeeCount, "Task Size: " + taskCount,
+                                "Generate" });
+                switch (choice) {
+                    case 1:
+                        employeeCount = consoleObserver.requestInput("SET EMPLOYEE SIZE",
+                                "Enter Employee count:",
+                                1, 10000);
+                        break;
+                    case 2:
+                        taskCount = consoleObserver.requestInput("SET TASK SIZe",
+                                "Enter Task count:",
+                                1, 10000);
+                        break;
+                    case 3:
+                        DataSet ds = RandomDataGen.generateDataSet(taskCount, employeeCount);
+                        tasks = ds.tasks;
+                        employees = ds.employees;
+                        consoleObserver.updateLoadedData("Employees", "Random of size " + taskCount);
+                        consoleObserver.updateLoadedData("Tasks", "Random of size " + employeeCount);
+                        consoleObserver.displayData("EMPLOYEES", employees);
+                        consoleObserver.displayData("TASKS", tasks);
+                        exit = true;
+                        break;
+                    case 0:
+                        exit = true;
+                        break;
+                    default:
+                        break;
+                }
+            }
+        } catch (InputException e) {
+            notifyObservers("ERROR", "Error occurred while getting input", e.getMessage());
+        }
+    }
+
+    private void runMenuMultiple(String algorithmType) {
+        determineNextRunId();
+        int currentRunId = PathUtility.getRunId();
+        System.out.println("RUN ID = " + currentRunId);
+        notifyObservers("INFO", "RUNNING TRIALS",
+                "Running " + TRIAL_NUMBER_DEFAULT + " trials of " + algorithmType + "...");
+        
+
+        for (int i = 0; i < TRIAL_NUMBER_DEFAULT; i++) {
+            // Create and run algorithm with this run ID
+            switch (algorithmType) {
+                case "GeneticAlg" -> {
+                    notifyObservers("ISRUNALL", "false", String.valueOf(currentRunId));
+                    GeneticAlg ga = new AlgorithmFactory(tasks, employees, observers)
+                            .createGeneticAlgorithm(POPULATION_SIZE_DEFAULT, GA_CROSSOVER_DEFAULT,
+                                    GA_MUTATION_DEFAULT, GA_ELITISM_DEFAULT,
+                                    MAX_GEN_DEFAULT, REPORTING_FREQUENCY_DEFAULT,
+                                    FILE_OUTPUT_DEFAULT, currentRunId);
+                    //notifyObservers("ISRUNALL", "false", String.valueOf(currentRunId));
+                    runMenu(ga, "Genetic Algorithm (Trial " + currentRunId + ")");
+                }
+                case "AntColonyAlg" -> {
+                    notifyObservers("ISRUNALL", "false", String.valueOf(currentRunId));
+                    AntColAlg ac = new AlgorithmFactory(tasks, employees, observers)
+                            .createAntColonyOptimisation(POPULATION_SIZE_DEFAULT, ACO_DECAY_RATE_DEFAULT,
+                                    ACO_INITIAL_PHEROMONE_DEFAULT,
+                                    MAX_GEN_DEFAULT, REPORTING_FREQUENCY_DEFAULT,
+                                    FILE_OUTPUT_DEFAULT, currentRunId);
+                    //notifyObservers("ISRUNALL", "false", String.valueOf(currentRunId));
+                    runMenu(ac, "Ant Colony Algorithm (Trial " + currentRunId + ")");
+                }
+                case "ParticleSwarmAlg" -> {
+                    notifyObservers("ISRUNALL", "false", String.valueOf(currentRunId));
+                    ParticleSwarmAlg ps = new AlgorithmFactory(tasks, employees, observers)
+                            .createParticleSwarm(POPULATION_SIZE_DEFAULT, MAX_GEN_DEFAULT, PSO_PBEST_W, PSO_GBEST_W,
+                                    PSO_INERTIA_WEIGHT,
+                                    REPORTING_FREQUENCY_DEFAULT, FILE_OUTPUT_DEFAULT, currentRunId);
+                    //notifyObservers("ISRUNALL", "false", String.valueOf(currentRunId));
+                    runMenu(ps, "Particle Swarm Algorithm (Trial " + currentRunId + ")");
+                }
+                case "All" -> {
+                    notifyObservers("ISRUNALL", "true", String.valueOf(currentRunId));
+                    Map<String, AbstractOptimisationAlgorithm> algs = new AlgorithmFactory(tasks, employees, observers)
+                            .createStandardisedAlgorithms(
+                                    POPULATION_SIZE_DEFAULT, MAX_GEN_DEFAULT,
+                                    REPORTING_FREQUENCY_DEFAULT, FILE_OUTPUT_DEFAULT,
+                                    ACO_DECAY_RATE_DEFAULT, ACO_INITIAL_PHEROMONE_DEFAULT,
+                                    GA_CROSSOVER_DEFAULT, GA_MUTATION_DEFAULT, GA_ELITISM_DEFAULT, PSO_PBEST_W,
+                                    PSO_GBEST_W,
+                                    PSO_INERTIA_WEIGHT,
+                                    currentRunId);
+                    runMenu(algs.get("AntColonyAlg"), "Ant Colony Algorithm (Trial " + currentRunId + ")");
+                    runMenu(algs.get("GeneticAlg"), "Genetic Algorithm (Trial " + currentRunId + ")");
+                    runMenu(algs.get("ParticleSwarmAlg"), "Particle Swarm Algorithm (Trial " + currentRunId + ")");
+                    notifyObservers("ISRUNALL", "false", String.valueOf(currentRunId));
+                }
+                default -> {
+                    notifyObservers("ERROR", "Invalid Algorithm Type",
+                            "The algorithm type of: " + algorithmType + " cannot be determined");
+                    return;
+                }
+            }
+
+        }
+
+        notifyObservers("SUCCESS", "RUN COMPLETE",
+                "Completed " + TRIAL_NUMBER_DEFAULT + " trials of " + algorithmType);
+    }
+
+    private void runAlgorithmMenu() {
+        boolean exit = false;
+        if (employees == null || tasks == null) {
+            notifyObservers("ERROR", "Invalid Data",
+                    "Employee or Task data has not been loaded \n" + consoleObserver.getLoadedDataStatus());
+            return;
+        }
+        try {
+            while (!exit) {
+
+                int choice = consoleObserver.requestInput("CHOOSE ALGORITHM",
+                        "Select an Algorithm to run",
+                        new String[] { "Exit", "Genetic Algorithm", "Swarm Optimisation", "Ant Colony", "All" });
+
+                switch (choice) {
+                    case 0:
+                        exit = true;
+                        break;
+                    case 1:
+                        runGeneticAlgMenu();
+                        break;
+                    case 2:
+                        runParticleSwarmMenu();
+                        break;
+                    case 3:
+                        runAntColAlgMenu();
+                        break;
+                    case 4:
+                        runStandardisedMenu();
+                        break;
+                    default:
+                        break;
+                }
+            }
+        } catch (InputException e) {
+            notifyObservers("ERROR", "Error occurred while getting input", e.getMessage());
+        }
+    }
+
+    private void runParticleSwarmMenu() {
+
+        boolean exit = false;
+
+        while (!exit) {
+
+            int choice = consoleObserver.requestInput("DEFINE Particle Swarm Algorithm",
+                    "Specify the parameters to use for this algorithm or proceed",
+                    new String[] { "Exit", "Population size: " + POPULATION_SIZE_DEFAULT,
+                            "Personal Best Weight " + PSO_PBEST_W,
+                            "Global Best Weight: " + PSO_GBEST_W,
+                            "Intertia Weight" + PSO_INERTIA_WEIGHT,
+                            "Maximum Generations: " + MAX_GEN_DEFAULT,
+                            "Reporting frequency: " + REPORTING_FREQUENCY_DEFAULT,
+                            "Output to file: " + FILE_OUTPUT_DEFAULT,
+                            "Number of Trials: " + TRIAL_NUMBER_DEFAULT,
+                            "Proceed" });
+
+            switch (choice) {
+                case 0:
+                    exit = true;
+                    break;
+                case 1:
+                    POPULATION_SIZE_DEFAULT = getParameter("Population size", POPULATION_SIZE_DEFAULT, 1,
+                            Integer.MAX_VALUE);
+                    break;
+                case 2:
+                    PSO_PBEST_W = getParameter("Personal Best Weight", PSO_PBEST_W, 0.0, 10.0);
+                    break;
+                case 3:
+                    PSO_GBEST_W = getParameter("Global Best Weight", PSO_GBEST_W, 0.0, 10.0);
+                    break;
+                case 4:
+                    PSO_INERTIA_WEIGHT = getParameter("Intertia Weight", PSO_INERTIA_WEIGHT, 0, 1.0);
+                    break;
+                case 5:
+                    MAX_GEN_DEFAULT = getParameter("Maximum Generations", MAX_GEN_DEFAULT, 1, Integer.MAX_VALUE);
+                    break;
+                case 6:
+                    REPORTING_FREQUENCY_DEFAULT = getParameter("Reporting frequency", REPORTING_FREQUENCY_DEFAULT,
+                            1, Integer.MAX_VALUE);
+                    break;
+                case 7:
+                    FILE_OUTPUT_DEFAULT = getParameter("Output to file", FILE_OUTPUT_DEFAULT);
+                    break;
+                case 8:
+                    TRIAL_NUMBER_DEFAULT = getParameter("Number of Trials", TRIAL_NUMBER_DEFAULT, 1, Integer.MAX_VALUE);
+                    break;
+                case 9:
+                    runMenuMultiple("ParticleSwarmAlg");
+                    break;
+                default:
+                    break;
+            }
+
+        }
+
+    }
+
+    private void runStandardisedMenu() {
+        boolean exit = false;
+
+        while (!exit) {
+
+            int choice = consoleObserver.requestInput("DEFINE ALL PARAMETERS",
+                    "Specify the parameters to use for all algorithms or proceed",
+                    new String[] { "Exit", "Population Size: " + POPULATION_SIZE_DEFAULT,
+                            "(Genetic) Crossover Rate: " + GA_CROSSOVER_DEFAULT,
+                            "(Genetic) Mutation Rate: " + GA_MUTATION_DEFAULT,
+                            "(Genetic) Elitism Count: " + GA_ELITISM_DEFAULT,
+                            "(Particle Swarm) Personal Best Weight: " + PSO_PBEST_W,
+                            "(Particle Swarm) Global Best Weight: " + PSO_GBEST_W,
+                            "(Paritcle Swarm) Inertia Weight: " + PSO_INERTIA_WEIGHT,
+                            "(Ant Colony) Pheromone Decay Rate: " + ACO_DECAY_RATE_DEFAULT,
+                            "(Ant Colony) Initial Pheromone Value: " + ACO_INITIAL_PHEROMONE_DEFAULT,
+                            "Maximum Iterations: " + MAX_GEN_DEFAULT,
+                            "Reporting Frequency: " + REPORTING_FREQUENCY_DEFAULT,
+                            "Output to File: " + FILE_OUTPUT_DEFAULT,
+                            "Number of Trials: " + TRIAL_NUMBER_DEFAULT,
+                            "Proceed" });
+
+            switch (choice) {
+                case 0:
+                    exit = true;
+                    break;
+                case 1:
+                    POPULATION_SIZE_DEFAULT = getParameter("Population Size", POPULATION_SIZE_DEFAULT, 1,
+                            Integer.MAX_VALUE);
+                    break;
+                case 2:
+                    GA_MUTATION_DEFAULT = getParameter("Mutation Rate", GA_MUTATION_DEFAULT, 0.0, 1.0);
+                    break;
+                case 3:
+                    GA_CROSSOVER_DEFAULT = getParameter("Crossover Rate", GA_CROSSOVER_DEFAULT, 0.0, 1.0);
+                    break;
+                case 4:
+                    GA_ELITISM_DEFAULT = getParameter("Elitsim Count", GA_ELITISM_DEFAULT, 0, employees.size());
+                    break;
+                case 5:
+                    PSO_PBEST_W = getParameter("Personal Best Weight", PSO_PBEST_W, 0.0, 10.0);
+                    break;
+                case 6:
+                    PSO_GBEST_W = getParameter("Global Best Weight", PSO_GBEST_W, 0.0, 10.0);
+                    break;
+                case 7:
+                    PSO_INERTIA_WEIGHT = getParameter("Intertia Weight", PSO_INERTIA_WEIGHT, 0, 1.0);
+                    break;
+                case 8:
+                    ACO_DECAY_RATE_DEFAULT = getParameter("Pheromone Decay Rate", ACO_DECAY_RATE_DEFAULT, 0.0, 1.0);
+                    break;
+                case 9:
+                    ACO_INITIAL_PHEROMONE_DEFAULT = getParameter("Initial Pheromone Value",
+                            ACO_INITIAL_PHEROMONE_DEFAULT, 0.0, Double.MAX_VALUE);
+                    break;
+                case 10:
+                    MAX_GEN_DEFAULT = getParameter("Maximum Iterations", MAX_GEN_DEFAULT, 1, Integer.MAX_VALUE);
+                    break;
+                case 11:
+                    REPORTING_FREQUENCY_DEFAULT = getParameter("Reporting Frequency", REPORTING_FREQUENCY_DEFAULT,
+                            1, Integer.MAX_VALUE);
+                    break;
+                case 12:
+                    FILE_OUTPUT_DEFAULT = getParameter("Output to File", FILE_OUTPUT_DEFAULT);
+                    break;
+                case 13:
+                    TRIAL_NUMBER_DEFAULT = getParameter("Number of Trials", TRIAL_NUMBER_DEFAULT, 1, Integer.MAX_VALUE);
+                    break;
+                case 14:
+                    fileOutput.isRunAll = true;
+                    runMenuMultiple("All");
+                    fileOutput.isRunAll = false;
+                    break;
+
+                default:
+                    break;
+            }
+
+        }
+
+    }
+
+    private void runAntColAlgMenu() {
+        // Initialise with parameters
+
+        boolean exit = false;
+
+        while (!exit) {
+
+            int choice = consoleObserver.requestInput("DEFINE ANT COLONY ALGORITHM ",
+                    "Specify the parameters to use for this algorithm or proceed",
+                    new String[] { "Exit", "Number of Ants (Population Size): " + POPULATION_SIZE_DEFAULT,
+                            "Pheromone Decay Rate: " + ACO_DECAY_RATE_DEFAULT,
+                            "Initial Pheromone Value: " + ACO_INITIAL_PHEROMONE_DEFAULT,
+                            "Maximum Iterations: " + MAX_GEN_DEFAULT,
+                            "Reporting Frequency: " + REPORTING_FREQUENCY_DEFAULT,
+                            "Output to File: " + FILE_OUTPUT_DEFAULT,
+                            "Number of Trials: " + TRIAL_NUMBER_DEFAULT,
+                            "Proceed" });
+
+            switch (choice) {
+                case 0:
+                    exit = true;
+                    break;
+                case 1:
+                    POPULATION_SIZE_DEFAULT = getParameter("Number of Ants", POPULATION_SIZE_DEFAULT, 1,
+                            Integer.MAX_VALUE);
+                    break;
+                case 2:
+                    ACO_DECAY_RATE_DEFAULT = getParameter("Pheromone Decay Rate", ACO_DECAY_RATE_DEFAULT, 0.0, 1.0);
+                    break;
+                case 3:
+                    ACO_INITIAL_PHEROMONE_DEFAULT = getParameter("Initial Pheromone Value",
+                            ACO_INITIAL_PHEROMONE_DEFAULT, 0.0, Double.MAX_VALUE);
+                    break;
+                case 4:
+                    MAX_GEN_DEFAULT = getParameter("Maximum Iterations", MAX_GEN_DEFAULT, 1, Integer.MAX_VALUE);
+                    break;
+                case 5:
+                    REPORTING_FREQUENCY_DEFAULT = getParameter("Reporting Frequency", REPORTING_FREQUENCY_DEFAULT,
+                            1, Integer.MAX_VALUE);
+                    break;
+                case 6:
+                    FILE_OUTPUT_DEFAULT = getParameter("Output to File", FILE_OUTPUT_DEFAULT);
+                    break;
+                case 7:
+                    TRIAL_NUMBER_DEFAULT = getParameter("Number of Trials", TRIAL_NUMBER_DEFAULT, 1, Integer.MAX_VALUE);
+                    break;
+                case 8:
+                    runMenuMultiple("AntColonyAlg");
+                default:
+                    break;
+            }
+
+        }
+    }
+
+    private void runGeneticAlgMenu() {
+
+        boolean exit = false;
+
+        while (!exit) {
+
+            int choice = consoleObserver.requestInput("DEFINE GENETIC ALGORITHM",
+                    "Specify the parameters to use for this algorithm or proceed",
+                    new String[] { "Exit", "Population size: " + POPULATION_SIZE_DEFAULT,
+                            "Crossover rate: " + GA_CROSSOVER_DEFAULT,
+                            "Mutation rate: " + GA_MUTATION_DEFAULT,
+                            "Elitism count: " + GA_ELITISM_DEFAULT,
+                            "Maximum Generations: " + MAX_GEN_DEFAULT,
+                            "Reporting frequency: " + REPORTING_FREQUENCY_DEFAULT,
+                            "Output to file: " + FILE_OUTPUT_DEFAULT,
+                            "Number of Trials: " + TRIAL_NUMBER_DEFAULT,
+                            "Proceed" });
+
+            switch (choice) {
+                case 0:
+                    exit = true;
+                    break;
+                case 1:
+                    POPULATION_SIZE_DEFAULT = getParameter("Population size", POPULATION_SIZE_DEFAULT, 1,
+                            Integer.MAX_VALUE);
+                    break;
+                case 2:
+                    GA_CROSSOVER_DEFAULT = getParameter("Crossover rate", GA_CROSSOVER_DEFAULT, 0.0, 1.0);
+                    break;
+                case 3:
+                    GA_MUTATION_DEFAULT = getParameter("Mutation rate", GA_MUTATION_DEFAULT, 0.0, 1.0);
+                    break;
+                case 4:
+                    GA_ELITISM_DEFAULT = getParameter("Elitsim Count", GA_ELITISM_DEFAULT, 0, employees.size());
+                    break;
+                case 5:
+                    MAX_GEN_DEFAULT = getParameter("Maximum Generations", MAX_GEN_DEFAULT, 1, Integer.MAX_VALUE);
+                    break;
+                case 6:
+                    REPORTING_FREQUENCY_DEFAULT = getParameter("Reporting frequency", REPORTING_FREQUENCY_DEFAULT,
+                            1, Integer.MAX_VALUE);
+                    break;
+                case 7:
+                    FILE_OUTPUT_DEFAULT = getParameter("Output to file", FILE_OUTPUT_DEFAULT);
+                    break;
+                case 8:
+                    TRIAL_NUMBER_DEFAULT = getParameter("Number of Trials", TRIAL_NUMBER_DEFAULT, 1, Integer.MAX_VALUE);
+                case 9:
+                    runMenuMultiple("GeneticAlg");
+                    break;
+                default:
+                    break;
+            }
+
+        }
+    }
+
+    private void runMenu(Algorithm algorithm, String name) {
+        notifyObservers("MENU", "RUN " + name.toUpperCase(), name + " algorithm running......");
+        algorithm.run();
+    }
+
+    private boolean getParameter(String parameter, boolean defaultVal) {
+        int choice = (consoleObserver.requestInput("ENTER " + parameter.toUpperCase(),
+                "Enter a value for " + parameter.toLowerCase(),
+                new String[] { "Exit", "True", "False" }));
+        return (choice == 0) ? defaultVal : choice != 2;
+    }
+
+    private double getParameter(String parameter, double defaultVal, double min, double max) {
+        double choice = consoleObserver.requestInput("ENTER " + parameter.toUpperCase(),
+                "Enter a value for " + parameter.toLowerCase(), min,
+                max);
+        return ((choice == min - 1.0) ? defaultVal : choice);
+    }
+
+    private int getParameter(String parameter, int defaultVal, int min, int max) {
+        int choice = consoleObserver.requestInput("ENTER " + parameter.toUpperCase(),
+                "Enter a value for " + parameter.toLowerCase(), min,
+                max);
+        return ((choice == min - 1.0) ? defaultVal : choice);
+    }
+
+    public void determineNextRunId() {
+        int nextRunId = PathUtility.determineNextRunId();
+        PathUtility.setRunId(nextRunId);
+        System.out.println("Next RUN ID determined to be: " + nextRunId);
+    }
+}
+**************************************************
+
+File: PerformanceLogger.java
+**************************************************
+package Utilities;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import Exceptions.LoadDataException;
+import Model.Employee;
+import Model.Task;
+
+/**
+ * Class for logging performance metrics during algorithm execution
+ * and generating CSV files for visualisations
+ */
+public class PerformanceLogger {
+
+    // File names for different metrics
+    private static final String SOLUTION_QUALITY_FILE = "solution_quality.csv";
+    private static final String COMPUTATIONAL_EFFICIENCY_FILE = "computational_efficiency.csv";
+    private static final String CONSTRAINT_SATISFACTION_FILE = "constraint_satisfaction.csv";
+
+    // Metrics tracking
+    private final List<IterationData> iterationDataList = new ArrayList<>();
+    private final String algorithmName;
+    private final List<Task> tasks;
+    private final List<Employee> employees;
+
+    // Time tracking
+    private long startTime;
+    private long totalExecutionTime;
+
+
+    /**
+     * Construct a PerformanceLogger for a specific algorithm run.
+     *
+     * @param algorithmName The name of the algorithm being logged
+     * @param tasks The list of tasks in the problem instance
+     * @param employees The list of employees in the problem instance
+     * @param runId The ID of the current run for the algorithm (for averaging)
+     */
+    public PerformanceLogger(String algorithmName, List<Task> tasks, List<Employee> employees, int runId) {
+        this.algorithmName = algorithmName;
+        this.tasks = tasks;
+        this.employees = employees;
+
+        PathUtility.setRunId(runId);
+        PathUtility.createDirectories();
+    }
+
+    /**
+     * Start timing the algorithm execution.
+     */
+    public void startTimer() {
+        this.startTime = System.currentTimeMillis();
+    }
+
+    /**
+     * Stop timing the algorithm execution.
+     */
+    public void stopTimer() {
+        this.totalExecutionTime = System.currentTimeMillis() - startTime;
+    }
+
+    /**
+     * Record metrics for the current iteration.
+     *
+     * @param iteration The current iteration/generation number
+     * @param solution The current best solution
+     * @param cost The cost of the current best solution
+     * @param memoryUsed The memory used (in MB) during this iteration
+     */
+    public void logIteration(int iteration, int[] solution, double cost, double memoryUsed) {
+        long currentTime = System.currentTimeMillis();
+        long elapsedTime = currentTime - startTime;
+
+        // Calculate constraint violations
+        int skillMismatchCount = countSkillMismatches(solution);
+        int overloadCount = countOverloads(solution);
+        int difficultyViolationCount = countDifficultyViolations(solution);
+        int deadlineViolationCount = countDeadlineViolations(solution);
+
+        // Total constraint violations
+        int totalConstraintViolations = skillMismatchCount + overloadCount + difficultyViolationCount + deadlineViolationCount;
+
+        // Create iteration data entry
+        IterationData data = new IterationData(
+                iteration,
+                elapsedTime,
+                cost,
+                memoryUsed,
+                totalConstraintViolations,
+                skillMismatchCount,
+                overloadCount,
+                difficultyViolationCount,
+                deadlineViolationCount
+        );
+
+        iterationDataList.add(data);
+    }
+
+    /**
+     * Count the number of skill mismatches in the solution.
+     */
+    private int countSkillMismatches(int[] solution) {
+        int count = 0;
+        for (Task task : tasks) {
+            int employeeIdx = solution[task.getIdx()];
+            Employee employee = employees.get(employeeIdx);
+            if (!employee.hasSkill(task.getRequiredSkill())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Count the number of employees with overloaded work hours.
+     */
+    private int countOverloads(int[] solution) {
+        Map<String, Integer> employeeWorkload = new HashMap<>();
+
+        // Calculate workload for each employee
+        for (Task task : tasks) {
+            int employeeIdx = solution[task.getIdx()];
+            Employee employee = employees.get(employeeIdx);
+            String employeeId = employee.getId();
+
+            employeeWorkload.put(
+                    employeeId,
+                    employeeWorkload.getOrDefault(employeeId, 0) + task.getEstimatedTime()
+            );
+        }
+
+        // Count overloaded employees
+        int count = 0;
+        for (Employee employee : employees) {
+            int workload = employeeWorkload.getOrDefault(employee.getId(), 0);
+            if (workload > employee.getAvailableHours()) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    /**
+     * Count the number of difficulty level violations.
+     */
+    private int countDifficultyViolations(int[] solution) {
+        int count = 0;
+        for (Task task : tasks) {
+            int employeeIdx = solution[task.getIdx()];
+            Employee employee = employees.get(employeeIdx);
+            if (employee.getSkillLevel() < task.getDifficulty()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Count the number of deadline violations.
+     */
+    private int countDeadlineViolations(int[] solution) {
+        // For each employee, track their current workload time
+        Map<String, Integer> employeeWorkloadTimes = new HashMap<>();
+        int count = 0;
+
+        for (Task task : tasks) {
+            int employeeIdx = solution[task.getIdx()];
+            Employee employee = employees.get(employeeIdx);
+            String employeeId = employee.getId();
+
+            // Initialize workload time if not already present
+            employeeWorkloadTimes.putIfAbsent(employeeId, 0);
+
+            // Get current workload time for the employee
+            int currentWorkloadTime = employeeWorkloadTimes.get(employeeId);
+
+            // Add the task's estimated time to the workload
+            currentWorkloadTime += task.getEstimatedTime();
+
+            // Check if the deadline is violated
+            if (currentWorkloadTime > task.getDeadline()) {
+                count++;
+            }
+
+            // Update the workload time
+            employeeWorkloadTimes.put(employeeId, currentWorkloadTime);
+        }
+
+        return count;
+    }
+
+    /**
+     * Save all logged metrics to CSV files for analysis and visualization.
+     */
+    public void saveMetricsToCSV() {
+        try {
+            saveSolutionQualityData();
+            saveConstraintSatisfactionData();
+            saveComputationalEfficiencyData();
+
+            System.out.println("Performance metrics saved successfully to the 'results' directory.");
+        } catch (IOException e) {
+            System.err.println("Error saving performance metrics: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Save solution quality data (cost vs. iteration/time).
+     */
+    private void saveSolutionQualityData() throws LoadDataException
+    {
+        String filename = PathUtility.getPerformanceDir() + "/" + algorithmName + "_" + SOLUTION_QUALITY_FILE;
+        boolean fileExists = Files.exists(Paths.get(filename));
+        try (FileWriter writer = new FileWriter(filename, true)) {
+            // Write header
+            if(!fileExists)
+            {
+                writer.write("Algorithm,Iteration,costValue\n");
+            }
+
+            for (IterationData data : iterationDataList) {
+                writer.write(String.format("%s,%d,%.2f\n",
+                        algorithmName,
+                        data.iteration,
+                        data.cost
+                ));
+            }
+        } catch (IOException e) {
+            throw new LoadDataException(e.getMessage());
+        }
+    }
+
+    /**
+     * Save constraint satisfaction data (violations vs. iteration/time).
+     */
+    private void saveConstraintSatisfactionData() throws LoadDataException
+    {
+        String filename = PathUtility.getPerformanceDir() + "/" + algorithmName + "_" + CONSTRAINT_SATISFACTION_FILE;
+
+        try (FileWriter writer = new FileWriter(filename, false))
+        {
+            // Write header
+            writer.write("Algorithm,Iteration,TotalConstraintViolations\n");
+
+
+            // Write data rows
+            for (IterationData data : iterationDataList)
+            {
+                writer.write(String.format("%s,%d,%d\n",
+                        algorithmName,
+                        data.iteration,
+                        data.totalConstraintViolations
+                ));
+            }
+        }
+        catch (IOException e) {
+            throw new LoadDataException(e.getMessage());
+        }
+    }
+
+    /**
+     * Append computational efficiency data (runtime/memory vs. algorithm).
+     * This file contains one row per algorithm run.
+     */
+    private void saveComputationalEfficiencyData() throws IOException {
+        String filename = PathUtility.getPerformanceDir() + "/"+ COMPUTATIONAL_EFFICIENCY_FILE;
+        boolean fileExists = Files.exists(Paths.get(filename));
+
+        try (FileWriter writer = new FileWriter(filename, true)) {
+            // Write header
+            if(!fileExists)
+            {
+                writer.write("Algorithm,Iterations,TotalTimeMs,AvgIterationTimeMs\n");
+            }
+
+
+            // Calculate average time per iteration
+            double avgTimePerIteration = (double) totalExecutionTime / iterationDataList.size();
+
+
+            // Write a single row with summary data
+            writer.write(String.format("%s,%d,%.2f\n",
+                    algorithmName,
+                    totalExecutionTime,
+                    avgTimePerIteration
+            ));
+        }
+        catch (IOException e) {
+            throw new LoadDataException(e.getMessage());
+        }
+    }
+
+    /**
+     * Inner class to store data for each iteration.
+     */
+    private static class IterationData {
+        final int iteration;
+        final long elapsedTimeMs;
+        final double cost;
+        final double memoryUsageMB;
+        final int totalConstraintViolations;
+        final int skillMismatchCount;
+        final int overloadCount;
+        final int difficultyViolationCount;
+        final int deadlineViolationCount;
+
+        IterationData(
+                int iteration,
+                long elapsedTimeMs,
+                double cost,
+                double memoryUsageMB,
+                int totalConstraintViolations,
+                int skillMismatchCount,
+                int overloadCount,
+                int difficultyViolationCount,
+                int deadlineViolationCount
+        ) {
+            this.iteration = iteration;
+            this.elapsedTimeMs = elapsedTimeMs;
+            this.cost = cost;
+            this.memoryUsageMB = memoryUsageMB;
+            this.totalConstraintViolations = totalConstraintViolations;
+            this.skillMismatchCount = skillMismatchCount;
+            this.overloadCount = overloadCount;
+            this.difficultyViolationCount = difficultyViolationCount;
+            this.deadlineViolationCount = deadlineViolationCount;
+        }
+    }
+
+    /**
+     * Utility method to get current memory usage in MB.
+     *
+     * @return Current memory usage in MB
+     */
+    public static double getCurrentMemoryUsageMB() {
+        Runtime runtime = Runtime.getRuntime();
+        long totalMemory = runtime.totalMemory();
+        long freeMemory = runtime.freeMemory();
+        long usedMemory = totalMemory - freeMemory;
+
+        return usedMemory / (1024.0 * 1024.0); // Convert bytes to MB
+    }
+}
+**************************************************
+
+File: RandomDataGen.java
+**************************************************
+package Utilities;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+
+import Model.Task;
+import Model.Employee;
+
+public class RandomDataGen {
+    public static class DataSet {
+        public DataSet() {
+            tasks = new ArrayList<>();
+            employees = new ArrayList<>();
+        }
+
+        public List<Task> tasks;
+        public List<Employee> employees;
+
+        @Override
+        public String toString() {
+            String res = "-----TASKS-------";
+            for (Task task : tasks) {
+                res.concat("\n" + task.toString());
+            }
+            res.concat("\n -----EMPLOYEES-------");
+            for (Employee employee : employees) {
+                res.concat("\n" + employee.toString());
+            }
+            return res;
+        }
+    }
+
+    public static void exportTasksToCSV(List<Task> tasks, String filePath) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            writer.write("ID,EstimatedTime,Difficulty,Deadline,RequiredSkill\n");
+            for (Task task : tasks) {
+                writer.write(String.format("%s,%d,%d,%d,%s\n",
+                        task.getId(),
+                        task.getEstimatedTime(),
+                        task.getDifficulty(),
+                        task.getDeadline(),
+                        task.getRequiredSkill()));
+            }
+            System.out.println("Tasks exported to " + filePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void exportEmployeesToCSV(List<Employee> employees, String filePath) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            writer.write("ID,AvailableHours,SkillLevel,Skills\n");
+            for (Employee emp : employees) {
+                writer.write(String.format("%s,%d,%d,\"%s\"\n",
+                        emp.getId(),
+                        emp.getAvailableHours(),
+                        emp.getSkillLevel(),
+                        String.join(" ", emp.getSkills())));
+            }
+            System.out.println("Employees exported to " + filePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    static String[] requiredSkills = new String[] { "A", "B", "C" };
+    static Random rd = new Random();
+
+    static private Set<String> generateRandomSkillSet() {
+        Set<String> skillSet = new HashSet<>();
+        int numSkills = rd.nextInt(requiredSkills.length) + 1;
+        while (skillSet.size() < numSkills) {
+            skillSet.add(requiredSkills[rd.nextInt(requiredSkills.length)]);
+        }
+        return skillSet;
+    }
+
+    public static DataSet generateDataSet(int numOfTasks, int numOfEmployees) {
+        DataSet dataSet = new DataSet();
+
+        for (int i = 0; i < numOfTasks; i++) {
+            String skill = requiredSkills[rd.nextInt(0, requiredSkills.length)];
+            int estimatedTime = rd.nextInt(1, 10);
+            int difficulty = rd.nextInt(1, 10);
+            int deadline = rd.nextInt(1, 30);
+            String id = Integer.toString(i);
+
+            Task newTask = new Task(id, estimatedTime, difficulty, deadline, skill,
+                    i);
+            dataSet.tasks.add(newTask);
+        }
+        for (int i = 0; i < numOfEmployees; i++) {
+            String id = Integer.toString(i);
+            int hours = rd.nextInt(7, 20);
+            int skillLevel = rd.nextInt(1, 10);
+            Set<String> skills = generateRandomSkillSet();
+            Employee newEmployee = new Employee(id, hours, skillLevel, skills, i);
+
+            dataSet.employees.add(newEmployee);
+
+        }
+        System.out.println("Generated");
+        int dirNum = 0;
+        String directory = "out/resources";
+        File runDir;
+        do {
+            runDir = new File(directory, "RandomData(" + dirNum + ")");
+            dirNum++;
+        } while (runDir.exists());
+        runDir.mkdirs();
+
+        directory = runDir.getPath();
+
+        exportEmployeesToCSV(dataSet.employees, directory + "/Employees.csv");
+        exportTasksToCSV(dataSet.tasks, directory + "/Tasks.csv");
+        return dataSet;
+    }
+
+}
+**************************************************
+
+File: PathUtility.java
+**************************************************
+package Utilities;
+
+import java.io.File;
+
+/**
+ * Utility class for managing paths and directories across the application.
+ * Provides a central place for directory path definitions to ensure consistency.
+ */
+public class PathUtility {
+    private static int runId = 1;
+
+    // Base directory
+    private static final String RESULTS_DIR = "results";
+
+    /**
+     * Set the current run ID
+     * @param id The run ID to set
+     */
+    public static void setRunId(int id) {
+        runId = id;
+    }
+
+    /**
+     * Get the current run ID
+     * @return The current run ID
+     */
+    public static int getRunId() {
+        return runId;
+    }
+
+
+    /**
+     * Get the run-specific directory path
+     * @return The run-specific directory path
+     */
+    public static String getRunDir() {
+        return RESULTS_DIR + "/run(" + runId + ")";
+    }
+
+    /**
+     * Get the performance directory path for the current run
+     * @return The performance directory path
+     */
+    public static String getPerformanceDir() {
+        return getRunDir() + "/performance";
+    }
+
+    /**
+     * Get the charts directory path for the current run
+     * @return The charts directory path
+     */
+    public static String getChartsDir() {
+        return getRunDir() + "/charts";
+    }
+
+    /**
+     * Create all necessary directories for the current run
+     */
+    public static void createDirectories() {
+        // Create all directories
+        new File(getRunDir()).mkdirs();
+        new File(getPerformanceDir()).mkdirs();
+        new File(getChartsDir()).mkdirs();
+    }
+
+    /**
+     * Determine the next available run ID by scanning the results directory
+     * @return The next available run ID
+     */
+    public static int determineNextRunId() {
+        File dir = new File(RESULTS_DIR);
+        if (!dir.exists()) {
+            return 1;
+        }
+
+        File[] files = dir.listFiles((d, name) -> name.startsWith("run(") && name.endsWith(")"));
+        if (files == null || files.length == 0) {
+            return 1;
+        }
+
+        int maxRunId = 0;
+        for (File file : files) {
+            String name = file.getName();
+            try {
+                // Extract number between "run(" and ")"
+                int extractedId = Integer.parseInt(name.substring(4, name.length() - 1));
+                maxRunId = Math.max(maxRunId, extractedId);
+            } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                // Skip files with invalid format
+            }
+        }
+
+        return maxRunId + 1;
+    }
+}
+**************************************************
+
+File: FileOutput.java
+**************************************************
+package Utilities;
+
+import Exceptions.ObserverException;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+public class FileOutput implements Observer {
+
+    public boolean isRunAll = false;
+
+    @Override
+    public void update(String messageType, String title, String content) throws ObserverException {
+        if (messageType.equalsIgnoreCase("FILE")) {
+            String uniqueFName = getUniqueFile(title);
+            String[] filepath = uniqueFName.split("/");
+            String fileName = filepath[filepath.length - 1];
+            File f = new File(uniqueFName);
+
+            try (FileWriter fw = new FileWriter(f)) {
+                fw.write(content);
+                System.out.println("\n[SUCCESS] " + "Writing to File:");
+                System.out.println(fileName);
+            } catch (IOException e) {
+                throw new ObserverException("Error writing to file: " + e.getMessage());
+            }
+        }
+        if(messageType.equalsIgnoreCase("ISRUNALL")) {
+            isRunAll = !title.equalsIgnoreCase("false");
+            int currentRunId = Integer.parseInt(content);
+            PathUtility.setRunId(currentRunId);
+        }
+    }
+
+    public String getUniqueFile(String title) {
+
+        String directory = PathUtility.getRunDir();
+        String extension = ".txt";
+        // Ensure the directory exists
+        File dir = new File(directory);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+
+        int counter = 1;
+        Path path;
+        String fileName;
+
+        do {
+            fileName = directory + "/" + title + (counter == 0 ? "" : "(" + counter + ")") + extension;
+            path = Paths.get(fileName);
+            counter++;
+        } while (Files.exists(path));
+
+        return fileName;
+    }
+
+
+    @Override
+    public String getFinalSolution(int[] solution, double cost, int generation, boolean feasible)
+            throws ObserverException {
+        return "";
+    }
+}
+**************************************************
+
+File: Initialise.java
+**************************************************
+package Utilities;
+
+import Model.Employee;
+import Model.Task;
+
+import java.util.List;
+import java.util.Random;
+
+/**
+ * Utility class for generating an initial population at random
+ *
+ */
+public class Initialise
+{
+
+    /**
+     * Gets a random index from the range of employee indexes
+     *
+     * @param size the size of employee list
+     * @return random index from 0 to employee size
+     */
+
+    public static int getRandomEmployeeIndex(int size)
+    {
+        return new Random().nextInt(size);
+    }
+
+    /**
+     * Generates population at random from data
+     *
+     * @param employees      the list of employees
+     * @param tasks          the list of tasks
+     * @param populationSize the total number of solutions in the population
+     * @return random initial population as int[][] array
+     */
+
+    public static int[][] getInitialPopulation(List<Employee> employees, List<Task> tasks, int populationSize)
+    {
+        int[][] population = new int[populationSize][tasks.size()];
+        for (int i = 0; i < populationSize; i++)
+        {
+            // Randomly assign each task to an employee
+            for (Task task : tasks)
+            {
+                population[i][task.getIdx()] = getRandomEmployeeIndex(employees.size());
+            }
+        }
+        return population;
+    }
+}
+**************************************************
+
+File: DataGenerator.java
+**************************************************
+package Utilities;
+
+import Exceptions.LoadDataException;
+import Model.Task;
+import Model.Employee;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.Arrays;
+
+/**
+ * Utility class for generating or loading task and employee data.
+ */
+public class DataGenerator {
+
+    private static final String RESOURCES_DIR = "out/resources/";
+
+    /**
+     * Loads task data from a CSV file.
+     *
+     * @param filename Path to the CSV file (just the filename)
+     * @return List of Task objects
+     * @throws LoadDataException If an I/O error occurs
+     */
+    public static List<Task> loadTasks(String filename) throws LoadDataException {
+        List<Task> tasks = new ArrayList<>();
+
+        // Strip any leading slash for consistency
+        String sanitizedFilename = filename.startsWith("/") ? filename.substring(1) : filename;
+
+        // Just use the filename part if a full path was given
+        String actualFilename = new File(sanitizedFilename).getName();
+
+        File file = new File(RESOURCES_DIR + actualFilename);
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            // Skip header
+            String line = reader.readLine();
+
+            int idx = 0;
+
+            // Read data lines
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split(",");
+                if (data.length == 5) {
+                    String id = data[0].trim();
+                    int estimatedTime = Integer.parseInt(data[1].trim());
+                    int difficulty = Integer.parseInt(data[2].trim());
+                    int deadline = Integer.parseInt(data[3].trim());
+                    String requiredSkill = data[4].trim();
+
+                    Task task = new Task(id, estimatedTime, difficulty, deadline, requiredSkill, idx);
+                    tasks.add(task);
+                    idx++;
+                } else {
+                    throw new LoadDataException("Invalid task line: " + line);
+                }
+            }
+        } catch (FileNotFoundException e) {
+            throw new LoadDataException("Task file not found: " + file.getAbsolutePath());
+        } catch (IOException e) {
+            throw new LoadDataException("Error reading task data: " + e.getMessage());
+        }
+
+        return tasks;
+    }
+
+    /**
+     * Loads employee data from a CSV file.
+     *
+     * @param filename Path to the CSV file (just the filename)
+     * @return List of Employee objects
+     * @throws LoadDataException If an I/O error occurs
+     */
+    public static List<Employee> loadEmployees(String filename) throws LoadDataException {
+        List<Employee> employees = new ArrayList<>();
+
+        // Strip any leading slash for consistency
+        String sanitizedFilename = filename.startsWith("/") ? filename.substring(1) : filename;
+
+        // Just use the filename part if a full path was given
+        String actualFilename = new File(sanitizedFilename).getName();
+
+        File file = new File(RESOURCES_DIR + actualFilename);
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            // Skip header line
+            String line = reader.readLine();
+
+            int idx = 0;
+            // Read data lines
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split(",");
+                if (data.length == 4) {
+                    String id = data[0].trim();
+                    int availableHours = Integer.parseInt(data[1].trim());
+                    int skillLevel = Integer.parseInt(data[2].trim());
+
+                    // Parse skills
+                    String skillsStr = data[3].trim();
+                    String[] skillsArray = skillsStr.split(" ");
+                    Set<String> skills = new HashSet<>(Arrays.asList(skillsArray));
+
+                    Employee employee = new Employee(id, availableHours, skillLevel, skills, idx);
+                    employees.add(employee);
+                    idx++;
+                } else {
+                    throw new LoadDataException("Invalid employee line: " + line);
+                }
+            }
+        } catch (FileNotFoundException e) {
+            throw new LoadDataException("Employee file not found: " + file.getAbsolutePath());
+        } catch (IOException e) {
+            throw new LoadDataException("Error reading employee data: " + e.getMessage());
+        }
+
+        return employees;
+    }
+
+    /**
+     * Scan and return a list of all csv files in the resources folder.
+     *
+     * @return List of file paths found
+     * @throws LoadDataException If no files found
+     */
+    public static List<String> getResourceFiles() throws LoadDataException {
+        List<String> fileNames = new ArrayList<>();
+
+        File resourceDir = new File(RESOURCES_DIR);
+        if (!resourceDir.exists()) {
+            throw new LoadDataException("Resources directory not found: " + resourceDir.getAbsolutePath());
+        }
+
+        File[] files = resourceDir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile() && file.getName().endsWith(".csv")) {
+                    System.out.println("Adding: " + file.getPath());
+                    fileNames.add(file.getPath());
+                }
+                if(file.isDirectory())
+                {
+                    File[] subDir = file.listFiles();
+                    if (subDir != null) {
+                        for (File subFile : subDir) {
+                            fileNames.add(subFile.getPath());
+                        }
+                    }
+                }
+            }
+        }
+
+        if (fileNames.isEmpty()) {
+            throw new LoadDataException("No CSV files found in resources directory.");
+        }
+
+        return fileNames;
+    }
+}
+**************************************************
+
+File: Observer.java
+**************************************************
+package Utilities;
+
+import Exceptions.ObserverException;
+
+public interface Observer {
+    /**
+     * Update method called when a subject changes its state.
+     *
+     * @param messageType The type of message being sent (e.g., "INFO", "ERROR", "MENU")
+     * @param title       The title of the message
+     * @param content     The content or body of the message
+     */
+    void update(String messageType, String title, String content) throws ObserverException;
+
+    /**Format the final solution for reporting
+     * @param solution The best solution found
+     * @param cost The cost of the best solution
+     * @param generation The final iteration/generation count
+     * @param isFeasible Whether the solution is feasible
+     * @return A formatted string representing the final solution
+     */
+    String getFinalSolution(int[] solution, double cost, int generation, boolean isFeasible) throws ObserverException;
+
+}
+**************************************************
+
+File: AlgorithmFactory.java
+**************************************************
+package Factories;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import Algorithms.*;
+import Model.Employee;
+import Model.Task;
+import Utilities.Observer;
+
+/**
+ * Creates and returns a registered an algorithm
+ */
+public class AlgorithmFactory {
+
+    private final List<Task> tasks;
+    private final List<Employee> employees;
+    private final List<Observer> observers;
+
+    public AlgorithmFactory(List<Task> tasks, List<Employee> employees, List<Observer> observers) {
+        this.tasks = tasks;
+        this.employees = employees;
+        this.observers = observers;
+    }
+
+    public GeneticAlg createGeneticAlgorithm(Integer populationSize, Double crossoverRate, Double mutationRate,
+            Integer elitismCount, Integer maxGenerations, Integer reportingFrequency, Boolean fileOutput, int runId) {
+        GeneticAlg ga = new GeneticAlg(tasks, employees, populationSize, crossoverRate, mutationRate,
+                elitismCount, maxGenerations, reportingFrequency, fileOutput, runId);
+        for (Observer observer : observers) {
+            ga.registerObserver(observer);
+        }
+        return ga;
+    }
+
+    public ParticleSwarmAlg createParticleSwarm(Integer populationSize, Integer maxIterations, double c1, double c2,
+            double w,
+            Integer reportingFrequency, Boolean fileOutput, int runId) {
+        ParticleSwarmAlg ps = new ParticleSwarmAlg(tasks, employees, populationSize, maxIterations, c1, c2, w,
+                reportingFrequency, fileOutput, runId);
+        for (Observer observer : observers) {
+            ps.registerObserver(observer);
+        }
+        return ps;
+
+    }
+
+    public AntColAlg createAntColonyOptimisation(Integer numAnts, Double pherDecayRate, Double initPheromone,
+            Integer maxIterations, Integer reportingFrequency, Boolean fileOutput, int runId) {
+        AntColAlg aco = new AntColAlg(tasks, employees, numAnts, pherDecayRate, initPheromone, maxIterations,
+                reportingFrequency, fileOutput, runId);
+        for (Observer observer : observers) {
+            aco.registerObserver(observer);
+        }
+        return aco;
+    }
+
+    public Map<String, AbstractOptimisationAlgorithm> createStandardisedAlgorithms(Integer populationSize,
+            Integer maxIterations,
+            Integer reportingFrequency, Boolean fileOutput,
+            Double pherDecayRate, Double initPheromone,
+            Double crossoverRate, Double mutationRate,
+            Integer elitismCount, Double c1, Double c2, Double w, int runID) {
+        Map<String, AbstractOptimisationAlgorithm> algos = new HashMap<>();
+        algos.put("GeneticAlg", createGeneticAlgorithm(populationSize, crossoverRate, mutationRate, elitismCount,
+                maxIterations, reportingFrequency, fileOutput, runID));
+        algos.put("ParticleSwarmAlg",
+                createParticleSwarm(populationSize, maxIterations, c1, c2, w, reportingFrequency, fileOutput, runID));
+        algos.put("AntColonyAlg", createAntColonyOptimisation(populationSize, pherDecayRate, initPheromone,
+                maxIterations, reportingFrequency, fileOutput, runID));
+        return algos;
+    }
+}
+**************************************************
+
+File: Main.java
+**************************************************
+import Controller.MenuController;
+import Utilities.FileOutput;
+import View.ConsoleObserver;
+
+public class Main
+{
+    public static void main(String[] args)
+    {
+        try
+        {
+            ConsoleObserver consoleObserver = new ConsoleObserver();
+            FileOutput fileOutput = new FileOutput();
+
+            MenuController menuController = new MenuController(consoleObserver, fileOutput);
+            menuController.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+}
+**************************************************
+
+File: Task.java
+**************************************************
+package Model;
+
+public class Task
+{
+    private final String id;
+    private final int estimatedTime;  // in hours
+    private final int difficulty;     // skill level required
+    private final int deadline;       // hours from now
+    private final String requiredSkill;
+    private final int idx;
+
+
+    public Task(String id, int estimatedTime, int difficulty, int deadline, String requiredSkill, int idx) {
+        this.id = id;
+        this.estimatedTime = estimatedTime;
+        this.difficulty = difficulty;
+        this.deadline = deadline;
+        this.requiredSkill = requiredSkill;
+        this.idx = idx;
+    }
+
+    public int getIdx()
+    {
+        return idx;
+    }
+
+    public String getId()
+    {
+        return id;
+    }
+
+    public int getEstimatedTime() {
+        return estimatedTime;
+    }
+
+    public int getDifficulty() {
+        return difficulty;
+    }
+
+    public int getDeadline() {
+        return deadline;
+    }
+
+    public String getRequiredSkill() {
+        return requiredSkill;
+    }
+
+    @Override
+    public String toString() {
+        return "Task{" +
+                "id='" + id + '\'' +
+                ", estimatedTime=" + estimatedTime +
+                ", difficulty=" + difficulty +
+                ", deadline=" + deadline +
+                ", requiredSkill='" + requiredSkill + '\'' +
+                '}';
+    }
+}
+
+**************************************************
+
+File: Employee.java
+**************************************************
+package Model;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+public class Employee
+{
+    private final String id;
+    private final int availableHours;
+    private final int skillLevel;
+    private final Set<String> skills;
+    private final int idx;
+
+    public Employee(String ID, int hours, int skillLevel, Set<String> skills, int idx)
+    {
+        this.id = ID;
+        this.availableHours = hours;
+        this.skillLevel = skillLevel;
+        this.skills = new HashSet<>(skills);
+        this.idx = idx;
+    }
+
+    public int getIdx(){
+        return idx;
+    }
+
+    public String getId()
+    {
+        return id;
+    }
+
+    public int getAvailableHours()
+    {
+        return availableHours;
+    }
+
+    public int getSkillLevel()
+    {
+        return skillLevel;
+    }
+
+    public Set<String> getSkills()
+    {
+        return Collections.unmodifiableSet(skills);
+    }
+
+    public boolean hasSkill(String skill)
+    {
+        return skills.contains(skill);
+    }
+
+
+    @Override
+    public String toString() {
+        return "Employee{" +
+                "id='" + id + '\'' +
+                ", availableHours=" + availableHours +
+                ", skillLevel=" + skillLevel +
+                ", skill/s=" + skills +
+                '}';
+    }
+
+}
+**************************************************
+
+File: PerformanceVisualiser.java
+**************************************************
+package View;
+
+import Exceptions.LoadDataException;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartUtils;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYAreaRenderer;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.chart.title.TextTitle;
+import org.jfree.chart.axis.NumberAxis;
+
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Font;
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * Class for visualizing algorithm performance metrics.
+ * Used for generating charts and graphs for the comparative analysis
+ * of different optimization algorithms.
+ */
+public class PerformanceVisualiser {
+
+    public PerformanceVisualiser() {
+        // Set the headless property to true - no gui needed
+        System.setProperty("java.awt.headless", "true");
+    }
+
+    /**
+     * Creates a comparative performance chart for multiple algorithms.
+     *
+     * @param title          The title of the chart
+     * @param xLabel         The label for the x-axis
+     * @param yLabel         The label for the y-axis
+     * @param algorithmNames List of algorithm names
+     * @param dataPoints     List of series data points for each algorithm
+     * @param outputPath     The file path where the chart will be saved
+     */
+    public void createComparisonChart(String title, String xLabel, String yLabel,
+                                      List<String> algorithmNames, List<List<double[]>> dataPoints, String outputPath) throws LoadDataException
+    {
+
+        XYSeriesCollection dataset = new XYSeriesCollection();
+
+        // Validate input data
+        if (algorithmNames.size() != dataPoints.size())
+        {
+            throw new LoadDataException("Mismatch between algorithm names and data points");
+        }
+
+        // Create series for each algorithm
+        for (int i = 0; i < algorithmNames.size(); i++)
+        {
+            String algorithmName = algorithmNames.get(i);
+            List<double[]> points = dataPoints.get(i);
+
+            System.out.println("Algorithm: " + algorithmName + ", Points: " + points.size());
+
+            XYSeries series = new XYSeries(algorithmName);
+            boolean hasValidData = false;
+
+            for (double[] point : points)
+            {
+                if (point.length < 2)
+                {
+                    throw new LoadDataException("Invalid data point for "+ algorithmName+ ": to few values at point "+ Arrays.toString(point));
+                }
+
+                double x = point[0];
+                double y = point[1];
+
+                if (!Double.isFinite(x) || !Double.isFinite(y))
+                {
+                   throw new LoadDataException("Non-finite value in data for " + algorithmName +
+                            ": [" + x + ", " + y + "]");
+                }
+
+                // Add the point and mark that we have valid data
+                series.add(x, y);
+                hasValidData = true;
+            }
+
+            if (hasValidData)
+            {
+                dataset.addSeries(series);
+            }
+            else
+            {
+                throw new LoadDataException("No valid data points for algorithm " + algorithmName);
+            }
+        }
+
+        try
+        {
+            JFreeChart chart = ChartFactory.createXYLineChart(
+                    title,
+                    xLabel,
+                    yLabel,
+                    dataset,
+                    PlotOrientation.VERTICAL,
+                    true,
+                    true,
+                    false
+            );
+
+            customizeChart(chart);
+
+            // Customize line colors for different algorithms
+            XYPlot plot = chart.getXYPlot();
+            XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
+
+            // Define colors for different algorithms
+            Color[] colors = {Color.RED, Color.BLUE, Color.GREEN};
+
+            for (int i = 0; i < dataset.getSeriesCount(); i++)
+            {
+                renderer.setSeriesPaint(i, colors[i % colors.length]);
+                renderer.setSeriesStroke(i, new BasicStroke(2.0f));
+                renderer.setSeriesShapesVisible(i, true);
+            }
+
+            plot.setRenderer(renderer);
+
+            // Ensure the range doesn't include infinity or NaN
+            NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
+            rangeAxis.setAutoRangeIncludesZero(true);
+            rangeAxis.setAutoRange(true);
+
+            // Ensure domain axis also has proper range
+            NumberAxis domainAxis = (NumberAxis) plot.getDomainAxis();
+            domainAxis.setAutoRange(true);
+
+            saveChart(outputPath, chart);
+        }
+        catch (Exception e)
+        {
+            throw new LoadDataException(e.getMessage());
+        }
+
+    }
+
+    public void createComparisonChartWithVariability(String title, String xLabel, String yLabel,
+                                                     List<String> algorithmNames,
+                                                     List<List<double[]>> avgData,
+                                                     List<List<double[]>> stdDevData,
+                                                     String outputPath) throws LoadDataException
+    {
+        // Create dataset with main series
+        XYSeriesCollection dataset = getXySeriesCollection(algorithmNames, avgData, stdDevData);
+
+        // Create chart with shaded areas for standard deviation
+        JFreeChart chart = ChartFactory.createXYLineChart(
+                title, xLabel, yLabel, dataset, PlotOrientation.VERTICAL, true, true, false);
+
+        // Customize renderer to show shaded areas
+        XYPlot plot = chart.getXYPlot();
+        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
+
+        // For each algorithm
+        for (int i = 0; i < algorithmNames.size(); i++) {
+            int mainIndex = i * 3;
+            int upperIndex = mainIndex + 1;
+            int lowerIndex = mainIndex + 2;
+
+            // Main line
+            renderer.setSeriesVisible(mainIndex, true);
+            renderer.setSeriesShapesVisible(mainIndex, false);
+            renderer.setSeriesStroke(mainIndex, new BasicStroke(2.0f));
+
+            // Upper and lower bounds - make invisible
+            renderer.setSeriesVisible(upperIndex, false);
+            renderer.setSeriesVisible(lowerIndex, false);
+
+            // Add shaded area between upper and lower
+            plot.setRenderer(renderer);
+
+            // Create dataset for area
+            XYSeriesCollection areaDataset = new XYSeriesCollection();
+            areaDataset.addSeries(dataset.getSeries(upperIndex));
+            areaDataset.addSeries(dataset.getSeries(lowerIndex));
+
+            // Add area renderer
+            XYAreaRenderer areaRenderer = new XYAreaRenderer();
+            areaRenderer.setOutline(true);
+            plot.setDataset(i + 1, areaDataset);
+            plot.setRenderer(i + 1, areaRenderer);
+        }
+
+        saveChart(outputPath, chart);
+    }
+
+    private XYSeriesCollection getXySeriesCollection(List<String> algorithmNames, List<List<double[]>> avgData, List<List<double[]>> stdDevData)
+    {
+        XYSeriesCollection dataset = new XYSeriesCollection();
+
+        for (int i = 0; i < algorithmNames.size(); i++) {
+            String algorithmName = algorithmNames.get(i);
+            List<double[]> points = avgData.get(i);
+            List<double[]> stdDev = stdDevData.get(i);
+
+            XYSeries mainSeries = new XYSeries(algorithmName);
+            XYSeries upperSeries = new XYSeries(algorithmName + " Upper");
+            XYSeries lowerSeries = new XYSeries(algorithmName + " Lower");
+
+            for (int j = 0; j < points.size(); j++) {
+                double x = points.get(j)[0];
+                double y = points.get(j)[1];
+                double dev = stdDev.get(j)[1];
+
+                mainSeries.add(x, y);
+                upperSeries.add(x, y + dev);
+                lowerSeries.add(x, y - dev);
+            }
+
+            dataset.addSeries(mainSeries);
+            dataset.addSeries(upperSeries);
+            dataset.addSeries(lowerSeries);
+        }
+        return dataset;
+    }
+
+
+    /**
+     * Customizes the appearance of a chart.
+     *
+     * @param chart The JFreeChart to customize
+     */
+    private void customizeChart(JFreeChart chart) {
+        // Set the background color
+        chart.setBackgroundPaint(Color.WHITE);
+
+        // Customize the title
+        chart.setTitle(new TextTitle(chart.getTitle().getText(),
+                new Font("Serif", Font.BOLD, 18)));
+
+        // Customize the plot
+        XYPlot plot = chart.getXYPlot();
+        plot.setBackgroundPaint(new Color(240, 240, 240));
+        plot.setDomainGridlinePaint(Color.GRAY);
+        plot.setRangeGridlinePaint(Color.GRAY);
+
+        // Customize the axes
+        NumberAxis domainAxis = (NumberAxis) plot.getDomainAxis();
+        domainAxis.setLabelFont(new Font("SansSerif", Font.BOLD, 14));
+
+        NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
+        rangeAxis.setLabelFont(new Font("SansSerif", Font.BOLD, 14));
+    }
+
+    /**
+     * Creates a bar chart for comparing computational efficiency across algorithms.
+     *
+     * @param title          The title of the chart
+     * @param xLabel         The label for the x-axis
+     * @param yLabel         The label for the y-axis
+     * @param algorithmNames List of algorithm names
+     * @param runtimeValues  List of runtime values for each algorithm
+     * @param outputPath     The file path where the chart will be saved
+     */
+    public void createEfficiencyBarChart(String title, String xLabel, String yLabel,
+                                           List<String> algorithmNames, List<Double> runtimeValues, String outputPath) throws LoadDataException
+    {
+        // Print debug information
+        System.out.println("Creating efficiency bar chart: " + title);
+        System.out.println("Number of algorithms: " + algorithmNames.size());
+
+        // Validate input
+        if (algorithmNames.isEmpty() || runtimeValues.isEmpty())
+        {
+            throw new LoadDataException("Empty algorithm names or runtime values");
+        }
+
+        if (algorithmNames.size() != runtimeValues.size())
+        {
+            throw new LoadDataException("Mismatch between algorithm names and runtime values");
+        }
+
+        DefaultCategoryDataset dataset = getCategoryDataset(algorithmNames, runtimeValues);
+
+        try
+        {
+            // Create chart
+            JFreeChart chart = ChartFactory.createBarChart(
+                    title,
+                    xLabel,
+                    yLabel,
+                    dataset,
+                    PlotOrientation.VERTICAL,
+                    true,
+                    true,
+                    false
+            );
+
+            // Customize the chart
+            chart.setBackgroundPaint(Color.WHITE);
+            chart.getTitle().setFont(new Font("Serif", Font.BOLD, 18));
+
+            // Customize the plot
+            org.jfree.chart.plot.CategoryPlot plot = chart.getCategoryPlot();
+            plot.setBackgroundPaint(new Color(240, 240, 240));
+            plot.setDomainGridlinePaint(Color.GRAY);
+            plot.setRangeGridlinePaint(Color.GRAY);
+
+            // Customize bars
+            org.jfree.chart.renderer.category.BarRenderer renderer = (org.jfree.chart.renderer.category.BarRenderer) plot.getRenderer();
+            renderer.setSeriesPaint(0, Color.BLUE);
+            renderer.setDrawBarOutline(false);
+            renderer.setItemMargin(0.1);
+
+            // Customize axis
+            org.jfree.chart.axis.CategoryAxis domainAxis = plot.getDomainAxis();
+            domainAxis.setCategoryMargin(0.2);
+            domainAxis.setLabelFont(new Font("SansSerif", Font.BOLD, 14));
+
+            // Ensure range includes zero but avoids infinity
+            NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
+            rangeAxis.setAutoRangeIncludesZero(true);
+            rangeAxis.setLabelFont(new Font("SansSerif", Font.BOLD, 14));
+
+            saveChart(outputPath, chart);
+            System.out.println("Successfully created chart: " + outputPath);
+        }
+        catch (Exception e)
+        {
+            System.out.println("Error creating chart: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private DefaultCategoryDataset getCategoryDataset(List<String> algorithmNames, List<Double> runtimeValues)
+    {
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
+        for (int i = 0; i < algorithmNames.size(); i++)
+        {
+            String algorithm = algorithmNames.get(i);
+            Double runtime = runtimeValues.get(i);
+
+
+            if (runtime != null && Double.isFinite(runtime))
+            {
+                dataset.addValue(runtime, "Runtime", algorithm);
+            }
+            else
+            {
+                throw new LoadDataException("Non-finite runtime value for " + algorithm + ": " + runtime);
+            }
+        }
+        return dataset;
+    }
+
+    private void saveChart(String outputPath,  JFreeChart chart) throws LoadDataException {
+        try {
+            File outputFile = new File(outputPath);
+            // Create directories if they don't exist
+            File parent = outputFile.getParentFile();
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs();
+            }
+
+            ChartUtils.saveChartAsPNG(outputFile, chart, 800, 600);
+        } catch (IOException e) {
+            throw new LoadDataException("Error saving chart: " + e.getMessage());
+        }
+    }
+}
+**************************************************
+
+File: ConsoleObserver.java
+**************************************************
+package View;
+
+import Algorithms.CostCalculator;
+import Model.Employee;
+import Model.Task;
+import Utilities.Observer;
+import Exceptions.ObserverException;
+
+import java.util.*;
+
+public class ConsoleObserver implements Observer
+{
+
+    /**
+     * Class for displaying formatted results to console
+     */
+    List<Employee> employeeList;
+    List<Task> taskList;
+    private final Scanner sc;
+    private final Map<String, String> loadedData;
+    private final int DIV_LENGTH = 60;
+
+    /**
+     * Constructor for the ConsoleObserver.
+     */
+    public ConsoleObserver() {
+        this.sc = new Scanner(System.in);
+        this.loadedData = new HashMap<>();
+        this.loadedData.put("Employees", "none");
+        this.loadedData.put("Tasks", "none");
+    }
+
+
+
+    @Override
+    public void update(String messageType, String title, String content)
+    {
+        switch (messageType)
+        {
+            case "MENU" -> displayMenu(title, content);
+            case "INFO" -> displayInfo(title, content);
+            case "ERROR" -> displayError(title, content);
+            case "SUCCESS" -> displaySuccess(title, content);
+        }
+    }
+
+    /**
+     * @param title The title of the input request
+     * @param prompt  The prompt to display to the user
+     * @param options The options the user can choose from
+     * @return the user choice
+     */
+
+    public int requestInput(String title,  String prompt, String[] options) {
+        int userInput;
+        int max = options.length;
+        StringBuilder menuString = new StringBuilder();
+        for (int i = 1; i < max; i++)
+        {
+            menuString.append(i).append(". ").append(options[i]).append("\n");
+        }
+        if (options[0] != null)
+        {
+            menuString.append("0. ").append(options[0]).append("\n");
+        }
+        menuString.append("Select and integer between (0-").append(max-1).append("): ");
+        String menuStr = menuString.toString();
+        while (true) {
+            try {
+                displayMenu(title, prompt);
+                System.out.println(menuStr);
+
+                while (!sc.hasNextInt()) {
+                    displayError("Invalid selection", "Please enter an integer.");
+                    displayMenu(title, prompt);
+                    System.out.print(menuStr);
+                    sc.nextLine();
+                }
+                userInput = sc.nextInt();
+                if ((userInput < 0 || userInput >= max)) {
+                    throw new IllegalArgumentException("Integer must be within 0 -> " + (max-1));
+                }
+                return userInput;
+            } catch (InputMismatchException e) {
+                displayError("Invalid selection", "Please enter an integer.");
+            } catch (IllegalArgumentException e) {
+                displayError("Invalid selection", e.getMessage());
+            }
+        }
+    }
+
+    public double requestInput(String title, String prompt, double min, double max) {
+        double userInput;
+
+        String menuStr =  "Select a decimal between " + min + " and " + max + ":\n";
+        while (true) {
+            try {
+                displayMenu(title, prompt);
+                System.out.println(menuStr);
+
+                while (!sc.hasNextDouble()) {
+                    displayError("Invalid selection", "Please enter a decimal.");
+                    displayMenu(title, prompt);
+                    System.out.print(menuStr);
+                    sc.nextLine();
+                }
+                userInput = sc.nextDouble();
+                if ((userInput < min || userInput > max)) {
+                    throw new IllegalArgumentException("Decimal must be within " + min + " -> " + max);
+                }
+                return userInput;
+            } catch (InputMismatchException e) {
+                displayError("Invalid selection", "Please enter a decimal.");
+            } catch (IllegalArgumentException e) {
+                displayError("Invalid selection", e.getMessage());
+            }
+        }
+    }
+
+    public int requestInput(String title, String prompt, int min, int max) {
+        int userInput;
+        String menuStr =  "Select an integer between " + min + " and " + max + ":\n";
+        while (true)
+        {
+            try {
+                displayMenu(title, prompt);
+                System.out.println(menuStr);
+
+                while (!sc.hasNextInt()) {
+                    displayError("Invalid selection", "Please enter an integer.");
+                    displayMenu(title, prompt);
+                    System.out.print(menuStr);
+                    sc.nextLine();
+                }
+                userInput = sc.nextInt();
+                if ((userInput < min || userInput > max)) {
+                    throw new IllegalArgumentException("Integer must be within " + min + " -> " + max);
+                }
+                return userInput;
+            } catch (InputMismatchException e) {
+                displayError("Invalid selection", "Please enter an integer.");
+            } catch (IllegalArgumentException e) {
+                displayError("Invalid selection", e.getMessage());
+            }
+        }
+    }
+
+
+    public void displayData(String dataType, Object data)
+    {
+        if (dataType.equals("TASKS") && data instanceof List<?>) {
+            this.taskList = (List<Task>) data;
+            System.out.println(getTaskTable());
+        } else if (dataType.equals("EMPLOYEES") && data instanceof List<?>) {
+            this.employeeList = (List<Employee>) data;
+            System.out.println(getEmployeeTable());
+        } else if (dataType.equals("SOLUTION") && data instanceof int[]) {
+            System.out.println(getSolutionTable((int[]) data));
+        } else if (dataType.equals("POPULATION") && data instanceof int[][]) {
+            System.out.println(getPopulationTable((int[][]) data));
+        } else if (dataType.equals("ALL_DATA")) {
+            System.out.println(getTaskTable() + "\n" + getEmployeeTable());
+        }
+    }
+
+
+    @Override
+    public String getFinalSolution(int[] solution, double cost, int generation, boolean feasible) throws ObserverException
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append( "\nGeneration: ").append(generation).append(" \n");
+        sb.append("Total cost: ").append(String.format("%.2f\n", cost));
+        sb.append("Feasible Solution: ").append(feasible).append("\n\n");
+
+        sb.append(getSolutionTable(solution)).append("\n");
+
+        sb.append("\nWorkload Distribution:\n");
+
+        for (Employee employee : employeeList)
+        {
+            String employeeId = employee.getId();
+            int totalTime = CostCalculator.calculateEmployeeWorkload(solution, taskList, employeeList, employeeId);
+
+            sb.append("  Employee ").append(employeeId)
+                    .append(": ").append(totalTime)
+                    .append(" / ").append(employee.getAvailableHours())
+                    .append(" hours (")
+                    .append(String.format("%.1f", (double) totalTime / employee.getAvailableHours() * 100))
+                    .append("%)");
+
+            if (totalTime > employee.getAvailableHours())
+            {
+                sb.append(" - OVERLOADED");
+            }
+
+            sb.append("\n");
+        }
+
+        // Print penalty breakdown
+        sb.append("\nPenalty Breakdown:\n");
+        double overloadPenalty = CostCalculator.calculateOverloadPenalty(solution, taskList, employeeList);
+
+
+        double skillMismatchPenalty = CostCalculator.calculateSkillMismatchPenalty(solution, taskList, employeeList);
+        double deadlineViolationPenalty = CostCalculator.calculateDeadlineViolationPenalty(solution, taskList, employeeList);
+
+        sb.append("  Overload Penalty: ").append(String.format("%.2f", overloadPenalty)).append("\n");
+        sb.append("  Skill Mismatch Penalty: ").append(String.format("%.2f", skillMismatchPenalty)).append("\n");
+        sb.append("  Deadline Violation Penalty: ").append(String.format("%.2f", deadlineViolationPenalty)).append("\n");
+
+
+        return sb.toString();
+    }
+
+    /**
+     * Update the loaded data status.
+     *
+     * @param dataType The type of data ("Employees" or "Tasks")
+     * @param filename The filename that was loaded
+     */
+    public void updateLoadedData(String dataType, String filename) {
+        this.loadedData.put(dataType.toLowerCase(), filename);
+    }
+
+    /**
+     * Get the current loaded data status.
+     *
+     * @return A string representation of the loaded data
+     */
+    public String getLoadedDataStatus() {
+        return "Loaded: Employees: " +
+                (loadedData.get("employees") == null ? "None" : loadedData.get("employees")) +
+                ", Tasks: "+ (loadedData.get("tasks") == null ? "None" : loadedData.get("tasks"));
+    }
+
+    /**
+     * Display a menu to the user.
+     *
+     * @param title The menu title
+     * @param content The menu content
+     */
+    private void displayMenu(String title, String content) {
+        System.out.println("\n" + centerString(title, DIV_LENGTH, true));
+        if (content != null && !content.isEmpty()) {
+            System.out.println(content);
+        }
+    }
+
+    /**
+     * Display info message.
+     *
+     * @param title The info title
+     * @param content The info content
+     */
+    private void displayInfo(String title, String content) {
+        System.out.println("\n" + centerString(title, DIV_LENGTH, false));
+        System.out.println(content);
+    }
+
+    /**
+     * Display error message.
+     *
+     * @param title The error title
+     * @param content The error content
+     */
+    private void displayError(String title, String content) {
+        System.out.println("\n \n[ERROR] " + title);
+        System.out.println(content);
+    }
+
+    /**
+     * Display success message.
+     *
+     * @param title The success title
+     * @param content The success content
+     */
+    private void displaySuccess(String title, String content) {
+        System.out.println("\n[SUCCESS] " + title);
+        System.out.println(content);
+    }
+
+    // CREATORS
+
+    /**
+     * Creates a table of all employees
+     * @return String of employee table and stats
+     */
+    public String getEmployeeTable()
+    {
+        StringBuilder sb = new StringBuilder();
+
+        int idWidth = 4;
+        int idxWidth = 5;
+        int hoursWidth = 7;
+        int skillLvlWidth= 11;
+        int skillsWidth = 12;
+
+        sb.append(centerString("EMPLOYEES", DIV_LENGTH, true)+"\n");
+
+        String horizontalLine = "_".repeat(45);
+
+        sb.append(horizontalLine+"\n");
+        sb.append("| ID | IDX | HOURS | SKILL LVL |   SKILLS   |\n");
+        sb.append(horizontalLine+"\n");
+
+        for(Employee employee : employeeList)
+        {
+            String id = centerString(employee.getId(), idWidth, false);
+            String idx = centerString(Integer.toString(employee.getIdx()), idxWidth, false);
+            String hours = centerString(Integer.toString(employee.getAvailableHours()), hoursWidth, false);
+            String skillLvl = centerString(Integer.toString(employee.getSkillLevel()), skillLvlWidth, false);
+            String skills = centerString(employee.getSkills().toString(), skillsWidth, false);
+
+            sb.append("|"+id+"|"+idx+"|"+hours+"|"+skillLvl+"|"+skills+"|\n");
+        }
+        sb.append(horizontalLine+"\n");
+
+        return sb.toString();
+    }
+
+    /**
+     * Creates a table of all tasks
+     * @return String of task table and stats
+     */
+
+    public String getTaskTable()
+    {
+        String horizontalLine = "_".repeat(59);
+
+        int taskIDWidth = 4;
+        int taskIdxWidth = 5;
+        int estTimeWidth = 10;
+        int difficultyWidth = 12;
+        int deadlineWidth = 10;
+        int taskSkillWidth = 11;
+
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(centerString("TASKS", DIV_LENGTH, true)).append("\n");
+
+        sb.append(horizontalLine).append("\n");
+        sb.append("| ID | IDX | EST TIME | DIFFICULTY | DEADLINE | SKILL REQ |\n");
+        sb.append(horizontalLine).append("\n");
+        for(Task task : taskList)
+        {
+            String taskId = centerString(task.getId(), taskIDWidth, false);
+            String taskIdx = centerString(Integer.toString(task.getIdx()), taskIdxWidth, false);
+            String estTime = centerString(Integer.toString(task.getEstimatedTime()), estTimeWidth, false);
+            String difficulty = centerString(Integer.toString(task.getDifficulty()), difficultyWidth, false);
+            String deadline = centerString(Integer.toString(task.getDeadline()), deadlineWidth, false);
+            String taskSkill = centerString(task.getRequiredSkill(), taskSkillWidth, false);
+
+            sb.append("|" + taskId + "|" + taskIdx +"|"+ estTime + "|" + difficulty + "|" + deadline + "|" + taskSkill + "|\n");
+
+        }
+        sb.append(horizontalLine+"\n");
+
+
+        return sb.toString();
+    }
+
+    /**
+     * Creates a solution table
+     * @param solution The solution to print
+     * @return a string of the solution table
+     */
+    public String getSolutionTable(int[] solution)
+    {
+        int lineLength = 55;
+
+        int taskIDWidth = 9;
+        int taskSkillWidth = 12;
+        int employeeIdWidth = 13;
+        int employeeSkillWidth = 16;
+        StringBuilder sb = new StringBuilder();
+        String horizontalLine = "_".repeat(lineLength);
+        sb.append(horizontalLine+"\n");
+        sb.append("| Task ID | Employee ID | Task Skill | Employee Skill |\n");
+        sb.append(horizontalLine+"\n");
+        for(int i = 0; i < solution.length; i++)
+        {
+            String taskId = centerString(taskList.get(i).getId(), taskIDWidth, false);
+            String taskSkill = centerString(taskList.get(i).getRequiredSkill(), taskSkillWidth, false);
+            String employeeId = centerString(employeeList.get(solution[i]).getId(), employeeIdWidth, false);
+            String employeeSkills = centerString(employeeList.get(solution[i]).getSkills().toString(), employeeSkillWidth, false);
+            sb.append("|" + taskId + "|" + employeeId + "|" + taskSkill + "|" + employeeSkills + "|\n");
+        }
+        sb.append(horizontalLine+"\n");
+        return sb.toString();
+    }
+
+    /**
+     * Creates tables of all solutions in a population
+     * @param population The population to print
+     * @return a string of the solution tables
+     */
+
+    public String getPopulationTable(int[][] population)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        for(int i = 0; i < population.length; i++)
+        {
+            String title = "POPULATION "+ i;
+            sb.append(centerString(title, DIV_LENGTH, true)+"\n");
+            sb.append(getSolutionTable(population[i]));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Function to center text within a given size
+     *
+     * @param text  The text to center
+     * @param width The total width of the area the text must be centered in
+     * @return A padded version of the original text centered within the given width.
+     */
+
+    public static String centerString(String text, int width, boolean heading) {
+
+        String padding = " ";
+        if(heading)
+        {
+            padding = "=";
+        }
+
+        if (text == null || width <= text.length()) {
+            return text;
+        }
+
+        int paddingTotal = width - text.length();
+        int paddingStart = paddingTotal / 2;
+        int paddingEnd = paddingTotal - paddingStart;
+
+        return padding.repeat(paddingStart) +
+                text +
+                padding.repeat(Math.max(0, paddingEnd));
+    }
+
+
+}
+**************************************************
+
