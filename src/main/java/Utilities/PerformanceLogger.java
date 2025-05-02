@@ -23,8 +23,10 @@ public class PerformanceLogger {
     private static final String SOLUTION_QUALITY_FILE = "solution_quality.csv";
     private static final String COMPUTATIONAL_EFFICIENCY_FILE = "computational_efficiency.csv";
     private static final String CONSTRAINT_SATISFACTION_FILE = "constraint_satisfaction.csv";
+    private static final String PARAMETERS_FILE = "parameters.csv";
 
     // Metrics tracking
+    private AlgParameters parameters;
     private final List<IterationData> iterationDataList = new ArrayList<>();
     private final String algorithmName;
     private final List<Task> tasks;
@@ -50,6 +52,11 @@ public class PerformanceLogger {
 
         PathUtility.setRunId(runId);
         PathUtility.createDirectories();
+    }
+
+    public void setParameters(AlgParameters parameters)
+    {
+        this.parameters = parameters;
     }
 
     /**
@@ -205,7 +212,7 @@ public class PerformanceLogger {
             saveSolutionQualityData();
             saveConstraintSatisfactionData();
             saveComputationalEfficiencyData();
-
+            saveRunParameters(parameters);
             System.out.println("Performance metrics saved successfully to the 'results' directory.");
         } catch (IOException e) {
             System.err.println("Error saving performance metrics: " + e.getMessage());
@@ -332,6 +339,23 @@ public class PerformanceLogger {
             this.overloadCount = overloadCount;
             this.difficultyViolationCount = difficultyViolationCount;
             this.deadlineViolationCount = deadlineViolationCount;
+        }
+    }
+
+    private void saveRunParameters(AlgParameters parameters)
+    {
+        String filename = PathUtility.getPerformanceDir() + "/"+ algorithmName + "_" + PARAMETERS_FILE;
+        boolean fileExists = Files.exists(Paths.get(filename));
+        if(!fileExists)
+        {
+            try (FileWriter writer = new FileWriter(filename, false))
+            {
+                writer.write(parameters.toString());
+            }
+            catch (IOException e)
+            {
+                throw new LoadDataException("Failed to save parameter file to " + filename + "\n" + e.getMessage());
+            }
         }
     }
 

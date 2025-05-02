@@ -98,7 +98,7 @@ public class MenuController {
             try {
                 int choice = consoleObserver.requestInput("WELCOME", consoleObserver.getLoadedDataStatus(),
                         new String[] { "Exit", "Load stored data from csv", "Run an algorithm",
-                                "Load Random Data", "Generate Visualisations" });
+                                "Load Random Data", "Generate Visualisations","Run CSV Test File" });
                 switch (choice) {
                     case 1:
                         loadDataMenu();
@@ -111,6 +111,9 @@ public class MenuController {
                         break;
                     case 4:
                         generateVisualisationsMenu();
+                        break;
+                    case 5:
+                        runTestFromMenu();
                         break;
                     case 0:
                         exit = true;
@@ -232,7 +235,7 @@ public class MenuController {
 
         while (true) {
             try {
-                List<String> files = DataGenerator.getResourceFiles();
+                List<String> files = DataGenerator.getResourceFiles(false);
                 if (files.isEmpty()) {
                     notifyObservers("ERROR", "No Data Files", "No CSV files found in resources folder.");
                     return;
@@ -358,6 +361,9 @@ public class MenuController {
                                     MAX_GEN_DEFAULT, REPORTING_FREQUENCY_DEFAULT,
                                     FILE_OUTPUT_DEFAULT, currentRunId);
                     //notifyObservers("ISRUNALL", "false", String.valueOf(currentRunId));
+
+                    AlgParameters params = new AlgParameters(ga);
+                    ga.setLoggerParameters(params);
                     runMenu(ga, "Genetic Algorithm (Trial " + currentRunId + ")");
                 }
                 case "AntColonyAlg" -> {
@@ -368,6 +374,8 @@ public class MenuController {
                                     MAX_GEN_DEFAULT, REPORTING_FREQUENCY_DEFAULT,
                                     FILE_OUTPUT_DEFAULT, currentRunId);
                     //notifyObservers("ISRUNALL", "false", String.valueOf(currentRunId));
+                    AlgParameters params = new AlgParameters(ac);
+                    ac.setLoggerParameters(params);
                     runMenu(ac, "Ant Colony Algorithm (Trial " + currentRunId + ")");
                 }
                 case "ParticleSwarmAlg" -> {
@@ -377,6 +385,8 @@ public class MenuController {
                                     PSO_INERTIA_WEIGHT,
                                     REPORTING_FREQUENCY_DEFAULT, FILE_OUTPUT_DEFAULT, currentRunId);
                     //notifyObservers("ISRUNALL", "false", String.valueOf(currentRunId));
+                    AlgParameters params = new AlgParameters(ps);
+                    ps.setLoggerParameters(params);
                     runMenu(ps, "Particle Swarm Algorithm (Trial " + currentRunId + ")");
                 }
                 case "All" -> {
@@ -390,9 +400,15 @@ public class MenuController {
                                     PSO_GBEST_W,
                                     PSO_INERTIA_WEIGHT,
                                     currentRunId);
+                    for(AbstractOptimisationAlgorithm alg : algs.values()) {
+                        AlgParameters params = new AlgParameters(alg);
+                        alg.setLoggerParameters(params);
+                    }
+
                     runMenu(algs.get("AntColonyAlg"), "Ant Colony Algorithm (Trial " + currentRunId + ")");
                     runMenu(algs.get("GeneticAlg"), "Genetic Algorithm (Trial " + currentRunId + ")");
                     runMenu(algs.get("ParticleSwarmAlg"), "Particle Swarm Algorithm (Trial " + currentRunId + ")");
+
                     notifyObservers("ISRUNALL", "false", String.valueOf(currentRunId));
                 }
                 default -> {
@@ -587,6 +603,68 @@ public class MenuController {
         }
 
     }
+
+    private void runTestFromMenu()
+    {
+        // Get a list of all files in /testData
+
+        if(employees == null || tasks == null)
+        {
+            notifyObservers("ERROR", "No Loaded data","No dataset has been loaded, please try again");
+            return;
+        }
+        determineNextRunId();
+        int currentRunId = PathUtility.getRunId();
+
+        try
+        {
+            List<String> files = DataGenerator.getResourceFiles(true);
+            if (files.isEmpty())
+            {
+                notifyObservers("ERROR", "No Data Files", "No CSV files found in testData folder.");
+                return;
+            }
+
+            // Add exit option
+            files.addFirst("Exit");
+            int choice = consoleObserver.requestInput("LOAD DATA",
+                    "Select the CSV file to use from the resources folder\n",
+                    files.toArray(new String[0]));
+
+            if (choice == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                AlgParameters standardisedRun = DataGenerator.loadTestFile(files.get(choice));
+
+                int numTrials = getParameter("Number of trials", 1, 1, Integer.MAX_VALUE);
+
+                for (int i = 0; i < numTrials; i++)
+                {
+                    AlgorithmFactory factory = new AlgorithmFactory(tasks, employees, observers);
+                    Map<String, AbstractOptimisationAlgorithm> algs = factory.createStandardisedAlgorithms(standardisedRun, currentRunId);
+                    notifyObservers("ISRUNALL", "true", String.valueOf(currentRunId));
+                    runMenu(algs.get("AntColonyAlg"), "Ant Colony Algorithm (Trial " + currentRunId + ")");
+                    runMenu(algs.get("GeneticAlg"), "Genetic Algorithm (Trial " + currentRunId + ")");
+                    runMenu(algs.get("ParticleSwarmAlg"), "Particle Swarm Algorithm (Trial " + currentRunId + ")");
+                    notifyObservers("ISRUNALL", "false", String.valueOf(currentRunId));
+                }
+            }
+            catch (LoadDataException e)
+            {
+                notifyObservers("ERROR", "Critical Error Running Test", e.getMessage());
+            }
+        }
+        catch (LoadDataException e)
+        {
+            notifyObservers("ERROR", "Critical Error Loading Test Data", e.getMessage());
+
+        }
+    }
+
 
     private void runAntColAlgMenu() {
         // Initialise with parameters

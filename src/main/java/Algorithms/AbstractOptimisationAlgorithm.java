@@ -2,6 +2,7 @@ package Algorithms;
 
 import Model.Employee;
 import Model.Task;
+import Utilities.AlgParameters;
 import Utilities.Observer;
 import Utilities.PerformanceLogger;
 
@@ -20,10 +21,11 @@ public abstract class AbstractOptimisationAlgorithm implements Algorithm {
     protected int[] bestSolution;
     protected double bestCost = Double.MAX_VALUE;
     protected final int maxIterations;
-    protected final int reportinFrequency;
+    protected final int reportingFrequency;
     protected final boolean fileOutput;
     protected final int populationSize;
     protected String output = "";
+    protected final int runID;
 
     protected final PerformanceLogger performanceLogger;
 
@@ -31,12 +33,17 @@ public abstract class AbstractOptimisationAlgorithm implements Algorithm {
             int reportingFrequency, boolean fileOutput, int maxIterations, int populationSize, int runId) {
         this.tasks = tasks;
         this.employees = employees;
-        this.reportinFrequency = reportingFrequency;
+        this.reportingFrequency = reportingFrequency;
         this.fileOutput = fileOutput;
         this.maxIterations = maxIterations;
         this.populationSize = populationSize;
-
+        this.runID = runId;
         this.performanceLogger = new PerformanceLogger(getAlgorithmName(), tasks, employees, runId);
+    }
+
+    public void setLoggerParameters(AlgParameters parameters)
+    {
+        performanceLogger.setParameters(parameters);
     }
 
     @Override
@@ -70,7 +77,7 @@ public abstract class AbstractOptimisationAlgorithm implements Algorithm {
 
         output += sb.toString();
 
-        if (iteration % reportinFrequency == 0 || iteration == getMaxIterations() - 1) {
+        if (iteration % reportingFrequency == 0 || iteration == getMaxIterations() - 1) {
             notifyObservers("INFO", getAlgorithmName() + " PROGRESS", sb.toString());
         }
     }
@@ -95,6 +102,45 @@ public abstract class AbstractOptimisationAlgorithm implements Algorithm {
         }
     }
 
+    public int[] getBestSolution()
+    {
+        return bestSolution;
+    }
+
+    public void setBestSolution(int[] bestSolution)
+    {
+        this.bestSolution = bestSolution;
+    }
+
+    public double getBestCost()
+    {
+        return bestCost;
+    }
+
+    public void setBestCost(double bestCost)
+    {
+        this.bestCost = bestCost;
+    }
+
+    public int getReportingFrequency()
+    {
+        return reportingFrequency;
+    }
+
+    public boolean isFileOutput()
+    {
+        return fileOutput;
+    }
+
+    public int getPopulationSize()
+    {
+        return populationSize;
+    }
+
+    public int getRunID()
+    {
+        return runID;
+    }
     /**
      * Get the name of this algorithm
      */
@@ -104,4 +150,5 @@ public abstract class AbstractOptimisationAlgorithm implements Algorithm {
      * Get the maximum number of iterations
      */
     public abstract int getMaxIterations();
+
 }
