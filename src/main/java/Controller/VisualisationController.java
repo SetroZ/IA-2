@@ -31,8 +31,11 @@ public class VisualisationController {
     private static final String[] ALGORITHM_NAMES = {"GeneticAlg", "ParticleSwarmAlg", "AntColonyAlg"};
 
     // Chart output filenames
-    private static final String SOLUTION_QUALITY_CHART = "solution_quality_comparison.png";
-    private static final String COMPUTATIONAL_EFFICIENCY_CHART = "computational_efficiency_comparison.png";
+    private static final String SOLUTION_QUALITY_CHART = "solution_quality.png";
+    private static final String COMPUTATIONAL_EFFICIENCY_TOTAL_RUNTIME_CHART = "computational_efficiency_total_runtime.png";
+    private static final String COMPUTATIONAL_EFFICIENCY_AVG_RUNTIME_CHART = "computational_efficiency_avg_runtime.png";
+    private static final String COMPUTATIONAL_EFFICIENCY_TOTAL_MEMORY_CHART = "computational_efficiency_total_memory.png";
+    private static final String COMPUTATIONAL_EFFICIENCY_AVG_MEMORY_CHART = "computational_efficiency_avg_memory.png";
     private static final String CONSTRAINT_SATISFACTION_CHART = "constraint_satisfaction_comparison.png";
 
 
@@ -136,39 +139,65 @@ public class VisualisationController {
             return "Computational efficiency data is empty.";
         }
 
-        String runtimeTitle;
         // Lists for bar chart data
         List<String> algorithmNames = new ArrayList<>(efficiencyData.keySet());
-        List<Double> runtimeValues = new ArrayList<>();
+        List<Double> tRuntimeValues = new ArrayList<>();
+        List<Double> avgRuntimeValues = new ArrayList<>();
+        List<Double> tMemoryValues = new ArrayList<>();
+        List<Double> avgMemoryValues = new ArrayList<>();
 
-        // Extract runtime values for each algorithm
-        if(perIteration)
-        {
+        String tRuntimeTitle = "Average TotalRuntime (ms)";
 
-            for (String algorithm : algorithmNames)
-            {
-                runtimeValues.add(efficiencyData.get(algorithm)[0]); // TotalRuntime is at index 0
-            }
-            runtimeTitle = " Average TotalRuntime (ms)";
-        }
-        else
+        String avgRuntimeTitle = "Average Runtime/Iteration (ms)";
+        String tMemoryTitle = "Average Total Memory Usage(MB)";
+        String avgMemoryTitle = "Average Memory/Iteration Usage (MB)";
+        for (String algorithm : algorithmNames)
         {
-            for (String algorithm : algorithmNames)
-            {
-                runtimeValues.add(efficiencyData.get(algorithm)[1]); // runtime/iteration is at index 0
-            }
-            runtimeTitle = "Average Runtime/Iteration (ms)";
+            // TotalRuntime,AvgRuntime,TotalMemory,AvgMemory
+            tRuntimeValues.add(efficiencyData.get(algorithm)[0]);
+            avgRuntimeValues.add(efficiencyData.get(algorithm)[1]);
+            tMemoryValues.add(efficiencyData.get(algorithm)[2]);
+            avgMemoryValues.add(efficiencyData.get(algorithm)[3]);
         }
 
-        // Generate the comparison chart
-        String outputPath = PathUtility.getChartsDir() + "/run" +
-                PathUtility.getRunId() + "_" + COMPUTATIONAL_EFFICIENCY_CHART;
+        // Generate the comparison charts
+        String outputPath = PathUtility.getChartsDir() + "/" + COMPUTATIONAL_EFFICIENCY_TOTAL_RUNTIME_CHART;
         visualiser.createEfficiencyBarChart(
                 "Computational Efficiency Comparison",
                 "Algorithm",
-                runtimeTitle,
+                tRuntimeTitle,
                 algorithmNames,
-                runtimeValues,
+                tRuntimeValues,
+                outputPath
+        );
+
+        outputPath = PathUtility.getChartsDir() + "/" + COMPUTATIONAL_EFFICIENCY_AVG_RUNTIME_CHART;
+        visualiser.createEfficiencyBarChart(
+                "Computational Efficiency Comparison",
+                "Algorithm",
+                avgRuntimeTitle,
+                algorithmNames,
+                avgRuntimeValues,
+                outputPath
+        );
+
+        outputPath = PathUtility.getChartsDir() + "/"+ COMPUTATIONAL_EFFICIENCY_TOTAL_MEMORY_CHART;
+        visualiser.createEfficiencyBarChart(
+                "Computational Efficiency Comparison",
+                "Algorithm",
+                tMemoryTitle,
+                algorithmNames,
+                tMemoryValues,
+                outputPath
+        );
+
+        outputPath = PathUtility.getChartsDir() + "/"+ COMPUTATIONAL_EFFICIENCY_AVG_MEMORY_CHART;
+        visualiser.createEfficiencyBarChart(
+                "Computational Efficiency Comparison",
+                "Algorithm",
+                avgMemoryTitle,
+                algorithmNames,
+                avgMemoryValues,
                 outputPath
         );
 
@@ -335,10 +364,12 @@ public class VisualisationController {
                 String[] parts = line.split(",");
                 if (parts.length >= 3) {
                     String algorithm = parts[0];
-                    Double[] metrics = new Double[2];
+                    Double[] metrics = new Double[4];
 
                     metrics[0] = (Double.parseDouble(parts[1])); // Total Time
                     metrics[1] = (Double.parseDouble(parts[2])); // time/iteration
+                    metrics[2] = (Double.parseDouble(parts[3])); // Total memoryUsage
+                    metrics[3] = (Double.parseDouble(parts[4])); // memoryusage per iteration
                     dataMap.computeIfAbsent(algorithm, k -> new ArrayList<>()).add(metrics);
                 }
             }
@@ -347,23 +378,29 @@ public class VisualisationController {
             for (Map.Entry<String, List<Double[]>> entry : dataMap.entrySet()) {
                 String algorithm = entry.getKey();
                 List<Double[]> metricList = entry.getValue();
-                // Calculate average runtime/iteration/algorithm for this iteration
+                // Calculate averages of metrics for every trial in run per algorithm
                 double avgTotalRunTime = 0;
                 double avgRunTimePerIteration = 0;
+                double avgTotalMemoryUsage = 0;
+                double avgMemoryUsagePerIteration = 0;
                 for(Double[] metrics : metricList) {
                     avgTotalRunTime += metrics[0];
                     avgRunTimePerIteration += metrics[1];
+                    avgTotalMemoryUsage += metrics[2];
+                    avgMemoryUsagePerIteration += metrics[3];
                 }
                 avgRunTimePerIteration = avgRunTimePerIteration/metricList.size();
-                avgTotalRunTime = avgTotalRunTime / avgRunTimePerIteration;
+                avgTotalRunTime = avgTotalRunTime / metricList.size();
+                avgTotalMemoryUsage = avgTotalMemoryUsage / metricList.size();
+                avgMemoryUsagePerIteration = avgMemoryUsagePerIteration / metricList.size();
+//
+//                System.out.println("Average runtime/itereration for algorithm " + algorithm + ": " + avgRunTimePerIteration +
+//                        " (from " + metricList.size() + " runs: " + metricList + ")");
+//                System.out.println("Average total runtime for algorithm " + algorithm + ": " + avgTotalRunTime +
+//                        " (from " + metricList.size() + " runs: " + metricList + ")");
 
-                System.out.println("Average runtime/itereration for algorithm " + algorithm + ": " + avgRunTimePerIteration +
-                        " (from " + metricList.size() + " runs: " + metricList + ")");
-                System.out.println("Average total runtime for algorithm " + algorithm + ": " + avgTotalRunTime +
-                        " (from " + metricList.size() + " runs: " + metricList + ")");
 
-
-                averagedData.put(algorithm, new Double[]{avgTotalRunTime, avgRunTimePerIteration});
+                averagedData.put(algorithm, new Double[]{avgTotalRunTime, avgRunTimePerIteration, avgTotalMemoryUsage, avgMemoryUsagePerIteration});
             }
         }
         catch (IOException e) {
