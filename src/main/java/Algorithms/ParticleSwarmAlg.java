@@ -81,12 +81,12 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
         gBestData = findGbest(gBestData, fitnessPBest, pBest);
         int n = 0;
 
-//        // Log initial state
-//        performanceLogger.logIteration(
-//                n,
-//                gBestData.gBestArr,
-//                gBestData.gBest,
-//                PerformanceLogger.getCurrentMemoryUsageMB());
+        // // Log initial state
+        // performanceLogger.logIteration(
+        // n,
+        // gBestData.gBestArr,
+        // gBestData.gBest,
+        // PerformanceLogger.getCurrentMemoryUsageMB());
 
         // Main loop.
         for (; n < maxIterations; n++) {
@@ -137,10 +137,10 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
         double social = c2 * r2 * (gBest - currP);
 
         double stag = (STAG_LIMIT < lastgBestUpdate)
-                ? rd.nextDouble(1.0, 1.5)
-                : 1;
+                ? Math.copySign(rd.nextDouble(0.5, 1.0), v)
+                : 0.0;
 
-        double newV = w * v + cognitive + social * stag;
+        double newV = w * v + cognitive + social + stag;
 
         return Math.max(-maxV, Math.min(maxV, newV));
     }
