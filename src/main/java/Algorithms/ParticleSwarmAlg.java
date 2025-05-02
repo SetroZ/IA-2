@@ -17,8 +17,6 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
         int[] gBestArr;
     }
 
-    int populationSize;
-    int maxIterations;
     int STAG_LIMIT = 20;
     int lastgBestUpdate = 0;
     double c1;
@@ -30,10 +28,9 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
             double c2,
             double w, int reportingFrequency, boolean fileOutput, int runId) {
         super(tasks, employees, reportingFrequency, fileOutput, maxIterations, populationSize, runId);
-        this.populationSize = populationSize;
-        this.employees = employees;
-        this.tasks = tasks;
-        this.maxIterations = maxIterations;
+        this.c1 = c1;
+        this.c2 = c2;
+        this.w = w;
 
     }
 
@@ -213,5 +210,20 @@ public class ParticleSwarmAlg extends AbstractOptimisationAlgorithm {
         }
 
         return currGBest;
+    }
+
+    public double getC1()
+    {
+        return c1;
+    }
+
+    public double getC2()
+    {
+        return c2;
+    }
+
+    public double getW()
+    {
+        return w;
     }
 }

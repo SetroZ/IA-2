@@ -80,7 +80,7 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
             );
 
 
-            if(iterationCount % reportinFrequency == 0)
+            if(iterationCount % reportingFrequency == 0)
             {
                 reportProgress(bestSolution, iterationCount);
             }
@@ -239,4 +239,14 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
         return maxIterations;
     }
 
+
+    public double getInitPheromone()
+    {
+        return initPheromone;
+    }
+
+    public double getPherDecayRate()
+    {
+        return pherDecayRate;
+    }
 }

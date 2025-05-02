@@ -1,5 +1,6 @@
 package Factories;
 
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -7,6 +8,7 @@ import java.util.Map;
 import Algorithms.*;
 import Model.Employee;
 import Model.Task;
+import Utilities.AlgParameters;
 import Utilities.Observer;
 
 /**
@@ -63,12 +65,59 @@ public class AlgorithmFactory {
             Double crossoverRate, Double mutationRate,
             Integer elitismCount, Double c1, Double c2, Double w, int runID) {
         Map<String, AbstractOptimisationAlgorithm> algos = new HashMap<>();
-        algos.put("GeneticAlg", createGeneticAlgorithm(populationSize, crossoverRate, mutationRate, elitismCount,
-                maxIterations, reportingFrequency, fileOutput, runID));
-        algos.put("ParticleSwarmAlg",
-                createParticleSwarm(populationSize, maxIterations, c1, c2, w, reportingFrequency, fileOutput, runID));
-        algos.put("AntColonyAlg", createAntColonyOptimisation(populationSize, pherDecayRate, initPheromone,
-                maxIterations, reportingFrequency, fileOutput, runID));
+        GeneticAlg ga = createGeneticAlgorithm(populationSize, crossoverRate, mutationRate, elitismCount,
+                maxIterations, reportingFrequency, fileOutput, runID);
+        ParticleSwarmAlg ps =
+                createParticleSwarm(populationSize, maxIterations, c1, c2, w, reportingFrequency, fileOutput, runID);
+        AntColAlg ac = createAntColonyOptimisation(populationSize, pherDecayRate, initPheromone,
+                maxIterations, reportingFrequency, fileOutput, runID);
+
+        for (Observer observer : observers) {
+            ga.registerObserver(observer);
+            ac.registerObserver(observer);
+            ps.registerObserver(observer);
+        }
+
+        algos.put("GeneticAlg", ga);
+        algos.put("ParticleSwarmAlg", ps);
+        algos.put("AntColonyAlg", ac);
+
+        return algos;
+    }
+
+    public Map<String, AbstractOptimisationAlgorithm> createStandardisedAlgorithms(AlgParameters p, int runID)
+    {
+        Map<String, AbstractOptimisationAlgorithm> algos = new HashMap<>();
+
+        GeneticAlg ga = createGeneticAlgorithm(p.getPopulationSize(),
+                p.getCrossoverRate(), p.getMutationRate(), p.getElitismCount(),
+                p.getMaxIterations(), p.getReportingFrequency(), p.isFileOutput(), runID);
+       ParticleSwarmAlg ps = createParticleSwarm(p.getPopulationSize(), p.getMaxIterations(), p.getC1(),
+                p.getC2(), p.getW(), p.getReportingFrequency(), p.isFileOutput(), runID);
+        AntColAlg ac = createAntColonyOptimisation(p.getPopulationSize(),p.getPherDecayRate(),
+                p.getInitPheromone(), p.getMaxIterations(), p.getReportingFrequency(), p.isFileOutput(), runID);
+
+        for (Observer observer : observers) {
+            ga.registerObserver(observer);
+            ac.registerObserver(observer);
+            ps.registerObserver(observer);
+        }
+
+        p.setType("GeneticAlg");
+        ga.setLoggerParameters(p);
+
+        p.setType("AntColonyAlg");
+        ac.setLoggerParameters(p);
+
+        p.setType("ParticleSwarmAlg");
+        ps.setLoggerParameters(p);
+
+
+
+        algos.put("GeneticAlg", ga);
+        algos.put("ParticleSwarmAlg", ps);
+        algos.put("AntColonyAlg", ac);
+
         return algos;
     }
 }
