@@ -561,7 +561,7 @@ These findings demonstrate that while all three algorithms can effectively solve
 - **Choose PSO**: For balanced performance between quality and efficiency
 - **Choose ACO**: For time-critical applications, especially with employee surplus
 
-All algorithms generally stabilize after 20-40 iterations, with memory usage patterns remaining similar across implementations.
+All algorithms generally stabilise after 20-40 iterations, with memory usage patterns remaining similar across implementations.
 ## 4.2 Insights 
 
 ### 4.2.1 Genetic Algorithm 
@@ -573,3 +573,16 @@ Particle Swarm Optimisation relies on swarm intelligence, where each particle re
 ### 4.2.3 Ant Colony Optimisation
 Ant Colony Optimisation applies a pheromone-based reinforcement mechanism where employee-task pairings that are part of low-cost solutions are incrementally strengthened over time. Its performance varies significantly with the structure of the problem. In balanced or employee-constrained configurations, such as 1:1 or 5:1 ratios, the algorithm struggles as early deposits of pheromone on suboptimal pairings can lead to premature convergence. However, in cases with employee surplus, such as the 1:10 ratio, ACO benefits from the wider selection space, allowing its adaptive learning process to reinforce efficient pairings over time. The initPheromone and pherDecayRate parameters are particularly influential, as they determine the relative importance of new versus historical information. When tuned correctly, ACO demonstrates strong improvement patterns in scenarios where flexibility and redundancy in assignments allow the pheromone-driven mechanism to shine.
 
+## 5 Conclusion
+
+The comparison of three optimisation algorithms (Genetic Algorithm, Particle Swarm Optimisation, and Ant Colony Optimisation) for employee task assignment reveals their distinct strengths:
+
+**Solution Quality**: GA consistently produces the best solutions across most scenarios, particularly excelling in resource-constrained environments. Its evolutionary approach enables effective solution space exploration despite starting with poor initial solutions.
+
+**Computational Efficiency**: ACO demonstrates superior runtime performance across all problem scales, with its efficiency advantage increasing as problem size grows. PSO maintains an intermediate position between the two.
+
+**Memory Usage**: All algorithms show similar memory consumption patterns, suggesting that implementation efficiency stems primarily from algorithmic approach rather than data structures.
+
+**Practical Applications**: The optimal algorithm choice depends on implementation priorities - GA for quality-focused applications with ample resources, ACO for time-sensitive scenarios requiring rapid solutions, and PSO as a balanced middle ground.
+
+Future research could explore hybrid approaches combining GA's solution quality with ACO's computational efficiency.
