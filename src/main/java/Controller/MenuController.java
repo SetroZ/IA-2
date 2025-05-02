@@ -98,7 +98,7 @@ public class MenuController {
             try {
                 int choice = consoleObserver.requestInput("WELCOME", consoleObserver.getLoadedDataStatus(),
                         new String[] { "Exit", "Load stored data from csv", "Run an algorithm",
-                                "Load Random Data", "Generate Visualisations","Run CSV Test File" });
+                                "Load Random Data", "Generate Visualisations" });
                 switch (choice) {
                     case 1:
                         loadDataMenu();
@@ -111,9 +111,6 @@ public class MenuController {
                         break;
                     case 4:
                         generateVisualisationsMenu();
-                        break;
-                    case 5:
-                        runTestFromMenu();
                         break;
                     case 0:
                         exit = true;
@@ -135,7 +132,7 @@ public class MenuController {
 
         try {
             determineNextRunId();
-            int currentRunId= PathUtility.getRunId()-1;
+            int currentRunId = PathUtility.getRunId() - 1;
             VisualisationController visualController = new VisualisationController(currentRunId);
 
             boolean perIteration;
@@ -150,7 +147,7 @@ public class MenuController {
                 int choice = consoleObserver.requestInput("GENERATE VISUALIZATIONS",
                         "Select which charts to generate from run 1 to " + (currentRunId),
                         new String[] { "Exit",
-                                "Run ID: " +(currentRunId),
+                                "Run ID: " + (currentRunId),
                                 "Solution Quality Comparison",
                                 "Computational Efficiency Comparison",
                                 "Constraint Satisfaction Comparison",
@@ -161,7 +158,7 @@ public class MenuController {
                         exit = true;
                         break;
                     case 1:
-                        int selectedRunId = getParameter("run id", currentRunId , 1, currentRunId );
+                        int selectedRunId = getParameter("run id", currentRunId, 1, currentRunId);
                         visualController.setRUN_ID(selectedRunId);
                         break;
                     case 2:
@@ -218,7 +215,7 @@ public class MenuController {
 
     private boolean selectGraphType() {
         int anotherChoice = consoleObserver.requestInput("DEFINE PARAMETER", "What efficiency graph to use",
-                new String[] { "Average Runtime/Iteration" ,"Total Average Runtime" });
+                new String[] { "Average Runtime/Iteration", "Total Average Runtime" });
         return switch (anotherChoice) {
             case 0 -> false;
             case 1 -> true;
@@ -253,6 +250,7 @@ public class MenuController {
                 }
 
                 try {
+
                     loadSelectedData("employees", files.get(choice));
                 } catch (LoadDataException e) {
                     try {
@@ -274,7 +272,7 @@ public class MenuController {
         String[] fileName = filePath.split("/");
         if (fileType.equalsIgnoreCase("employees")) {
             String employeesFileName = fileName[fileName.length - 1];
-            employees = DataGenerator.loadEmployees("/" + employeesFileName);
+            employees = DataGenerator.loadEmployees(filePath);
             consoleObserver.updateLoadedData("Employees", employeesFileName);
             // Display loaded employees
             consoleObserver.displayData("EMPLOYEES", employees);
@@ -282,7 +280,7 @@ public class MenuController {
                     "Successfully loaded employees from " + employeesFileName);
         } else if (fileType.equalsIgnoreCase("tasks")) {
             String tasksFileName = fileName[fileName.length - 1];
-            tasks = DataGenerator.loadTasks("/" + tasksFileName);
+            tasks = DataGenerator.loadTasks(filePath);
             consoleObserver.updateLoadedData("Tasks", tasksFileName);
             // Display Loaded Tasks
             consoleObserver.displayData("TASKS", tasks);
@@ -408,7 +406,6 @@ public class MenuController {
                     runMenu(algs.get("AntColonyAlg"), "Ant Colony Algorithm (Trial " + currentRunId + ")");
                     runMenu(algs.get("GeneticAlg"), "Genetic Algorithm (Trial " + currentRunId + ")");
                     runMenu(algs.get("ParticleSwarmAlg"), "Particle Swarm Algorithm (Trial " + currentRunId + ")");
-
                     notifyObservers("ISRUNALL", "false", String.valueOf(currentRunId));
                 }
                 default -> {
@@ -603,68 +600,6 @@ public class MenuController {
         }
 
     }
-
-    private void runTestFromMenu()
-    {
-        // Get a list of all files in /testData
-
-        if(employees == null || tasks == null)
-        {
-            notifyObservers("ERROR", "No Loaded data","No dataset has been loaded, please try again");
-            return;
-        }
-        determineNextRunId();
-        int currentRunId = PathUtility.getRunId();
-
-        try
-        {
-            List<String> files = DataGenerator.getResourceFiles(true);
-            if (files.isEmpty())
-            {
-                notifyObservers("ERROR", "No Data Files", "No CSV files found in testData folder.");
-                return;
-            }
-
-            // Add exit option
-            files.addFirst("Exit");
-            int choice = consoleObserver.requestInput("LOAD DATA",
-                    "Select the CSV file to use from the resources folder\n",
-                    files.toArray(new String[0]));
-
-            if (choice == 0)
-            {
-                return;
-            }
-
-            try
-            {
-                AlgParameters standardisedRun = DataGenerator.loadTestFile(files.get(choice));
-
-                int numTrials = getParameter("Number of trials", 1, 1, Integer.MAX_VALUE);
-
-                for (int i = 0; i < numTrials; i++)
-                {
-                    AlgorithmFactory factory = new AlgorithmFactory(tasks, employees, observers);
-                    Map<String, AbstractOptimisationAlgorithm> algs = factory.createStandardisedAlgorithms(standardisedRun, currentRunId);
-                    notifyObservers("ISRUNALL", "true", String.valueOf(currentRunId));
-                    runMenu(algs.get("AntColonyAlg"), "Ant Colony Algorithm (Trial " + currentRunId + ")");
-                    runMenu(algs.get("GeneticAlg"), "Genetic Algorithm (Trial " + currentRunId + ")");
-                    runMenu(algs.get("ParticleSwarmAlg"), "Particle Swarm Algorithm (Trial " + currentRunId + ")");
-                    notifyObservers("ISRUNALL", "false", String.valueOf(currentRunId));
-                }
-            }
-            catch (LoadDataException e)
-            {
-                notifyObservers("ERROR", "Critical Error Running Test", e.getMessage());
-            }
-        }
-        catch (LoadDataException e)
-        {
-            notifyObservers("ERROR", "Critical Error Loading Test Data", e.getMessage());
-
-        }
-    }
-
 
     private void runAntColAlgMenu() {
         // Initialise with parameters
