@@ -151,10 +151,49 @@ The **fitness evaluation** for each particle uses the defined cost function, whi
 
 **Overview** 
 
-The Ant Colony Optimisation Algorithm is a metaheuristic algorithm inspired by the real life behaviour of ant colonies optimising the path between the colony and a food source through pheromone communication. As an ant returns to its colony from the food source it deposits pheromone along its path, this serves as a signal to other ants who are more likely to follow paths to the food source with a higher pheromone concentration. Pheromone evaporates over time, this results in paths that are longer (less optimized) having a weaker pheromone signal by the time the ant returns to the colony compared to more optimal paths. Over time, these optimal paths generate higher concentrations of pheromone, encouraging more ants to take the same path who each deposit pheromone, further reinforcing the efficiency of the route. This positive feedback mechanic results in the convergence of all ants to a near optimal route. 
+The Ant Colony Optimisation Algorithm is a metaheuristic algorithm inspired by the real life behaviour of ant colonies optimising the path between the colony and a food source through pheromone communication. As an ant returns to its colony from the food source it deposits pheromone along its path, this serves as a signal to other ants who are more likely to follow paths to the food source with a higher pheromone concentration. Pheromone evaporates over time, this results in paths that are longer (less optimized) having a weaker pheromone signal by the time the ant returns to the colony compared to more optimal paths. Over time, these optimal paths generate higher concentrations of pheromone due to repeated deposition, encouraging more ants to take the same path who each deposit pheromone, further reinforcing the efficiency of the route. This positive feedback mechanic results in the convergence of all ants to a near optimal route. 
 
 **Application to Employee Task Assignment Problem**
-The concept of ACO can be applied to combinatorial problems such as the Employee Task assignment optimisation problem by considering a whole solution as the path with a length equal to a cost function that describes how far away the solution is from meeting the given constraints. Each individual decision, employee-task assignment, that composes the solution is then deposited with pheromone influencing the probability of that employee-task pairing being chosen in subsequent solutions. Over time the pairings that compose solutions with lower cost are favoured and those composing higher cost solutions are disfavoured.
+The concept of ACO can be applied to combinatorial problems such as the Employee Task assignment optimisation problem by considering a whole solution as the path with a length equal to a cost function that describes how far away the solution is from meeting the given constraints. Each individual decision, employee-task assignment, that composes the solution is then deposited with pheromone influencing the probability of that employee-task pairing being chosen in subsequent solutions. Over time the pairings that compose solutions with lower cost are favoured as pheromone is continuosly deposited, and those composing higher cost solutions are disfavoured as pheromone evaporation outweighs the minimal pheromone deposited.
+
+#### Ant Colony Represenation
+- The ant colony is represented by a 2D-array where `antMatrix[i]` represents the solution or path taken by the i'th ant.
+- `antMatrix[i][t] = e` means that in the i'th ant's solution, task t has been assigned to employee e.
+- Every iteration the 2D-array is updated with new solutions that are generated probabilistically based on the values stored in the pheromone matrix.
+- A 1D-array stores the global best solution; the solution with the lowest cost found over all iterations run so far.
+
+#### Pheromone Matrix Representation
+- The pheromone matrix is represented by a 2D-array where `pherMatrix[t][e] = p` means that the assignment of employee e to task t has a pheromone value of p.
+
+**Initialisation Mechanism** 
+The pheromone matrix is initialised with a constrained solution space. All employee task pairings `[t][e]` are evaluated according to if the pairing violates the skill level constraint and the specialized skill matching constraint. If the pairing of employee e with task t violates either constraint then `[t][e] = 0`, otherwise `[t][e] = initial pheromone value parameter`. This process effectively reduces the solution space, as pairings with a pheromone value of 0 can never be chosen by the ant, and so can never have a pheromone deposited upon it. In the edge case that their exists a task  t where no employee can satisfy both the skill level and specialized skill matching constraints, all `[t][e]` are assigned a value equal to the initial pheromone parameter for that specific task t.
+
+**Updating Mechanism**
+- After each iteration all elements in the pheromone matrix are multiplied by `1 - (pherDecayRate)`, where pherDecayRate is the decimal representation of the percentage decrease in pheromone strength; this process implements the concept of pheromone evaporation. 
+- The cost for each ant's solution is then evaluated for the current iteration.
+- The pheromone value for that solution is then evaluated according to the equation: `pheromone = 1/(5 * cost + 1) `.
+- This pheromone value is then incremented into the elements for all employee task pairs that compose the solution using the for loop:
+``` java 
+for(int j = 0; j < numTasks; j++) 
+{
+    int empIdx = ant[j];
+    this.pherMatrix[j][empIdx] += pheromone;
+    
+}
+```
+where ant is a 1D array for a specific solution from the antMatrix.
+
+#### Solution Generation Mechanism
+- In each iteration the number of independent solutions generated is equal to the `numAnts` parameter.
+- Each solution is generated sequentially from Task 1 to Task n, and assigning an employee at each different task. 
+- For each task in a solution, the pheromone value of assigning that task to each employee is summed and stored as `totalPheromone`.
+- A random number is then generated between 0 and `total pheromone` and assigned to `choice`. 
+- We then iterate through each element representing the pheromone value for assigning each employee to that task, and on each iteration the respective pheromone value is incremented to the variable `cumulative` and `choice < cumulative` is checked. When this condition is true the respective employee is the one that is chosen for the solution. This ensures probabilistic assignment of employees for each task based on their relative pheromone strengths.
+- This process is repeated for all ants in the antMatrix.
+    
+
+
+
 
 
 

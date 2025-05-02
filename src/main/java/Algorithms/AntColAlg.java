@@ -150,19 +150,11 @@ public class AntColAlg extends AbstractOptimisationAlgorithm
         {
             ant = antMatrix[i];
             double antCost = CostCalculator.calculateTotalCost(ant, this.tasks, this.employees);
-            //System.out.println(antCost);
             if(antCost < bestCost)
             {
                 bestCost = antCost;
                 bestSolution = ant.clone();
             }
-            /* 
-            * CREATE A BEST SOLUTION SO FAR TRACKER
-            if(antCost == 0.0)
-            {
-                this.foundPerfectSolution = true;
-            }
-            */
             double pheromone = 1.0/(5.0 * antCost) + 1.0; // Multiplying by 5 ensures no dividing by a decimal, Adding 1 ensures no division by zero
             
             for(int j = 0; j < numTasks; j++) //for each task in ant's solution
