@@ -101,8 +101,53 @@ Each particle's position _(task assignment)_ is updated by applying the newly co
 
 The **fitness evaluation** for each particle uses the defined cost function, which aggregates penalties for violating task assignment constraints.
 
+
+
+
 ### 2.1.3 Ant Colony Optimization (ACO)
 
 ## 2.2 Implementation Details
 
 ### 2.2.1 Solution Encoding Strategy
+
+
+
+
+# Data set Tests
+
+
+Datasets:
+10 trials
+Test1: 10 tasks -> 10 employees
+test2: 10 tasks -> 100 employees
+test3: 100 tasks -> 10 employees
+
+test4 : 100 tasks -> 100 employees
+
+
+test5: 100 tasks->500 employees
+
+
+test6:  500 tasks -> 10 employees
+
+
+tsest7: 500 tasks-> 100 employees
+
+
+test 8 : 500 tasks ->500 employees
+
+**Parameter tests
+
+Test1-Mutation-C1-initPherm UP
+
+Test2- CrossOver-c2- pher decay UP
+
+
+test3-elitismRate - W
+
+
+
+
+
+
+
