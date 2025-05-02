@@ -149,6 +149,15 @@ The **fitness evaluation** for each particle uses the defined cost function, whi
 
 ### 2.1.3 Ant Colony Optimisation (ACO)
 
+**Overview** 
+
+The Ant Colony Optimisation Algorithm is a metaheuristic algorithm inspired by the real life behaviour of ant colonies optimising the path between the colony and a food source through pheromone communication. As an ant returns to its colony from the food source it deposits pheromone along its path, this serves as a signal to other ants who are more likely to follow paths to the food source with a higher pheromone concentration. Pheromone evaporates over time, this results in paths that are longer (less optimized) having a weaker pheromone signal by the time the ant returns to the colony compared to more optimal paths. Over time, these optimal paths generate higher concentrations of pheromone, encouraging more ants to take the same path who each deposit pheromone, further reinforcing the efficiency of the route. This positive feedback mechanic results in the convergence of all ants to a near optimal route. 
+
+**Application to Employee Task Assignment Problem**
+The concept of ACO can be applied to combinatorial problems such as the Employee Task assignment optimisation problem by considering a whole solution as the path with a length equal to a cost function that describes how far away the solution is from meeting the given constraints. Each individual decision, employee-task assignment, that composes the solution is then deposited with pheromone influencing the probability of that employee-task pairing being chosen in subsequent solutions. Over time the pairings that compose solutions with lower cost are favoured and those composing higher cost solutions are disfavoured.
+
+
+
 ## 2.2 Implementation Details
 
 ### 2.2.1 Solution Encoding Strategy
