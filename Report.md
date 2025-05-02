@@ -178,6 +178,39 @@ Each term represents a different type of constraint violation or inefficiency:
 - **Unique Assignment Violation Penalty ($\sigma$):** Penalises cases where tasks are either not assigned at all or assigned to more than one employee.
 
 
+### 2.2.3  Algorithm Parameters
+
+
+
+
+
+## 2.3 Experimental Design
+
+
+### 2.3.1 Data Set Description
+
+
+### 2.3.2 Experiment Setup and Configuration
+
+### 2.3.3 Hardware and Software Specifications
+
+
+
+# 3. Performance Evaluation
+
+## 3.1 Solution Quality and Optimality
+
+### 3.1.1 Graphical Analysis
+### 3.1.2 Interpretation of Results
+
+## 3.2 Computational Efficiency
+
+### 3.2.1 Graphical Representation of Efficiency
+### 3.2.2 Analysis of Resource Usage
+
+
+
+
 
 
 
